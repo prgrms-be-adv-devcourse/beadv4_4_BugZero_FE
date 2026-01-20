@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+:root {
+  --lego-yellow: #FFD700;
+  --lego-red: #E3000B;
+  --lego-blue: #006CB7;
+  --lego-green: #00852B;
+  --lego-orange: #FFA500;
+}
+
+body {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
+/* Lego Brick Button Style */
+.lego-btn {
+  position: relative;
+  padding: 0.75rem 1.5rem;
+  font-weight: bold;
+  color: #000;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  background: linear-gradient(180deg, #FFD700 0%, #E6C200 100%);
+  box-shadow:
+    0 4px 0 #B8860B,
+    0 6px 10px rgba(0, 0, 0, 0.3);
+  border: none;
+  cursor: pointer;
+}
+
+.lego-btn:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 0 #B8860B,
+    0 8px 15px rgba(0, 0, 0, 0.4);
+}
+
+.lego-btn:active {
+  transform: translateY(2px);
+  box-shadow:
+    0 2px 0 #B8860B,
+    0 3px 5px rgba(0, 0, 0, 0.3);
+}
+
+/* Lego Card Style */
+.lego-card {
+  background-color: #1f2937;
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 3px solid #FFD700;
+  box-shadow:
+    0 0 0 3px #E3000B,
+    0 10px 30px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s;
+}
+
+.lego-card:hover {
+  transform: translateY(-5px);
+  box-shadow:
+    0 0 0 3px #E3000B,
+    0 15px 40px rgba(0, 0, 0, 0.6);
+}
+
+/* Animated gradient text */
+.gradient-text {
+  background: linear-gradient(90deg, #FFD700, #E3000B, #006CB7, #FFD700);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 3s ease infinite;
+}
+
+@keyframes gradient-shift {
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Pulse animation for live auctions */
+.pulse-live {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
