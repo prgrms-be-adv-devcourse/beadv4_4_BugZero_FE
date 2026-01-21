@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { api, Auction, BidLog, MemberInfo, isVerified } from '@/lib/api';
+import { api, Auction, BidLog, MemberInfo } from '@/lib/api';
 import VerifyModal from '@/components/VerifyModal';
+
 
 function formatPrice(price: number): string {
     return new Intl.NumberFormat('ko-KR').format(price);
@@ -33,7 +34,9 @@ export default function AuctionDetailPage() {
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
     const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
     const [showVerifyModal, setShowVerifyModal] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null);
+
 
     const eventSourceRef = useRef<EventSource | null>(null);
 
@@ -103,9 +106,10 @@ export default function AuctionDetailPage() {
                             eventSource.close();
                             setConnectionStatus('disconnected');
                         }
-                    } catch (e) {
+                    } catch (_e) {
                         console.log('SSE 데이터 파싱 실패:', event.data);
                     }
+
                 };
 
                 eventSource.onerror = () => {
@@ -120,10 +124,11 @@ export default function AuctionDetailPage() {
                         }
                     }, 10000);
                 };
-            } catch (e) {
+            } catch (_e) {
                 console.log('SSE 연결 시도 실패 - BE 서버 확인 필요');
                 setConnectionStatus('disconnected');
             }
+
         };
 
         connect();
@@ -136,6 +141,7 @@ export default function AuctionDetailPage() {
             }
         };
     }, [auctionId, auction?.status]);
+
 
     const handleBid = async () => {
         if (!bidAmount || !auction) return;
@@ -151,7 +157,8 @@ export default function AuctionDetailPage() {
             setBidAmount('');
             alert('입찰 완료!');
             // SSE를 통해 업데이트가 오므로 여기서는 별도 처리 불필요
-        } catch (error) {
+        } catch (_error) {
+
             // API 연동 전 Mock 처리
             setAuction(prev => prev ? { ...prev, currentPrice: amount, bidCount: (prev.bidCount || 0) + 1 } : null);
             setBidLogs(prev => [{ id: Date.now(), publicId: '나', bidAmount: amount, bidTime: new Date().toISOString() }, ...prev]);

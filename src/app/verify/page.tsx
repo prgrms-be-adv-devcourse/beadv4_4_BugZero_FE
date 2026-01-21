@@ -15,7 +15,8 @@ export default function VerifyPage() {
         verifyCode: ''
     });
     const [loading, setLoading] = useState(false);
-    const [codeSent, setCodeSent] = useState(false);
+    const [_codeSent, setCodeSent] = useState(false);
+
     const [countdown, setCountdown] = useState(0);
 
     // 인증번호 발송
@@ -43,7 +44,8 @@ export default function VerifyPage() {
                     return prev - 1;
                 });
             }, 1000);
-        } catch (error) {
+        } catch (_error) {
+
             alert('인증번호 발송에 실패했습니다.');
         } finally {
             setLoading(false);
@@ -68,7 +70,8 @@ export default function VerifyPage() {
             } else {
                 alert('인증번호가 올바르지 않습니다.');
             }
-        } catch (error) {
+        } catch (_error) {
+
             alert('인증에 실패했습니다.');
         } finally {
             setLoading(false);
@@ -113,17 +116,17 @@ export default function VerifyPage() {
                         {['input', 'verify', 'complete'].map((s, i) => (
                             <div key={s} className="flex items-center">
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition ${step === s
-                                        ? 'bg-yellow-500 text-black'
-                                        : ['input', 'verify', 'complete'].indexOf(step) > i
-                                            ? 'bg-green-500 text-white'
-                                            : 'bg-gray-700 text-gray-400'
+                                    ? 'bg-yellow-500 text-black'
+                                    : ['input', 'verify', 'complete'].indexOf(step) > i
+                                        ? 'bg-green-500 text-white'
+                                        : 'bg-gray-700 text-gray-400'
                                     }`}>
                                     {['input', 'verify', 'complete'].indexOf(step) > i ? '✓' : i + 1}
                                 </div>
                                 {i < 2 && (
                                     <div className={`w-8 h-0.5 ${['input', 'verify', 'complete'].indexOf(step) > i
-                                            ? 'bg-green-500'
-                                            : 'bg-gray-700'
+                                        ? 'bg-green-500'
+                                        : 'bg-gray-700'
                                         }`} />
                                 )}
                             </div>

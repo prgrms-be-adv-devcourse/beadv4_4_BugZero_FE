@@ -52,9 +52,10 @@ export default function ProductInspectionPage() {
             // TODO: API 연동
             await new Promise(resolve => setTimeout(resolve, 1500));
             alert(`검수 ${finalResult === 'APPROVED' ? '승인' : '거부'} 완료!`);
-        } catch (error) {
+        } catch (_error) {
             alert('처리 실패');
         } finally {
+
             setLoading(false);
         }
     };
@@ -140,10 +141,10 @@ export default function ProductInspectionPage() {
                                                 key={result}
                                                 onClick={() => handleResult(item.id, result)}
                                                 className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${results[item.id] === result
-                                                        ? result === 'PASS' ? 'bg-green-500 text-white'
-                                                            : result === 'FAIL' ? 'bg-red-500 text-white'
-                                                                : 'bg-yellow-500 text-black'
-                                                        : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+                                                    ? result === 'PASS' ? 'bg-green-500 text-white'
+                                                        : result === 'FAIL' ? 'bg-red-500 text-white'
+                                                            : 'bg-yellow-500 text-black'
+                                                    : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
                                                     }`}
                                             >
                                                 {result === 'PASS' ? '✓ 통과' : result === 'FAIL' ? '✕ 불합격' : '? 보류'}

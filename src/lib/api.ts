@@ -13,6 +13,7 @@ interface ApiResponse<T> {
     message?: string;
 }
 
+
 // Paged response type
 interface PagedResponse<T> {
     content: T[];
@@ -32,6 +33,21 @@ export interface ProductResponse {
     auctionId: number;
     inspectionStatus: string;
 }
+
+export interface ProductRequest {
+    name: string;
+    category: string;
+    description: string;
+    productAuctionRequestDto: {
+        startPrice: number;
+        durationDays: number;
+    };
+    productImageRequestDto: {
+        imgUrl: string;
+        sortOrder: number;
+    }[];
+}
+
 
 // Auction types
 export interface Auction {
@@ -320,7 +336,7 @@ export const api = {
     },
 
     // 상품 및 경매 등록
-    createProduct: async (memberId: string, data: any): Promise<ProductResponse> => {
+    createProduct: async (memberId: string, data: ProductRequest): Promise<ProductResponse> => {
         const res = await fetch(`${API_BASE}/api/v1/products?memberUUID=${memberId}`, {
             method: 'POST',
             headers: createAuthHeaders(),
@@ -329,6 +345,7 @@ export const api = {
         const json: SuccessResponse<ProductResponse> = await res.json();
         return json.data;
     },
+
 
     // 결제 승인 (충전 완료)
     confirmPayment: async (memberId: string, paymentKey: string, orderId: string, amount: number): Promise<void> => {
