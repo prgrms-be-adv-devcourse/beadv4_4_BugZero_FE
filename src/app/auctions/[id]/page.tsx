@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { api, Auction, BidLog } from '@/lib/api';
+import { api, Auction, BidLog, MemberInfo, isVerified } from '@/lib/api';
+import VerifyModal from '@/components/VerifyModal';
 
 function formatPrice(price: number): string {
     return new Intl.NumberFormat('ko-KR').format(price);
@@ -11,16 +12,17 @@ function formatPrice(price: number): string {
 
 function formatDate(dateString: string): string {
     return new Date(dateString).toLocaleString('ko-KR', {
-        month: 'long',
+        month: 'short',
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
     });
 }
 
+type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
+
 export default function AuctionDetailPage() {
     const params = useParams();
-    const router = useRouter();
     const auctionId = Number(params.id);
 
     const [auction, setAuction] = useState<Auction | null>(null);
@@ -28,29 +30,23 @@ export default function AuctionDetailPage() {
     const [bidAmount, setBidAmount] = useState('');
     const [loading, setLoading] = useState(true);
     const [bidding, setBidding] = useState(false);
+    const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
+    const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+    const [showVerifyModal, setShowVerifyModal] = useState(false);
+    const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null);
 
+    const eventSourceRef = useRef<EventSource | null>(null);
+
+    // 경매 데이터 로드
     useEffect(() => {
         async function loadData() {
             try {
-                // 경매 정보 로드 (mock)
-                const auctions = await api.getAuctions();
-                const found = auctions.find(a => a.id === auctionId);
-                setAuction(found || null);
-
-                // 입찰 기록 로드
-                // const logs = await api.getBidLogs(auctionId);
-                // setBidLogs(logs);
-
-                // Mock bid logs
-                setBidLogs([
-                    { id: 1, bidderId: 5, bidderNickname: '레고덕후', bidAmount: 1250000, createdAt: '2026-01-20T11:30:00' },
-                    { id: 2, bidderId: 3, bidderNickname: '브릭마스터', bidAmount: 1200000, createdAt: '2026-01-20T10:45:00' },
-                    { id: 3, bidderId: 8, bidderNickname: '미니피규어', bidAmount: 1100000, createdAt: '2026-01-19T22:10:00' },
-                    { id: 4, bidderId: 2, bidderNickname: '레고왕', bidAmount: 1000000, createdAt: '2026-01-19T18:30:00' },
-                    { id: 5, bidderId: 7, bidderNickname: '테크닉러버', bidAmount: 900000, createdAt: '2026-01-19T14:20:00' },
-                ]);
+                const data = await api.getAuction(auctionId);
+                setAuction(data);
+                const logs = await api.getBidLogs(auctionId);
+                setBidLogs(logs);
             } catch (error) {
-                console.error('데이터 로딩 실패:', error);
+                console.error("Failed to load auction data:", error);
             } finally {
                 setLoading(false);
             }
@@ -58,41 +54,140 @@ export default function AuctionDetailPage() {
         loadData();
     }, [auctionId]);
 
+    // SSE 실시간 구독
+    useEffect(() => {
+        if (!auction || auction.status !== 'IN_PROGRESS') return;
+
+        const connect = () => {
+            setConnectionStatus('connecting');
+            const url = api.getAuctionSubscribeUrl(auctionId);
+
+            try {
+                const eventSource = new EventSource(url);
+                eventSourceRef.current = eventSource;
+
+                eventSource.onopen = () => {
+                    console.log('SSE 연결 성공');
+                    setConnectionStatus('connected');
+                    setLastUpdate(new Date());
+                };
+
+                eventSource.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        console.log('SSE 메시지 수신:', data);
+                        setLastUpdate(new Date());
+
+                        // 새 입찰 이벤트 처리
+                        if (data.type === 'BID' || data.bidAmount) {
+                            setAuction(prev => prev ? {
+                                ...prev,
+                                currentPrice: data.currentPrice || data.bidAmount,
+                                bidCount: (prev.bidCount || 0) + 1
+                            } : null);
+
+                            // 입찰 기록에 추가
+                            if (data.publicId) {
+                                setBidLogs(prev => [{
+                                    id: Date.now(),
+                                    publicId: data.publicId,
+                                    bidAmount: data.bidAmount || data.currentPrice,
+                                    bidTime: new Date().toISOString()
+                                }, ...prev]);
+                            }
+                        }
+
+                        // 경매 종료 이벤트
+                        if (data.type === 'ENDED' || data.status === 'ENDED') {
+                            setAuction(prev => prev ? { ...prev, status: 'ENDED' } : null);
+                            eventSource.close();
+                            setConnectionStatus('disconnected');
+                        }
+                    } catch (e) {
+                        console.log('SSE 데이터 파싱 실패:', event.data);
+                    }
+                };
+
+                eventSource.onerror = () => {
+                    console.log('SSE 연결 종료 - 서버 미연결 또는 경매 종료');
+                    setConnectionStatus('disconnected');
+                    eventSource.close();
+
+                    // 10초 후 재연결 시도 (서버 켜질 때까지)
+                    setTimeout(() => {
+                        if (auction?.status === 'IN_PROGRESS') {
+                            connect();
+                        }
+                    }, 10000);
+                };
+            } catch (e) {
+                console.log('SSE 연결 시도 실패 - BE 서버 확인 필요');
+                setConnectionStatus('disconnected');
+            }
+        };
+
+        connect();
+
+        // cleanup
+        return () => {
+            if (eventSourceRef.current) {
+                eventSourceRef.current.close();
+                eventSourceRef.current = null;
+            }
+        };
+    }, [auctionId, auction?.status]);
+
     const handleBid = async () => {
         if (!bidAmount || !auction) return;
-
         const amount = Number(bidAmount);
         if (amount <= auction.currentPrice) {
-            alert('현재가보다 높은 금액을 입력해주세요!');
+            alert('현재가보다 높은 금액을 입력해주세요');
             return;
         }
 
         setBidding(true);
         try {
-            // await api.createBid(auctionId, amount);
-            alert('입찰 완료! (데모 모드)');
-            // Simulate successful bid
-            setAuction(prev => prev ? { ...prev, currentPrice: amount, bidCount: prev.bidCount + 1 } : null);
-            setBidLogs(prev => [{
-                id: Date.now(),
-                bidderId: 1,
-                bidderNickname: '나',
-                bidAmount: amount,
-                createdAt: new Date().toISOString()
-            }, ...prev]);
+            await api.createBid(auctionId, amount);
             setBidAmount('');
+            alert('입찰 완료!');
+            // SSE를 통해 업데이트가 오므로 여기서는 별도 처리 불필요
         } catch (error) {
-            alert('입찰 실패');
+            // API 연동 전 Mock 처리
+            setAuction(prev => prev ? { ...prev, currentPrice: amount, bidCount: (prev.bidCount || 0) + 1 } : null);
+            setBidLogs(prev => [{ id: Date.now(), publicId: '나', bidAmount: amount, bidTime: new Date().toISOString() }, ...prev]);
+            setBidAmount('');
+            alert('입찰 완료! (Mock)');
         } finally {
             setBidding(false);
         }
     };
 
+    // 연결 상태 표시 컴포넌트
+    const ConnectionIndicator = () => {
+        const statusConfig = {
+            connecting: { color: 'bg-yellow-400', text: '연결 중...', animate: true },
+            connected: { color: 'bg-green-500', text: '실시간 연결됨', animate: true },
+            disconnected: { color: 'bg-gray-500', text: '연결 안됨', animate: false },
+            error: { color: 'bg-red-500', text: '연결 오류', animate: false },
+        };
+        const config = statusConfig[connectionStatus];
+
+        return (
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+                <span className={`w-2 h-2 rounded-full ${config.color} ${config.animate ? 'animate-pulse' : ''}`}></span>
+                <span>{config.text}</span>
+                {lastUpdate && connectionStatus === 'connected' && (
+                    <span className="text-gray-600">• {lastUpdate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                )}
+            </div>
+        );
+    };
+
     if (loading) {
         return (
             <div className="text-center py-20">
-                <div className="text-6xl animate-bounce">🧱</div>
-                <p className="text-gray-400 mt-4">로딩 중...</p>
+                <div className="animate-spin w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full mx-auto"></div>
+                <p className="text-gray-500 mt-4">로딩 중...</p>
             </div>
         );
     }
@@ -100,157 +195,156 @@ export default function AuctionDetailPage() {
     if (!auction) {
         return (
             <div className="text-center py-20">
-                <p className="text-6xl mb-4">😢</p>
-                <p className="text-gray-400 mb-4">경매를 찾을 수 없습니다</p>
-                <Link href="/" className="text-yellow-400 hover:underline">
-                    ← 목록으로 돌아가기
-                </Link>
+                <p className="text-gray-500 mb-4">경매를 찾을 수 없습니다</p>
+                <Link href="/" className="text-[var(--lego-yellow)] hover:underline">← 돌아가기</Link>
             </div>
         );
     }
 
+    const deposit = api.calculateDeposit(auction.startPrice);
+
     return (
-        <div className="max-w-6xl mx-auto">
-            {/* 뒤로가기 */}
-            <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-yellow-400 transition mb-6">
+        <div className="max-w-5xl mx-auto">
+            <Link href="/" className="text-gray-400 hover:text-white transition text-sm mb-6 inline-block">
                 ← 목록으로
             </Link>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* 왼쪽: 이미지 & 설명 */}
+                {/* Left: Image */}
                 <div>
-                    <div className="lego-card overflow-hidden mb-6">
-                        <div className="h-80 bg-gray-700">
+                    <div className="card overflow-hidden mb-4">
+                        <div className="h-80 bg-[#222]">
                             {auction.imageUrl ? (
-                                <img
-                                    src={auction.imageUrl}
-                                    alt={auction.productName}
-                                    className="w-full h-full object-cover"
-                                />
+                                <img src={auction.imageUrl} alt="" className="w-full h-full object-cover" />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center text-8xl">
-                                    🧱
+                                <div className="w-full h-full flex items-center justify-center">
+                                    <span className="text-6xl">🧱</span>
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-                        <h2 className="text-xl font-bold mb-4 text-yellow-400">상품 설명</h2>
-                        <p className="text-gray-300 leading-relaxed">
-                            {auction.productDescription}
-                        </p>
+                    <div className="card p-5">
+                        <h2 className="font-semibold mb-3">상품 설명</h2>
+                        <p className="text-gray-400 text-sm leading-relaxed">{auction.productDescription}</p>
                     </div>
                 </div>
 
-                {/* 오른쪽: 경매 정보 */}
+                {/* Right: Info & Bid */}
                 <div>
-                    <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 mb-6">
-                        <div className="flex items-center gap-2 mb-4">
-                            {auction.status === 'ACTIVE' && (
-                                <span className="bg-green-500 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                                    <span className="w-2 h-2 bg-white rounded-full pulse-live"></span>
-                                    진행 중
-                                </span>
-                            )}
-                            <span className="text-gray-400 text-sm">
-                                입찰 {auction.bidCount}회
-                            </span>
+                    <div className="card p-5 mb-4">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                                {auction.status === 'IN_PROGRESS' && (
+                                    <span className="badge badge-live">
+                                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1 animate-pulse"></span>
+                                        LIVE
+                                    </span>
+                                )}
+                                <span className="text-gray-500 text-sm">{(auction.bidCount || 0)}회 입찰</span>
+                            </div>
+                            {auction.status === 'IN_PROGRESS' && <ConnectionIndicator />}
                         </div>
 
-                        <h1 className="text-2xl font-bold text-white mb-6">
-                            {auction.productName}
-                        </h1>
+                        <h1 className="text-xl font-semibold mb-4">{auction.productName}</h1>
 
-                        <div className="grid grid-cols-2 gap-4 mb-6">
-                            <div className="bg-gray-900 rounded-lg p-4">
+                        <div className="grid grid-cols-2 gap-3 mb-3">
+                            <div className="bg-[#111] rounded-lg p-3">
                                 <p className="text-xs text-gray-500 mb-1">시작가</p>
-                                <p className="text-lg font-bold text-gray-400">
-                                    ₩{formatPrice(auction.startPrice)}
-                                </p>
+                                <p className="font-semibold text-gray-400">₩{formatPrice(auction.startPrice)}</p>
                             </div>
-                            <div className="bg-gradient-to-r from-yellow-500/20 to-red-500/20 rounded-lg p-4 border border-yellow-500/50">
-                                <p className="text-xs text-yellow-400 mb-1">현재가</p>
-                                <p className="text-2xl font-bold text-yellow-400">
-                                    ₩{formatPrice(auction.currentPrice)}
-                                </p>
+                            <div className="bg-[#111] rounded-lg p-3 border border-[var(--lego-yellow)]/30">
+                                <p className="text-xs text-[var(--lego-yellow)] mb-1">현재가</p>
+                                <p className="text-xl font-bold text-[var(--lego-yellow)]">₩{formatPrice(auction.currentPrice)}</p>
                             </div>
                         </div>
 
-                        {/* 입찰 폼 */}
-                        {auction.status === 'ACTIVE' && (
-                            <div className="mb-6">
-                                <label className="block text-sm text-gray-400 mb-2">입찰 금액</label>
-                                <div className="flex gap-3">
-                                    <input
-                                        type="number"
-                                        value={bidAmount}
-                                        onChange={(e) => setBidAmount(e.target.value)}
-                                        placeholder={`최소 ${formatPrice(auction.currentPrice + 10000)}원`}
-                                        className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
-                                    />
-                                    <button
-                                        onClick={handleBid}
-                                        disabled={bidding}
-                                        className="lego-btn text-black font-bold px-6 disabled:opacity-50"
-                                    >
-                                        {bidding ? '입찰 중...' : '입찰하기'}
-                                    </button>
+                        {/* 보증금 안내 */}
+                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mb-4">
+                            <p className="text-blue-400 text-xs">
+                                💰 입찰 보증금: <span className="font-bold">₩{formatPrice(deposit)}</span> (시작가의 10%)
+                            </p>
+                        </div>
+
+                        {auction.status === 'IN_PROGRESS' && (
+                            <div className="mb-4">
+                                <div className="flex items-center justify-between mb-2">
+                                    <label className="text-sm text-gray-400">입찰 금액 선택</label>
+                                    <span className="text-xs text-gray-500">
+                                        호가 단위: ₩{formatPrice(api.getBidIncrement(auction.currentPrice))}
+                                    </span>
                                 </div>
+                                <div className="grid grid-cols-3 gap-2 mb-3">
+                                    {api.getBidOptions(auction.currentPrice).map((amount, i) => (
+                                        <button
+                                            key={amount}
+                                            onClick={() => setBidAmount(String(amount))}
+                                            className={`py-3 rounded-lg text-sm font-medium transition ${bidAmount === String(amount)
+                                                ? 'bg-yellow-500 text-black'
+                                                : 'bg-gray-800 text-white hover:bg-gray-700'
+                                                }`}
+                                        >
+                                            ₩{formatPrice(amount)}
+                                            {i === 0 && <span className="block text-xs opacity-70">최소</span>}
+                                        </button>
+                                    ))}
+                                </div>
+                                <button
+                                    onClick={handleBid}
+                                    disabled={bidding || !bidAmount}
+                                    className="w-full lego-btn py-3 text-black font-bold disabled:opacity-50"
+                                >
+                                    {bidding ? '입찰 중...' : `₩${bidAmount ? formatPrice(Number(bidAmount)) : '금액 선택'} 입찰하기`}
+                                </button>
                             </div>
                         )}
 
-                        <div className="flex gap-4 text-sm text-gray-400">
-                            <div>
-                                <span className="text-gray-500">시작:</span> {formatDate(auction.startedAt)}
-                            </div>
-                            <div>
-                                <span className="text-gray-500">종료:</span> {formatDate(auction.endedAt)}
-                            </div>
+                        <div className="text-sm text-gray-500 flex gap-4">
+                            <span>시작: {formatDate(auction.startTime)}</span>
+                            <span>종료: {formatDate(auction.endTime)}</span>
                         </div>
                     </div>
 
-                    {/* 입찰 기록 */}
-                    <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-                        <h2 className="text-xl font-bold mb-4 text-yellow-400">
-                            입찰 기록
-                        </h2>
-
-                        <div className="space-y-3 max-h-80 overflow-y-auto">
-                            {bidLogs.map((log, index) => (
-                                <div
-                                    key={log.id}
-                                    className={`flex justify-between items-center p-3 rounded-lg ${index === 0 ? 'bg-yellow-500/20 border border-yellow-500/50' : 'bg-gray-900'
-                                        }`}
-                                >
+                    {/* Bid History */}
+                    <div className="card p-5">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="font-semibold">입찰 기록</h2>
+                            {auction.status === 'IN_PROGRESS' && connectionStatus === 'connected' && (
+                                <span className="text-xs text-green-400">🔴 실시간 업데이트</span>
+                            )}
+                        </div>
+                        <div className="space-y-2 max-h-60 overflow-y-auto">
+                            {bidLogs.map((log, i) => (
+                                <div key={log.id} className={`flex justify-between items-center p-3 rounded-lg transition-all ${i === 0 ? 'bg-[var(--lego-yellow)]/10 border border-[var(--lego-yellow)]/20' : 'bg-[#111]'}`}>
                                     <div className="flex items-center gap-3">
-                                        <span className="text-2xl">
-                                            {index === 0 ? '👑' : '🧱'}
+                                        <span className={`w-6 h-6 rounded text-xs flex items-center justify-center font-semibold ${i === 0 ? 'bg-[var(--lego-yellow)] text-black' : 'bg-[#333] text-gray-400'}`}>
+                                            {i + 1}
                                         </span>
                                         <div>
-                                            <p className={`font-medium ${index === 0 ? 'text-yellow-400' : 'text-white'}`}>
-                                                {log.bidderNickname}
-                                            </p>
-                                            <p className="text-xs text-gray-500">
-                                                {formatDate(log.createdAt)}
-                                            </p>
+                                            <p className={`font-medium text-sm ${i === 0 ? 'text-[var(--lego-yellow)]' : 'text-white'}`}>{log.publicId}</p>
+                                            <p className="text-xs text-gray-500">{formatDate(log.bidTime)}</p>
                                         </div>
                                     </div>
-                                    <p className={`font-bold ${index === 0 ? 'text-yellow-400' : 'text-gray-300'}`}>
+                                    <p className={`font-semibold ${i === 0 ? 'text-[var(--lego-yellow)]' : 'text-gray-300'}`}>
                                         ₩{formatPrice(log.bidAmount)}
                                     </p>
                                 </div>
                             ))}
-
-                            {bidLogs.length === 0 && (
-                                <p className="text-center text-gray-500 py-8">
-                                    아직 입찰이 없습니다. 첫 번째 입찰자가 되어보세요!
-                                </p>
-                            )}
                         </div>
                     </div>
                 </div>
             </div>
+
+            {/* 본인인증 모달 */}
+            <VerifyModal
+                isOpen={showVerifyModal}
+                onClose={() => setShowVerifyModal(false)}
+                onVerified={() => {
+                    // 인증 완료 후 memberInfo 업데이트 (실제로는 API에서 다시 조회)
+                    setMemberInfo(prev => prev ? { ...prev, realName: '인증완료', contactPhone: '01012345678' } : null);
+                }}
+            />
         </div>
     );
 }
+

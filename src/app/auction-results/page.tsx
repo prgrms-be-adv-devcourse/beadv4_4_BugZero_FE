@@ -11,7 +11,7 @@ interface AuctionResult {
     imageUrl: string;
     finalPrice: number;
     myBidAmount: number;
-    endedAt: string;
+    endTime: string;
     status: 'WON' | 'LOST' | 'FAILED';
     paymentStatus?: 'PENDING' | 'PAID' | 'EXPIRED';
     paymentDeadline?: string;
@@ -24,7 +24,7 @@ const mockResults: AuctionResult[] = [
         imageUrl: 'https://images.unsplash.com/photo-1585366119957-e9730b6d0f60?w=400',
         finalPrice: 1250000,
         myBidAmount: 1250000,
-        endedAt: '2026-01-20T22:00:00',
+        endTime: '2026-01-20T22:00:00',
         status: 'WON',
         paymentStatus: 'PENDING',
         paymentDeadline: '2026-01-21T22:00:00',
@@ -35,7 +35,7 @@ const mockResults: AuctionResult[] = [
         imageUrl: 'https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=400',
         finalPrice: 520000,
         myBidAmount: 480000,
-        endedAt: '2026-01-19T20:00:00',
+        endTime: '2026-01-19T20:00:00',
         status: 'LOST',
     },
     {
@@ -44,7 +44,7 @@ const mockResults: AuctionResult[] = [
         imageUrl: 'https://images.unsplash.com/photo-1608889175123-8ee362201f81?w=400',
         finalPrice: 780000,
         myBidAmount: 780000,
-        endedAt: '2026-01-18T21:00:00',
+        endTime: '2026-01-18T21:00:00',
         status: 'WON',
         paymentStatus: 'PAID',
     },
@@ -56,7 +56,7 @@ const mockFailedAuctions = [
         productName: '레고 닌자고 시티 가든',
         imageUrl: 'https://images.unsplash.com/photo-1560961911-ba7ef651a56c?w=400',
         startPrice: 300000,
-        endedAt: '2026-01-17T22:00:00',
+        endTime: '2026-01-17T22:00:00',
         reason: 'NO_BIDS',
     },
 ];
@@ -109,8 +109,8 @@ export default function AuctionResultsPage() {
                         key={tab.key}
                         onClick={() => setActiveTab(tab.key)}
                         className={`flex-1 py-4 rounded-xl font-medium transition flex items-center justify-center gap-2 ${activeTab === tab.key
-                                ? 'bg-gradient-to-r from-yellow-500 to-red-500 text-white'
-                                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                            ? 'bg-gradient-to-r from-yellow-500 to-red-500 text-white'
+                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                             }`}
                     >
                         <span>{tab.icon}</span>
@@ -157,7 +157,7 @@ export default function AuctionResultsPage() {
 
                                         <div className="flex items-center justify-between">
                                             <p className="text-sm text-gray-500">
-                                                종료: {formatDate(auction.endedAt)}
+                                                종료: {formatDate(auction.endTime)}
                                             </p>
 
                                             {auction.paymentStatus === 'PENDING' && deadline && (
@@ -223,7 +223,7 @@ export default function AuctionResultsPage() {
                                     </div>
 
                                     <p className="text-sm text-gray-500">
-                                        종료: {formatDate(auction.endedAt)}
+                                        종료: {formatDate(auction.endTime)}
                                     </p>
                                 </div>
                             </div>
