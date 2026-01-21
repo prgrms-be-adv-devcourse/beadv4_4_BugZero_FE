@@ -1,0 +1,15 @@
+services:
+  frontend:
+    image: ${DOCKER_IMAGE}
+    container_name: rarego-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+    restart: always
+    networks:
+      - rarego-network
+
+networks:
+  rarego-network:
+    external: true
