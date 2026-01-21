@@ -1,101 +1,126 @@
 @import "tailwindcss";
 
 :root {
-  --lego-yellow: #FFD700;
-  --lego-red: #E3000B;
-  --lego-blue: #006CB7;
-  --lego-green: #00852B;
-  --lego-orange: #FFA500;
+  --lego-yellow: #F5CD2F;
+  --lego-red: #C91A09;
+  --lego-blue: #0055BF;
+  --lego-green: #237841;
 }
 
 body {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background-color: #0a0a0a;
 }
 
-/* Lego Brick Button Style */
-.lego-btn {
-  position: relative;
-  padding: 0.75rem 1.5rem;
-  font-weight: bold;
+/* Buttons */
+.btn-primary {
+  background: var(--lego-yellow);
   color: #000;
-  border-radius: 0.5rem;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
   transition: all 0.2s;
-  background: linear-gradient(180deg, #FFD700 0%, #E6C200 100%);
-  box-shadow:
-    0 4px 0 #B8860B,
-    0 6px 10px rgba(0, 0, 0, 0.3);
-  border: none;
-  cursor: pointer;
 }
 
-.lego-btn:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 6px 0 #B8860B,
-    0 8px 15px rgba(0, 0, 0, 0.4);
+.btn-primary:hover {
+  filter: brightness(1.1);
 }
 
-.lego-btn:active {
-  transform: translateY(2px);
-  box-shadow:
-    0 2px 0 #B8860B,
-    0 3px 5px rgba(0, 0, 0, 0.3);
+.btn-secondary {
+  background: #1a1a1a;
+  color: #fff;
+  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #333;
+  transition: all 0.2s;
 }
 
-/* Lego Card Style */
-.lego-card {
-  background-color: #1f2937;
-  border-radius: 1rem;
+.btn-secondary:hover {
+  background: #222;
+}
+
+/* Card */
+.card {
+  background: #141414;
+  border-radius: 12px;
+  border: 1px solid #222;
   overflow: hidden;
-  border: 3px solid #FFD700;
-  box-shadow:
-    0 0 0 3px #E3000B,
-    0 10px 30px rgba(0, 0, 0, 0.5);
-  transition: all 0.3s;
+  transition: all 0.2s;
 }
 
-.lego-card:hover {
-  transform: translateY(-5px);
-  box-shadow:
-    0 0 0 3px #E3000B,
-    0 15px 40px rgba(0, 0, 0, 0.6);
+.card:hover {
+  border-color: #333;
 }
 
-/* Animated gradient text */
-.gradient-text {
-  background: linear-gradient(90deg, #FFD700, #E3000B, #006CB7, #FFD700);
+/* Input */
+.input {
+  width: 100%;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: white;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--lego-yellow);
+}
+
+/* Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 4px;
+  background: #222;
+  color: #888;
+}
+
+.badge-live {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+/* Gradient text with animation */
+.text-gradient {
+  background: linear-gradient(90deg,
+      var(--lego-yellow),
+      var(--lego-red),
+      var(--lego-blue),
+      var(--lego-yellow));
   background-size: 300% 100%;
+  animation: colorShift 8s linear infinite;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: gradient-shift 3s ease infinite;
 }
 
-@keyframes gradient-shift {
-
-  0%,
-  100% {
+@keyframes colorShift {
+  0% {
     background-position: 0% 50%;
   }
 
-  50% {
+  100% {
     background-position: 100% 50%;
   }
 }
 
-/* Pulse animation for live auctions */
-.pulse-live {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+/* Lego button */
+.lego-btn {
+  background: linear-gradient(180deg, #ffe066 0%, var(--lego-yellow) 50%, #d4a912 100%);
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.2s;
 }
 
-@keyframes pulse {
+.lego-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
 
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.5;
-  }
+.lego-btn:active {
+  transform: translateY(0);
 }
