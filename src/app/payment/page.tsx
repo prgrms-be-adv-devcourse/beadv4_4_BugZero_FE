@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { api, MemberInfo, isVerified } from '@/lib/api';
+import VerifyModal from '@/components/VerifyModal';
 
 function formatPrice(price: number): string {
     return new Intl.NumberFormat('ko-KR').format(price);
@@ -10,25 +12,49 @@ function formatPrice(price: number): string {
 export default function PaymentPage() {
     const [amount, setAmount] = useState('');
     const [loading, setLoading] = useState(false);
-    const [walletBalance] = useState(500000); // Mock balance
+    const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null);
+    const [showVerifyModal, setShowVerifyModal] = useState(false);
+    const [balance, setBalance] = useState(0);
 
-    const presetAmounts = [10000, 50000, 100000, 500000];
+    useEffect(() => {
+        async function loadData() {
+            try {
+                const info = await api.getMe();
+                setMemberInfo(info);
+                // 지갑 조회 API가 따로 없으면 getMe의 balance를 써야 하는데 MemberInfo에 balance가 없음.
+                // Wallet API를 쓰거나 임시로 mock 유지
+                setBalance(500000);
+            } catch (error) {
+                console.error('Failed to load data');
+            }
+        }
+        loadData();
+    }, []);
+
+    const presets = [10000, 50000, 100000, 500000];
 
     const handleCharge = async () => {
-        if (!amount || Number(amount) <= 0) {
-            alert('충전 금액을 입력해주세요');
+        if (!amount || !memberInfo) return;
+
+        if (!isVerified(memberInfo)) {
+            setShowVerifyModal(true);
             return;
         }
 
         setLoading(true);
         try {
-            // TODO: 실제 토스페이먼츠 결제 연동
-            // const response = await api.requestPayment(memberId, Number(amount));
-            // 토스 결제창 호출
+            // 실제 구현: Toss Payments 연동 후 redirect 되어 confirm 호출됨.
+            // 여기서는 시뮬레이션을 위해 바로 confirm 호출 (테스트용)
+            const orderId = `order_${Date.now()}`;
+            const paymentKey = `key_${Date.now()}`;
 
-            alert(`₩${formatPrice(Number(amount))} 충전 요청! (데모 모드)`);
+            await api.confirmPayment(memberInfo.publicId, paymentKey, orderId, Number(amount));
+
+            alert(`₩${formatPrice(Number(amount))} 충전 완료!`);
+            setBalance(prev => prev + Number(amount));
             setAmount('');
         } catch (error) {
+            console.error('Payment error:', error);
             alert('충전 실패');
         } finally {
             setLoading(false);
@@ -36,101 +62,62 @@ export default function PaymentPage() {
     };
 
     return (
-        <div className="max-w-2xl mx-auto">
-            <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-yellow-400 transition mb-6">
-                ← 경매 목록으로
+        <div className="max-w-md mx-auto">
+            <Link href="/" className="text-gray-400 hover:text-white transition text-sm mb-6 inline-block">
+                ← 돌아가기
             </Link>
 
-            {/* 현재 잔액 */}
-            <div className="lego-card p-8 mb-8 text-center">
-                <p className="text-gray-400 mb-2">내 지갑 잔액</p>
-                <p className="text-5xl font-bold text-yellow-400 mb-2">
-                    ₩{formatPrice(walletBalance)}
-                </p>
-                <p className="text-sm text-gray-500">
-                    레고 입찰에 사용할 수 있어요!
-                </p>
+            {/* Balance */}
+            <div className="card p-6 mb-6 text-center">
+                <p className="text-gray-400 text-sm mb-1">내 지갑</p>
+                <p className="text-3xl font-bold text-[var(--lego-yellow)]">₩{formatPrice(balance)}</p>
             </div>
 
-            {/* 충전하기 */}
-            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 mb-8">
-                <h2 className="text-xl font-bold text-yellow-400 mb-6 flex items-center gap-2">
-                    💰 지갑 충전
-                </h2>
+            {/* Charge */}
+            <div className="card p-6">
+                <h2 className="font-semibold mb-4">충전하기</h2>
 
-                {/* 빠른 선택 버튼 */}
-                <div className="grid grid-cols-4 gap-3 mb-6">
-                    {presetAmounts.map((preset) => (
+                <div className="grid grid-cols-4 gap-2 mb-4">
+                    {presets.map(p => (
                         <button
-                            key={preset}
-                            onClick={() => setAmount(String(preset))}
-                            className={`py-3 rounded-lg font-medium transition ${amount === String(preset)
-                                    ? 'bg-yellow-500 text-black'
-                                    : 'bg-gray-700 text-white hover:bg-gray-600'
+                            key={p}
+                            onClick={() => setAmount(String(p))}
+                            className={`py-2 rounded-lg text-sm font-medium transition ${amount === String(p) ? 'btn-primary' : 'btn-secondary'
                                 }`}
                         >
-                            {formatPrice(preset)}원
+                            {formatPrice(p)}
                         </button>
                     ))}
                 </div>
 
-                {/* 직접 입력 */}
-                <div className="mb-6">
-                    <label className="block text-sm text-gray-400 mb-2">충전 금액 직접 입력</label>
-                    <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">₩</span>
-                        <input
-                            type="number"
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
-                            placeholder="금액 입력"
-                            className="w-full bg-gray-900 border border-gray-700 rounded-lg pl-10 pr-4 py-4 text-white text-xl focus:outline-none focus:border-yellow-500"
-                        />
-                    </div>
-                </div>
+                <input
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="금액 입력"
+                    className="input mb-4"
+                />
 
-                {/* 충전 버튼 */}
                 <button
                     onClick={handleCharge}
                     disabled={loading || !amount}
-                    className="w-full lego-btn text-black text-xl py-4 disabled:opacity-50"
+                    className="w-full btn-primary py-3 disabled:opacity-50"
                 >
-                    {loading ? '처리 중...' : `₩${amount ? formatPrice(Number(amount)) : 0} 충전하기`}
+                    {loading ? '처리 중...' : `₩${amount ? formatPrice(Number(amount)) : 0} 충전`}
                 </button>
-
-                <p className="text-center text-sm text-gray-500 mt-4">
-                    토스페이먼츠를 통해 안전하게 결제됩니다
-                </p>
             </div>
 
-            {/* 최근 거래 내역 */}
-            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-                <h2 className="text-xl font-bold text-yellow-400 mb-4">
-                    📋 최근 거래 내역
-                </h2>
-
-                <div className="space-y-3">
-                    {[
-                        { type: '충전', amount: 100000, date: '2026-01-20 10:30', positive: true },
-                        { type: '입찰 보증금', amount: -50000, date: '2026-01-19 15:20', positive: false },
-                        { type: '보증금 환불', amount: 50000, date: '2026-01-18 09:45', positive: true },
-                        { type: '낙찰 결제', amount: -350000, date: '2026-01-17 22:10', positive: false },
-                    ].map((tx, index) => (
-                        <div
-                            key={index}
-                            className="flex justify-between items-center p-4 bg-gray-900 rounded-lg"
-                        >
-                            <div>
-                                <p className="font-medium text-white">{tx.type}</p>
-                                <p className="text-xs text-gray-500">{tx.date}</p>
-                            </div>
-                            <p className={`font-bold ${tx.positive ? 'text-green-400' : 'text-red-400'}`}>
-                                {tx.positive ? '+' : ''}₩{formatPrice(tx.amount)}
-                            </p>
-                        </div>
-                    ))}
-                </div>
-            </div>
+            {/* 본인인증 모달 */}
+            <VerifyModal
+                isOpen={showVerifyModal}
+                onClose={() => setShowVerifyModal(false)}
+                onVerified={async () => {
+                    const info = await api.getMe();
+                    setMemberInfo(info);
+                    setShowVerifyModal(false);
+                    alert('인증이 완료되었습니다. 작업을 계속해주세요.');
+                }}
+            />
         </div>
     );
 }

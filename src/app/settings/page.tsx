@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 interface ProfileForm {
@@ -12,6 +13,7 @@ interface ProfileForm {
 }
 
 export default function ProfileSettingsPage() {
+    const router = useRouter();
     const [form, setForm] = useState<ProfileForm>({
         nickname: '레고덕후',
         email: 'lego_lover@email.com',
@@ -20,7 +22,9 @@ export default function ProfileSettingsPage() {
         addressDetail: '456호',
     });
     const [loading, setLoading] = useState(false);
-    const [activeSection, setActiveSection] = useState<'profile' | 'password' | 'notification'>('profile');
+    const [activeSection, setActiveSection] = useState<'profile' | 'password' | 'notification' | 'withdraw'>('profile');
+    const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+    const [withdrawConfirm, setWithdrawConfirm] = useState('');
 
     const handleSave = async () => {
         setLoading(true);
@@ -49,13 +53,14 @@ export default function ProfileSettingsPage() {
                         { key: 'profile', label: '프로필', icon: '👤' },
                         { key: 'password', label: '비밀번호', icon: '🔒' },
                         { key: 'notification', label: '알림 설정', icon: '🔔' },
+                        { key: 'withdraw', label: '회원탈퇴', icon: '⚠️' },
                     ].map((item) => (
                         <button
                             key={item.key}
                             onClick={() => setActiveSection(item.key as typeof activeSection)}
                             className={`w-full py-3 px-4 rounded-lg text-left transition flex items-center gap-2 ${activeSection === item.key
-                                    ? 'bg-yellow-500 text-black font-medium'
-                                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                                ? 'bg-yellow-500 text-black font-medium'
+                                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                                 }`}
                         >
                             <span>{item.icon}</span>
@@ -64,7 +69,13 @@ export default function ProfileSettingsPage() {
                     ))}
 
                     <div className="pt-4 mt-4 border-t border-gray-700">
-                        <button className="w-full py-3 px-4 rounded-lg text-left text-red-400 hover:bg-red-500/10 transition">
+                        <button
+                            onClick={() => {
+                                localStorage.removeItem('accessToken');
+                                window.location.href = '/login';
+                            }}
+                            className="w-full py-3 px-4 rounded-lg text-left text-red-400 hover:bg-red-500/10 transition"
+                        >
                             🚪 로그아웃
                         </button>
                     </div>
@@ -77,16 +88,14 @@ export default function ProfileSettingsPage() {
                         <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
                             <h2 className="text-xl font-bold text-yellow-400 mb-6">프로필 정보</h2>
 
-                            {/* 프로필 이미지 */}
+                            {/* 프로필 아이콘 */}
                             <div className="flex items-center gap-4 mb-8">
                                 <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-red-500 rounded-full flex items-center justify-center text-4xl">
                                     🧱
                                 </div>
                                 <div>
-                                    <button className="bg-gray-700 text-white py-2 px-4 rounded-lg text-sm hover:bg-gray-600 transition">
-                                        이미지 변경
-                                    </button>
-                                    <p className="text-xs text-gray-500 mt-1">JPG, PNG (최대 2MB)</p>
+                                    <p className="text-white font-medium">{form.nickname}</p>
+                                    <p className="text-gray-500 text-sm">{form.email}</p>
                                 </div>
                             </div>
 
@@ -228,8 +237,96 @@ export default function ProfileSettingsPage() {
                             </button>
                         </div>
                     )}
+
+                    {/* 회원탈퇴 */}
+                    {activeSection === 'withdraw' && (
+                        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                            <h2 className="text-xl font-bold text-red-400 mb-6">회원탈퇴</h2>
+
+                            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
+                                <p className="text-red-400 text-sm font-medium mb-2">⚠️ 탈퇴 전 주의사항</p>
+                                <ul className="text-red-300 text-sm space-y-1">
+                                    <li>• 진행 중인 경매가 있으면 탈퇴할 수 없습니다.</li>
+                                    <li>• 지갑 잔액은 환불 요청 후 탈퇴해주세요.</li>
+                                    <li>• 탈퇴 후 모든 데이터는 복구할 수 없습니다.</li>
+                                    <li>• 동일 계정으로 재가입은 30일 후 가능합니다.</li>
+                                </ul>
+                            </div>
+
+                            <div className="bg-gray-900 rounded-lg p-4 mb-6">
+                                <div className="flex justify-between text-sm mb-2">
+                                    <span className="text-gray-400">현재 지갑 잔액</span>
+                                    <span className="text-yellow-400 font-medium">₩500,000</span>
+                                </div>
+                                <div className="flex justify-between text-sm mb-2">
+                                    <span className="text-gray-400">진행중 입찰</span>
+                                    <span className="text-white">2건</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-400">진행중 판매</span>
+                                    <span className="text-white">0건</span>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={() => setShowWithdrawModal(true)}
+                                className="w-full bg-red-500 hover:bg-red-600 text-white py-4 rounded-lg font-bold transition"
+                            >
+                                회원탈퇴
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
+
+            {/* 회원탈퇴 확인 모달 */}
+            {showWithdrawModal && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                    <div className="bg-gray-800 rounded-2xl p-6 max-w-md w-full border border-gray-700">
+                        <div className="text-center mb-6">
+                            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span className="text-4xl">⚠️</span>
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-2">정말 탈퇴하시겠습니까?</h3>
+                            <p className="text-gray-400 text-sm">
+                                탈퇴 확인을 위해 아래에 &quot;탈퇴합니다&quot;를 입력해주세요.
+                            </p>
+                        </div>
+
+                        <input
+                            type="text"
+                            value={withdrawConfirm}
+                            onChange={(e) => setWithdrawConfirm(e.target.value)}
+                            placeholder="탈퇴합니다"
+                            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white text-center mb-4 focus:outline-none focus:border-red-500"
+                        />
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => { setShowWithdrawModal(false); setWithdrawConfirm(''); }}
+                                className="flex-1 bg-gray-700 text-white py-3 rounded-lg hover:bg-gray-600 transition"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    if (withdrawConfirm === '탈퇴합니다') {
+                                        // TODO: BE API 연동
+                                        alert('회원탈퇴가 완료되었습니다.');
+                                        router.push('/');
+                                    } else {
+                                        alert('"탈퇴합니다"를 정확히 입력해주세요.');
+                                    }
+                                }}
+                                disabled={withdrawConfirm !== '탈퇴합니다'}
+                                className="flex-1 bg-red-500 text-white py-3 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-600 transition"
+                            >
+                                탈퇴하기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
