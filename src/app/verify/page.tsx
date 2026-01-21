@@ -15,9 +15,9 @@ export default function VerifyPage() {
         verifyCode: ''
     });
     const [loading, setLoading] = useState(false);
-    const [_codeSent, setCodeSent] = useState(false);
-
+    const [, setCodeSent] = useState(false);
     const [countdown, setCountdown] = useState(0);
+
 
     // 인증번호 발송
     const handleSendCode = async () => {
@@ -44,9 +44,10 @@ export default function VerifyPage() {
                     return prev - 1;
                 });
             }, 1000);
-        } catch (_error) {
+        } catch {
 
             alert('인증번호 발송에 실패했습니다.');
+
         } finally {
             setLoading(false);
         }
@@ -70,9 +71,10 @@ export default function VerifyPage() {
             } else {
                 alert('인증번호가 올바르지 않습니다.');
             }
-        } catch (_error) {
+        } catch {
 
             alert('인증에 실패했습니다.');
+
         } finally {
             setLoading(false);
         }

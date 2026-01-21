@@ -7,14 +7,10 @@ interface SuccessResponse<T> {
     data: T;
 }
 
-interface ApiResponse<T> {
-    success: boolean;
-    data: T;
-    message?: string;
-}
-
+// Note: ApiResponse was removed as it was unused
 
 // Paged response type
+
 interface PagedResponse<T> {
     content: T[];
     totalElements: number;
@@ -262,8 +258,9 @@ export const api = {
             if (!res.ok) throw new Error('API error');
             const json: SuccessResponse<PagedResponse<MyBid>> = await res.json();
             return json.data || { content: [], totalElements: 0, totalPages: 0, size: 0, number: 0 };
-        } catch (error) {
+        } catch {
             console.log('getMyBids API 실패, Mock 데이터 사용');
+
             // Mock 데이터 반환
             return {
                 content: [
@@ -284,8 +281,9 @@ export const api = {
             if (!res.ok) throw new Error('API error');
             const json: SuccessResponse<PagedResponse<MySale>> = await res.json();
             return json.data || { content: [], totalElements: 0, totalPages: 0, size: 0, number: 0 };
-        } catch (error) {
+        } catch {
             console.log('getMySales API 실패, Mock 데이터 사용');
+
             return {
                 content: [
                     { auctionId: 3, productId: 3, productName: '레고 해리포터 호그와트 성', startPrice: 500000, currentPrice: 780000, bidCount: 31, status: 'IN_PROGRESS', auctionEndTime: '2026-01-20T21:00:00' },

@@ -31,7 +31,7 @@ export default function ProfileSettingsPage() {
         try {
             await new Promise(resolve => setTimeout(resolve, 1000));
             alert('저장되었습니다!');
-        } catch (error) {
+        } catch {
             alert('저장 실패');
         } finally {
             setLoading(false);

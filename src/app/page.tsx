@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { api, Auction } from '@/lib/api';
+
 
 function formatPrice(price: number): string {
   return new Intl.NumberFormat('ko-KR').format(price);
@@ -23,7 +25,8 @@ function AuctionCard({ auction }: { auction: Auction }) {
       <div className="card cursor-pointer group hover:border-[#333]">
         <div className="relative h-48 bg-[#1a1a1a]">
           {auction.imageUrl ? (
-            <img src={auction.imageUrl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+            <Image src={auction.imageUrl} alt="" width={400} height={192} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <span className="text-4xl">🧱</span>

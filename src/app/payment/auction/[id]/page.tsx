@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { useParams } from 'next/navigation';
+
 
 function formatPrice(price: number): string {
     return new Intl.NumberFormat('ko-KR').format(price);
@@ -10,8 +12,8 @@ function formatPrice(price: number): string {
 
 export default function AuctionPaymentPage() {
     const params = useParams();
-    const router = useRouter();
     const auctionId = params.id;
+
 
     const [step, setStep] = useState<'confirm' | 'processing' | 'complete'>('confirm');
     const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'toss'>('wallet');
@@ -45,8 +47,9 @@ export default function AuctionPaymentPage() {
             }
 
             setStep('complete');
-        } catch (error) {
+        } catch {
             alert('결제 실패');
+
             setStep('confirm');
         } finally {
             setLoading(false);
@@ -69,8 +72,9 @@ export default function AuctionPaymentPage() {
                     <div className="lego-card p-6 mb-6">
                         <div className="flex gap-4">
                             <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-700">
-                                <img src={auction.imageUrl} alt="" className="w-full h-full object-cover" />
+                                <Image src={auction.imageUrl} alt="" width={96} height={96} className="w-full h-full object-cover" />
                             </div>
+
                             <div>
                                 <h2 className="font-bold text-white text-lg mb-2">{auction.productName}</h2>
                                 <p className="text-3xl font-bold text-yellow-400">
@@ -120,10 +124,10 @@ export default function AuctionPaymentPage() {
                                 onClick={() => setPaymentMethod('wallet')}
                                 disabled={insufficientBalance}
                                 className={`w-full p-4 rounded-xl text-left transition flex items-center justify-between ${paymentMethod === 'wallet'
-                                        ? 'bg-yellow-500/20 border-2 border-yellow-500'
-                                        : insufficientBalance
-                                            ? 'bg-gray-900 border-2 border-transparent opacity-50 cursor-not-allowed'
-                                            : 'bg-gray-900 border-2 border-transparent hover:border-gray-600'
+                                    ? 'bg-yellow-500/20 border-2 border-yellow-500'
+                                    : insufficientBalance
+                                        ? 'bg-gray-900 border-2 border-transparent opacity-50 cursor-not-allowed'
+                                        : 'bg-gray-900 border-2 border-transparent hover:border-gray-600'
                                     }`}
                             >
                                 <div className="flex items-center gap-3">
@@ -145,8 +149,8 @@ export default function AuctionPaymentPage() {
                             <button
                                 onClick={() => setPaymentMethod('toss')}
                                 className={`w-full p-4 rounded-xl text-left transition flex items-center justify-between ${paymentMethod === 'toss'
-                                        ? 'bg-blue-500/20 border-2 border-blue-500'
-                                        : 'bg-gray-900 border-2 border-transparent hover:border-gray-600'
+                                    ? 'bg-blue-500/20 border-2 border-blue-500'
+                                    : 'bg-gray-900 border-2 border-transparent hover:border-gray-600'
                                     }`}
                             >
                                 <div className="flex items-center gap-3">

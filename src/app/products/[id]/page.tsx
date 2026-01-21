@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useParams } from 'next/navigation';
+
 
 interface Product {
     id: number;
@@ -72,8 +74,9 @@ const mockProduct: Product = {
 };
 
 export default function ProductDetailPage() {
-    const params = useParams();
+    useParams(); // Kept for potential future use
     const [currentImage, setCurrentImage] = useState(0);
+
     const [showInspection, setShowInspection] = useState(false);
     const product = mockProduct;
 
@@ -97,12 +100,15 @@ export default function ProductDetailPage() {
                 <div>
                     <div className="lego-card overflow-hidden mb-4">
                         <div className="h-96 bg-gray-700">
-                            <img
+                            <Image
                                 src={product.images[currentImage]}
                                 alt={product.name}
+                                width={800}
+                                height={384}
                                 className="w-full h-full object-cover"
                             />
                         </div>
+
                     </div>
 
                     <div className="flex gap-2">
@@ -113,8 +119,9 @@ export default function ProductDetailPage() {
                                 className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition ${currentImage === idx ? 'border-yellow-500' : 'border-transparent opacity-60 hover:opacity-100'
                                     }`}
                             >
-                                <img src={img} alt="" className="w-full h-full object-cover" />
+                                <Image src={img} alt="" width={80} height={80} className="w-full h-full object-cover" />
                             </button>
+
                         ))}
                     </div>
                 </div>

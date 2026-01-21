@@ -24,9 +24,10 @@ export default function PaymentPage() {
                 // 지갑 조회 API가 따로 없으면 getMe의 balance를 써야 하는데 MemberInfo에 balance가 없음.
                 // Wallet API를 쓰거나 임시로 mock 유지
                 setBalance(500000);
-            } catch (error) {
+            } catch {
                 console.error('Failed to load data');
             }
+
         }
         loadData();
     }, []);

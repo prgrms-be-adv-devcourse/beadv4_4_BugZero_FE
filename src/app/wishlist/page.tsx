@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+
 
 interface WishlistItem {
     id: number;
@@ -95,12 +97,15 @@ export default function WishlistPage() {
                             <Link key={item.id} href={`/auctions/${item.id}`}>
                                 <div className="lego-card p-4 flex gap-4 group cursor-pointer">
                                     <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-700 flex-shrink-0">
-                                        <img
+                                        <Image
                                             src={item.imageUrl}
                                             alt={item.productName}
+                                            width={80}
+                                            height={80}
                                             className="w-full h-full object-cover group-hover:scale-110 transition-transform"
                                         />
                                     </div>
+
                                     <div className="flex-1 min-w-0">
                                         <h3 className="font-bold text-white truncate group-hover:text-yellow-400 transition">
                                             {item.productName}
@@ -145,12 +150,15 @@ export default function WishlistPage() {
                         {endedItems.map((item) => (
                             <div key={item.id} className="bg-gray-800 rounded-xl p-4 flex gap-4 border border-gray-700 opacity-60">
                                 <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-700 flex-shrink-0 grayscale">
-                                    <img
+                                    <Image
                                         src={item.imageUrl}
                                         alt={item.productName}
+                                        width={80}
+                                        height={80}
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
+
                                 <div className="flex-1 min-w-0">
                                     <h3 className="font-bold text-gray-400 truncate">
                                         {item.productName}

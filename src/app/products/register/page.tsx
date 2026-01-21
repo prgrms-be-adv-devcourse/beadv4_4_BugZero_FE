@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { api, MemberInfo, isVerified } from '@/lib/api';
 import VerifyModal from '@/components/VerifyModal';
+
 
 interface ProductForm {
     name: string;
@@ -34,8 +36,9 @@ export default function ProductRegisterPage() {
             try {
                 const info = await api.getMe();
                 setMemberInfo(info);
-            } catch (error) {
+            } catch {
                 console.error('Failed to load member info');
+
                 alert('로그인이 필요하거나 서버 연결이 원활하지 않습니다.');
                 router.push('/login');
             }
@@ -185,7 +188,7 @@ export default function ProductRegisterPage() {
                         <div className="grid grid-cols-5 gap-3">
                             {images.map((img, idx) => (
                                 <div key={idx} className="relative aspect-square rounded-lg overflow-hidden">
-                                    <img src={img} alt="" className="w-full h-full object-cover" />
+                                    <Image src={img} alt="" width={100} height={100} className="w-full h-full object-cover" />
                                     <button
                                         onClick={() => setImages(images.filter((_, i) => i !== idx))}
                                         className="absolute top-1 right-1 w-6 h-6 bg-red-500 rounded-full text-white text-xs"
@@ -194,6 +197,7 @@ export default function ProductRegisterPage() {
                                     </button>
                                 </div>
                             ))}
+
                             {images.length < 5 && (
                                 <label className="aspect-square rounded-lg border-2 border-dashed border-gray-600 flex flex-col items-center justify-center cursor-pointer hover:border-yellow-500 transition">
                                     <span className="text-3xl mb-1">📷</span>

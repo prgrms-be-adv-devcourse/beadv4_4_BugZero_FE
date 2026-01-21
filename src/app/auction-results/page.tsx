@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+
 
 type AuctionResultTab = 'won' | 'lost' | 'failed';
 
@@ -133,8 +135,9 @@ export default function AuctionResultsPage() {
                             <div key={auction.id} className="lego-card p-5">
                                 <div className="flex gap-4">
                                     <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-700 flex-shrink-0">
-                                        <img src={auction.imageUrl} alt="" className="w-full h-full object-cover" />
+                                        <Image src={auction.imageUrl} alt="" width={96} height={96} className="w-full h-full object-cover" />
                                     </div>
+
                                     <div className="flex-1">
                                         <div className="flex justify-between items-start mb-2">
                                             <h3 className="font-bold text-white">{auction.productName}</h3>
@@ -196,8 +199,9 @@ export default function AuctionResultsPage() {
                         <div key={auction.id} className="bg-gray-800 rounded-xl p-5 border border-gray-700 opacity-75">
                             <div className="flex gap-4">
                                 <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-700 flex-shrink-0 grayscale">
-                                    <img src={auction.imageUrl} alt="" className="w-full h-full object-cover" />
+                                    <Image src={auction.imageUrl} alt="" width={96} height={96} className="w-full h-full object-cover" />
                                 </div>
+
                                 <div className="flex-1">
                                     <h3 className="font-bold text-gray-400 mb-2">{auction.productName}</h3>
 
@@ -252,8 +256,9 @@ export default function AuctionResultsPage() {
                         <div key={auction.id} className="bg-gray-800 rounded-xl p-5 border border-red-500/30">
                             <div className="flex gap-4">
                                 <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-700 flex-shrink-0">
-                                    <img src={auction.imageUrl} alt="" className="w-full h-full object-cover opacity-50" />
+                                    <Image src={auction.imageUrl} alt="" width={96} height={96} className="w-full h-full object-cover opacity-50" />
                                 </div>
+
                                 <div className="flex-1">
                                     <div className="flex justify-between items-start mb-2">
                                         <h3 className="font-bold text-white">{auction.productName}</h3>

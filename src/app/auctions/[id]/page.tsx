@@ -3,8 +3,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { api, Auction, BidLog, MemberInfo } from '@/lib/api';
 import VerifyModal from '@/components/VerifyModal';
+
 
 
 function formatPrice(price: number): string {
@@ -106,9 +108,10 @@ export default function AuctionDetailPage() {
                             eventSource.close();
                             setConnectionStatus('disconnected');
                         }
-                    } catch (_e) {
+                    } catch {
                         console.log('SSE 데이터 파싱 실패:', event.data);
                     }
+
 
                 };
 
@@ -124,10 +127,11 @@ export default function AuctionDetailPage() {
                         }
                     }, 10000);
                 };
-            } catch (_e) {
+            } catch {
                 console.log('SSE 연결 시도 실패 - BE 서버 확인 필요');
                 setConnectionStatus('disconnected');
             }
+
 
         };
 
@@ -140,7 +144,9 @@ export default function AuctionDetailPage() {
                 eventSourceRef.current = null;
             }
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [auctionId, auction?.status]);
+
 
 
     const handleBid = async () => {
@@ -157,9 +163,10 @@ export default function AuctionDetailPage() {
             setBidAmount('');
             alert('입찰 완료!');
             // SSE를 통해 업데이트가 오므로 여기서는 별도 처리 불필요
-        } catch (_error) {
+        } catch {
 
             // API 연동 전 Mock 처리
+
             setAuction(prev => prev ? { ...prev, currentPrice: amount, bidCount: (prev.bidCount || 0) + 1 } : null);
             setBidLogs(prev => [{ id: Date.now(), publicId: '나', bidAmount: amount, bidTime: new Date().toISOString() }, ...prev]);
             setBidAmount('');
@@ -222,7 +229,8 @@ export default function AuctionDetailPage() {
                     <div className="card overflow-hidden mb-4">
                         <div className="h-80 bg-[#222]">
                             {auction.imageUrl ? (
-                                <img src={auction.imageUrl} alt="" className="w-full h-full object-cover" />
+                                <Image src={auction.imageUrl} alt="" width={400} height={320} className="w-full h-full object-cover" />
+
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center">
                                     <span className="text-6xl">🧱</span>

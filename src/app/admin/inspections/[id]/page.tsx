@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useParams } from 'next/navigation';
+
 
 type InspectionResult = 'PASS' | 'FAIL' | 'PENDING';
 
@@ -52,9 +54,10 @@ export default function ProductInspectionPage() {
             // TODO: API 연동
             await new Promise(resolve => setTimeout(resolve, 1500));
             alert(`검수 ${finalResult === 'APPROVED' ? '승인' : '거부'} 완료!`);
-        } catch (_error) {
+        } catch {
             alert('처리 실패');
         } finally {
+
 
             setLoading(false);
         }
@@ -84,15 +87,18 @@ export default function ProductInspectionPage() {
                 <div className="space-y-6">
                     <div className="lego-card overflow-hidden">
                         <div className="h-64 bg-gray-700">
-                            <img
+                            <Image
                                 src={product.images[0]}
                                 alt={product.name}
+                                width={400}
+                                height={256}
                                 className="w-full h-full object-cover"
                             />
                         </div>
                     </div>
 
                     <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+
                         <h2 className="font-bold text-lg text-white mb-4">{product.name}</h2>
 
                         <div className="space-y-3 text-sm">
@@ -198,6 +204,6 @@ export default function ProductInspectionPage() {
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
