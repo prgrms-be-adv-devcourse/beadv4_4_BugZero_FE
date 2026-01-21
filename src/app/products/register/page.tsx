@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { api, MemberInfo, isVerified } from '@/lib/api';
+import VerifyModal from '@/components/VerifyModal';
 
 interface ProductForm {
     name: string;
     description: string;
     category: string;
-    condition: string;
     startPrice: string;
     auctionDuration: string;
 }
@@ -21,28 +22,31 @@ export default function ProductRegisterPage() {
         name: '',
         description: '',
         category: '',
-        condition: '',
         startPrice: '',
         auctionDuration: '3',
     });
     const [loading, setLoading] = useState(false);
+    const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null);
+    const [showVerifyModal, setShowVerifyModal] = useState(false);
+
+    useEffect(() => {
+        async function loadMember() {
+            try {
+                const info = await api.getMe();
+                setMemberInfo(info);
+            } catch (error) {
+                console.error('Failed to load member info');
+                alert('로그인이 필요하거나 서버 연결이 원활하지 않습니다.');
+                router.push('/login');
+            }
+        }
+        loadMember();
+    }, [router]);
 
     const categories = [
-        { value: 'star_wars', label: '스타워즈', icon: '⭐' },
-        { value: 'technic', label: '테크닉', icon: '⚙️' },
-        { value: 'creator', label: '크리에이터', icon: '🎨' },
-        { value: 'harry_potter', label: '해리포터', icon: '🧙' },
-        { value: 'city', label: '시티', icon: '🏙️' },
-        { value: 'ninjago', label: '닌자고', icon: '🥷' },
-        { value: 'architecture', label: '아키텍처', icon: '🏛️' },
-        { value: 'other', label: '기타', icon: '📦' },
-    ];
-
-    const conditions = [
-        { value: 'sealed', label: '미개봉', desc: '새 상품, 박스 밀봉 상태' },
-        { value: 'opened', label: '개봉 미조립', desc: '개봉했으나 조립하지 않음' },
-        { value: 'complete', label: '조립 완품', desc: '조립 완료, 모든 부품 있음' },
-        { value: 'used', label: '사용감 있음', desc: '일부 부품 분실 또는 손상' },
+        { value: '스타워즈', label: '스타워즈', icon: '⭐' },
+        { value: '해리포터', label: '해리포터', icon: '🧙' },
+        { value: '오리지널', label: '오리지널', icon: '🎨' },
     ];
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,13 +58,38 @@ export default function ProductRegisterPage() {
     };
 
     const handleSubmit = async () => {
+        if (!memberInfo) {
+            alert('로그인 정보가 없습니다. 다시 로그인 해주세요.');
+            router.push('/login');
+            return;
+        }
+
+        if (!isVerified(memberInfo)) {
+            setShowVerifyModal(true);
+            return;
+        }
+
         setLoading(true);
         try {
-            // TODO: API 연동
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            const productData = {
+                name: form.name,
+                category: form.category,
+                description: form.description,
+                productAuctionRequestDto: {
+                    startPrice: Number(form.startPrice),
+                    durationDays: Number(form.auctionDuration)
+                },
+                productImageRequestDto: images.map((url, i) => ({
+                    imgUrl: url,
+                    sortOrder: i
+                }))
+            };
+
+            await api.createProduct(memberInfo.publicId, productData);
             alert('상품이 등록되었습니다! 검수 승인 후 경매가 시작됩니다.');
             router.push('/mypage');
         } catch (error) {
+            console.error('Registration error:', error);
             alert('등록 실패');
         } finally {
             setLoading(false);
@@ -114,33 +143,12 @@ export default function ProductRegisterPage() {
                                     key={cat.value}
                                     onClick={() => setForm({ ...form, category: cat.value })}
                                     className={`p-3 rounded-lg text-center transition ${form.category === cat.value
-                                            ? 'bg-yellow-500 text-black'
-                                            : 'bg-gray-900 text-white hover:bg-gray-700'
+                                        ? 'bg-yellow-500 text-black'
+                                        : 'bg-gray-900 text-white hover:bg-gray-700'
                                         }`}
                                 >
                                     <span className="text-2xl block mb-1">{cat.icon}</span>
                                     <span className="text-xs">{cat.label}</span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm text-gray-400 mb-2">상품 상태 *</label>
-                        <div className="grid grid-cols-2 gap-3">
-                            {conditions.map((cond) => (
-                                <button
-                                    key={cond.value}
-                                    onClick={() => setForm({ ...form, condition: cond.value })}
-                                    className={`p-4 rounded-lg text-left transition ${form.condition === cond.value
-                                            ? 'bg-yellow-500/20 border-2 border-yellow-500'
-                                            : 'bg-gray-900 border-2 border-transparent hover:border-gray-600'
-                                        }`}
-                                >
-                                    <p className={`font-medium ${form.condition === cond.value ? 'text-yellow-400' : 'text-white'}`}>
-                                        {cond.label}
-                                    </p>
-                                    <p className="text-xs text-gray-500 mt-1">{cond.desc}</p>
                                 </button>
                             ))}
                         </div>
@@ -159,7 +167,7 @@ export default function ProductRegisterPage() {
 
                     <button
                         onClick={() => setStep(2)}
-                        disabled={!form.name || !form.category || !form.condition || !form.description}
+                        disabled={!form.name || !form.category || !form.description}
                         className="w-full lego-btn py-4 text-black font-bold disabled:opacity-50"
                     >
                         다음 단계 →
@@ -248,8 +256,8 @@ export default function ProductRegisterPage() {
                                     key={days}
                                     onClick={() => setForm({ ...form, auctionDuration: days })}
                                     className={`py-4 rounded-lg font-medium transition ${form.auctionDuration === days
-                                            ? 'bg-yellow-500 text-black'
-                                            : 'bg-gray-900 text-white hover:bg-gray-700'
+                                        ? 'bg-yellow-500 text-black'
+                                        : 'bg-gray-900 text-white hover:bg-gray-700'
                                         }`}
                                 >
                                     {days}일
@@ -293,6 +301,17 @@ export default function ProductRegisterPage() {
                     </div>
                 </div>
             )}
+            {/* 본인인증 모달 */}
+            <VerifyModal
+                isOpen={showVerifyModal}
+                onClose={() => setShowVerifyModal(false)}
+                onVerified={async () => {
+                    const info = await api.getMe();
+                    setMemberInfo(info);
+                    setShowVerifyModal(false);
+                    alert('인증이 완료되었습니다. 다시 등록 버튼을 눌러주세요.');
+                }}
+            />
         </div>
     );
 }
