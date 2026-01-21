@@ -13,7 +13,8 @@
     "next": "16.1.4",
     "openapi-fetch": "^0.15.0",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "zustand": "^5.0.10"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
