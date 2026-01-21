@@ -8,7 +8,13 @@ RUN npm ci
 
 # Copy source and build
 COPY . .
+
+# Build-time environment variable for Next.js
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 RUN npm run build
+
 
 # Production stage
 FROM node:20-alpine AS runner
