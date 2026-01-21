@@ -1,5 +1,10 @@
+import { client } from "@/api/client";
+import { components } from "@/api/schema";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://52.78.240.121:8080';
 // const API_BASE = 'http://localhost:8080'; // Local development server
+
+type Schema = components["schemas"];
 
 // Generic API response type (Commonly used in BE SuccessResponseDto)
 interface SuccessResponse<T> {
@@ -303,14 +308,18 @@ export const api = {
         return json.data;
     },
 
-    // 지갑 충전 요청
-    requestPayment: async (memberId: number, amount: number): Promise<{ orderId: string }> => {
-        const res = await fetch(`${API_BASE}/api/v1/payments/charges?memberId=${memberId}`, {
-            method: 'POST',
-            headers: createAuthHeaders(),
-            body: JSON.stringify({ amount })
+    // 예치금 결제 요청
+    requestPayment: async (amount: number) => {
+        const { data, error } = await client.POST("/api/v1/payments/charges", {
+            body: { amount },
         });
-        return res.json();
+
+        if (error || !data) {
+            // 백엔드 ExceptionResponseDto의 message를 에러로 던짐
+            throw new Error((error as any)?.message || "결제 요청 중 오류가 발생했습니다.");
+        }
+
+        return data.data;
     },
 
     // 지갑 거래 내역 조회
@@ -344,15 +353,21 @@ export const api = {
         return json.data;
     },
 
-
-    // 결제 승인 (충전 완료)
-    confirmPayment: async (memberId: string, paymentKey: string, orderId: string, amount: number): Promise<void> => {
-        const res = await fetch(`${API_BASE}/api/v1/payments/charges/confirm?memberId=${memberId}`, {
-            method: 'POST',
-            headers: createAuthHeaders(),
-            body: JSON.stringify({ paymentKey, orderId, amount })
+    // 결제 승인 요청
+    confirmPayment: async (payload: {
+        paymentKey: string;
+        orderId: string;
+        amount: number;
+    }) => {
+        const { data, error } = await client.POST("/api/v1/payments/charges/confirm", {
+            body: payload,
         });
-        if (!res.ok) throw new Error('결제 승인 실패');
+
+        if (error || !data) {
+            throw new Error((error as any)?.message || "결제 승인에 실패했습니다.");
+        }
+
+        return data.data;
     },
 
     // 보증금 계산 (시작가의 10%)
