@@ -1,5 +1,6 @@
 import { client } from "@/api/client";
 import { components } from "@/api/schema";
+import { getErrorMessage } from "@/api/utils";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://52.78.240.121:8080';
 // const API_BASE = 'http://localhost:8080'; // Local development server
@@ -22,6 +23,13 @@ interface PagedResponse<T> {
     totalPages: number;
     size: number;
     number: number;
+}
+
+// API Error type
+interface ErrorResponse {
+    message?: string;
+    status?: number;
+    code?: number;
 }
 
 export interface PresignedUrlResponse {
@@ -315,8 +323,7 @@ export const api = {
         });
 
         if (error || !data) {
-            // 백엔드 ExceptionResponseDto의 message를 에러로 던짐
-            throw new Error((error as any)?.message || "결제 요청 중 오류가 발생했습니다.");
+            throw new Error(getErrorMessage(error, "결제 요청 중 오류가 발생했습니다."));
         }
 
         return data.data;
@@ -353,7 +360,7 @@ export const api = {
         return json.data;
     },
 
-    // 결제 승인 요청
+    // 예치금 결제 승인 요청
     confirmPayment: async (payload: {
         paymentKey: string;
         orderId: string;
@@ -364,7 +371,7 @@ export const api = {
         });
 
         if (error || !data) {
-            throw new Error((error as any)?.message || "결제 승인에 실패했습니다.");
+            throw new Error(getErrorMessage(error, "결제 승인에 실패했습니다."));
         }
 
         return data.data;
