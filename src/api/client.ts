@@ -38,10 +38,18 @@ client.use({
         // refresh 요청은 인터셉터 스킵 (무한 루프 방지)
         if (request.url.includes('/api/v1/auth/refresh')) return request;
 
-        // 현재 토큰 가져오기
-        const token = useAuthStore.getState().accessToken;
+        let token = useAuthStore.getState().accessToken;
 
-        // 토큰이 있으면 사용, 없으면 그냥 요청 (401 시 onResponse에서 처리)
+        // 토큰 없으면 refresh 시도 (authApi 싱글톤이 중복 호출 방지)
+        if (!token) {
+            try {
+                const tokenData = await authApi.refreshAccessToken();
+                token = tokenData?.accessToken || null;
+            } catch {
+                // 세션 없음 - 로그인 필요
+            }
+        }
+
         if (token) {
             request.headers.set("Authorization", `Bearer ${token}`);
         }
@@ -50,19 +58,16 @@ client.use({
     },
 
     async onResponse({ response, request }) {
-        // 401 에러 시에만 리프레시 시도 (Lazy Refresh 패턴)
+        // 401 에러 시 재시도
         if (response.status === 401 && !request.url.includes('/api/v1/auth/refresh')) {
             try {
                 // authApi 내부에서 싱글톤 처리됨
                 const tokenData = await authApi.refreshAccessToken();
 
                 if (tokenData?.accessToken) {
-                    const newToken = tokenData.accessToken;
-
                     // 원래 실패했던 요청 복제 및 새 토큰 주입
                     const retryRequest = new Request(request.url, request);
-                    retryRequest.headers.set("Authorization", `Bearer ${newToken}`);
-
+                    retryRequest.headers.set("Authorization", `Bearer ${tokenData.accessToken}`);
                     return fetch(retryRequest);
                 }
             } catch {

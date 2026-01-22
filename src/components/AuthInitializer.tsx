@@ -2,22 +2,31 @@
 
 import { useEffect } from 'react';
 import { authApi } from '@/api/auth';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function AuthInitializer() {
+    const loadTokenFromStorage = useAuthStore((state) => state.loadTokenFromStorage);
+
     useEffect(() => {
         const initAuth = async () => {
+            // 1단계: localStorage에서 기존 토큰 복원 시도
+            const existingToken = loadTokenFromStorage();
+
+            if (existingToken) {
+                // 토큰이 있으면 그냥 사용 - refresh 불필요!
+                return;
+            }
+
+            // 2단계: 토큰 없을 때만 refresh 시도
             try {
-                // 앱 진입 시 리프레시 토큰(쿠키)을 이용해 새 액세스 토큰 발급 시도
-                // authApi 내부에서 싱글톤 + useAuthStore 업데이트 처리됨
                 await authApi.refreshAccessToken();
             } catch {
-                // 토큰이 없거나 만료된 경우 - 로그인 안 된 상태 유지
-                // console.log("세션 정보가 없거나 만료되었습니다.");
+                // 세션 없음 - 로그인 필요
             }
         };
 
         initAuth();
-    }, []);
+    }, [loadTokenFromStorage]);
 
     return null;
 }
