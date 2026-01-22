@@ -310,7 +310,8 @@ export const api = {
 
     // 로그아웃
     logout: async () => {
-        const { data, error } = await client.POST("/api/v1/auth/logout");
+        const { data, error } = await client.POST("/api/v1/auth/logout", {});
+
         if (error) {
             throw new Error(getErrorMessage(error, "로그아웃 처리 중 오류가 발생했습니다."));
         }
