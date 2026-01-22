@@ -400,7 +400,10 @@ export const api = {
     },
 
     // 상품 및 경매 등록
-    createProduct: async (memberPublicId: string, productData: any) => {
+    createProduct: async (
+        memberPublicId: string,
+        productData: components["schemas"]["ProductRequestDto"]
+    ) => {
         const { data, error } = await client.POST("/api/v1/products", {
             params: {
                 query: { publicId: memberPublicId }
