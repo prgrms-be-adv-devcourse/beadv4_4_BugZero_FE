@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "gen": "openapi-typescript http://localhost:8080/api-docs -o ./src/api/schema.d.ts"
+    "gen": "openapi-typescript https://rarego.duckdns.org/api-docs -o ./src/api/schema.d.ts"
   },
   "dependencies": {
     "next": "16.1.4",

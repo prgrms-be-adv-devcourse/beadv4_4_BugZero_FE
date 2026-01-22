@@ -2,30 +2,54 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { api, MyBid, MySale } from '@/lib/api';
+import { client } from '@/api/client';
+import { getErrorMessage } from '@/api/utils';
+import type { components } from '@/api/schema';
 import VerifyModal from '@/components/VerifyModal';
+
+// 타입 정의 (스키마에서 가져옴)
+type MyBid = components['schemas']['MyBidResponseDto'];
+type MySale = components['schemas']['MySaleResponseDto'];
+type WalletTransaction = components['schemas']['WalletTransactionResponseDto'];
+type MemberInfo = components['schemas']['MemberMeResponseDto'];
 
 function formatPrice(price: number): string {
     return new Intl.NumberFormat('ko-KR').format(price);
 }
 
-type Tab = 'bids' | 'sales' | 'wallet';
+function formatDate(dateString?: string): string {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
 
-// Mock 거래내역 (API 연동 전까지 사용)
-const mockTx = [
-    { type: '충전', amount: 100000, date: '01/20 10:30', positive: true },
-    { type: '입찰 보증금', amount: -50000, date: '01/19 15:20', positive: false },
-    { type: '환불', amount: 50000, date: '01/18 09:45', positive: true },
-];
+type Tab = 'bids' | 'sales' | 'wallet';
 
 export default function MyPage() {
     const [tab, setTab] = useState<Tab>('bids');
     const [myBids, setMyBids] = useState<MyBid[]>([]);
     const [mySales, setMySales] = useState<MySale[]>([]);
+    const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
+    const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null);
     const [loading, setLoading] = useState(false);
-    const [isVerified, setIsVerified] = useState(false); // 본인인증 여부
-    const [userRole, setUserRole] = useState<'USER' | 'SELLER' | 'ADMIN'>('USER'); // 역할
     const [showVerifyModal, setShowVerifyModal] = useState(false);
+
+    // 본인인증 여부 판단
+    const isVerified = !!(memberInfo?.realNameMasked && memberInfo?.contactPhoneMasked);
+    const userRole = memberInfo?.role as 'USER' | 'SELLER' | 'ADMIN' || 'USER';
+
+    // 회원 정보 로드
+    useEffect(() => {
+        const loadMemberInfo = async () => {
+            const { data, error } = await client.GET('/api/v1/members/me');
+            if (data?.data) {
+                setMemberInfo(data.data);
+            } else if (error) {
+                console.error('회원 정보 로드 실패:', getErrorMessage(error, '회원 정보를 불러올 수 없습니다.'));
+            }
+        };
+        loadMemberInfo();
+    }, []);
 
     // 탭 변경 시 데이터 로드
     useEffect(() => {
@@ -33,25 +57,32 @@ export default function MyPage() {
             setLoading(true);
             try {
                 if (tab === 'bids') {
-                    const result = await api.getMyBids();
-                    setMyBids(result.content || []);
+                    const { data, error } = await client.GET('/api/v1/members/me/bids', {
+                        params: { query: { pageable: { page: 0, size: 20 } } }
+                    });
+                    if (data?.data) {
+                        setMyBids(data.data || []);
+                    } else if (error) {
+                        console.error('입찰 내역 로드 실패:', getErrorMessage(error, ''));
+                    }
                 } else if (tab === 'sales') {
-                    const result = await api.getMySales();
-                    setMySales(result.content || []);
-                }
-            } catch (error) {
-                console.error('데이터 로드 실패:', error);
-                // API 연동 전 Mock 데이터 사용
-                if (tab === 'bids') {
-                    setMyBids([
-                        { auctionId: 1, productName: '레고 스타워즈 밀레니엄 팔콘', productImageUrl: '/placeholder.jpg', startPrice: 800000, currentPrice: 1250000, myBidAmount: 1250000, status: 'IN_PROGRESS', auctionEndTime: '2026-01-22T22:00:00', isWinning: true },
-                        { auctionId: 2, productName: '레고 테크닉 포르쉐 911', productImageUrl: '/placeholder.jpg', startPrice: 350000, currentPrice: 520000, myBidAmount: 480000, status: 'IN_PROGRESS', auctionEndTime: '2026-01-21T20:00:00', isWinning: false },
-                    ]);
-                } else if (tab === 'sales') {
-                    setMySales([
-                        { auctionId: 3, productId: 3, productName: '레고 해리포터 호그와트 성', startPrice: 500000, currentPrice: 780000, bidCount: 31, status: 'IN_PROGRESS', auctionEndTime: '2026-01-20T21:00:00' },
-                        { auctionId: 4, productId: 4, productName: '레고 닌자고 시티 가든 (유찰)', startPrice: 300000, currentPrice: 300000, bidCount: 0, status: 'FAILED', auctionEndTime: '2026-01-18T22:00:00' },
-                    ]);
+                    const { data, error } = await client.GET('/api/v1/members/me/sales', {
+                        params: { query: { pageable: { page: 0, size: 20 } } }
+                    });
+                    if (data?.data) {
+                        setMySales(data.data || []);
+                    } else if (error) {
+                        console.error('판매 내역 로드 실패:', getErrorMessage(error, ''));
+                    }
+                } else if (tab === 'wallet') {
+                    const { data, error } = await client.GET('/api/v1/payments/me/wallet-transactions', {
+                        params: { query: { page: 0, size: 20 } }
+                    });
+                    if (data?.data?.data) {
+                        setTransactions(data.data.data);
+                    } else if (error) {
+                        console.error('거래내역 로드 실패:', getErrorMessage(error, ''));
+                    }
                 }
             } finally {
                 setLoading(false);
@@ -62,20 +93,29 @@ export default function MyPage() {
 
     // 상태 표시 헬퍼
     const getBidStatus = (bid: MyBid) => {
-        if (bid.status === 'ENDED') {
-            return bid.isWinning ? { text: '낙찰', color: 'text-green-500' } : { text: '패찰', color: 'text-red-500' };
+        const status = bid.auctionStatus;
+        const isWinning = (bid.bidAmount ?? 0) >= (bid.currentPrice ?? 0);
+        if (status === 'ENDED') {
+            return isWinning ? { text: '낙찰', color: 'text-green-500' } : { text: '패찰', color: 'text-red-500' };
         }
-        return bid.isWinning ? { text: '낙찰 예정', color: 'text-green-500' } : { text: '패찰', color: 'text-red-500' };
+        return isWinning ? { text: '1등', color: 'text-green-500' } : { text: '추월됨', color: 'text-red-500' };
     };
 
     const getSaleStatus = (sale: MySale) => {
-        switch (sale.status) {
+        switch (sale.auctionStatus) {
             case 'IN_PROGRESS': return { text: '진행중', color: 'text-yellow-400' };
             case 'SCHEDULED': return { text: '예정', color: 'text-blue-400' };
-            case 'ENDED': return { text: '낙찰', color: 'text-green-500' };
-            case 'FAILED': return { text: '유찰', color: 'text-red-500' };
+            case 'ENDED':
+                return sale.tradeStatus === 'SUCCESS'
+                    ? { text: '낙찰', color: 'text-green-500' }
+                    : { text: '유찰', color: 'text-red-500' };
             default: return { text: '대기중', color: 'text-gray-400' };
         }
+    };
+
+    const getTransactionSign = (tx: WalletTransaction) => {
+        const delta = tx.balanceDelta ?? 0;
+        return delta >= 0;
     };
 
     return (
@@ -100,15 +140,15 @@ export default function MyPage() {
                         </div>
                         <div>
                             <div className="flex items-center gap-2">
-                                <p className="font-semibold">레고덕후</p>
+                                <p className="font-semibold">{memberInfo?.nickname || '로딩중...'}</p>
                                 {isVerified && <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">인증완료</span>}
                             </div>
-                            <p className="text-sm text-gray-500">lego@email.com</p>
+                            <p className="text-sm text-gray-500">{memberInfo?.email || ''}</p>
                         </div>
                     </div>
                     <div className="text-right">
-                        <p className="text-sm text-gray-500">잔액</p>
-                        <p className="text-xl font-bold text-[var(--lego-yellow)]">₩{formatPrice(500000)}</p>
+                        <p className="text-sm text-gray-500">역할</p>
+                        <p className="text-xl font-bold text-[var(--lego-yellow)]">{userRole}</p>
                     </div>
                 </div>
                 <div className="flex gap-2 mt-4 pt-4 border-t border-gray-700">
@@ -125,9 +165,7 @@ export default function MyPage() {
                                 if (!isVerified) {
                                     setShowVerifyModal(true);
                                 } else {
-                                    // 판매자 등록 API 호출 (BE에서 역할 변경)
-                                    alert('판매자 등록이 완료되었습니다!');
-                                    setUserRole('SELLER');
+                                    alert('판매자 등록 기능 준비 중입니다.');
                                 }
                             }}
                             className="flex-1 lego-btn py-2 text-center text-sm rounded-lg text-black font-medium"
@@ -174,28 +212,27 @@ export default function MyPage() {
                             ) : (
                                 myBids.map(bid => {
                                     const status = getBidStatus(bid);
-                                    const deposit = api.calculateDeposit(bid.startPrice);
                                     return (
-                                        <Link key={bid.auctionId} href={`/auctions/${bid.auctionId}`}>
+                                        <Link key={bid.bidId} href={`/auctions/${bid.auctionId}`}>
                                             <div className="card p-4 hover:border-[var(--lego-yellow)]/50 transition">
                                                 <div className="flex justify-between items-start mb-2">
                                                     <div className="flex-1">
-                                                        <p className="font-medium">{bid.productName}</p>
-                                                        <p className="text-sm text-gray-500">내 입찰: ₩{formatPrice(bid.myBidAmount)}</p>
+                                                        <p className="font-medium">경매 #{bid.auctionId}</p>
+                                                        <p className="text-sm text-gray-500">내 입찰: ₩{formatPrice(bid.bidAmount ?? 0)}</p>
                                                     </div>
                                                     <div className="text-right">
                                                         <p className={`text-sm font-medium ${status.color}`}>
                                                             {status.text}
                                                         </p>
-                                                        <p className="text-sm text-gray-400">현재 ₩{formatPrice(bid.currentPrice)}</p>
+                                                        <p className="text-sm text-gray-400">현재 ₩{formatPrice(bid.currentPrice ?? 0)}</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex justify-between items-center pt-2 border-t border-gray-700/50 text-xs">
                                                     <span className="text-gray-500">
-                                                        💰 보증금: <span className="text-yellow-400">₩{formatPrice(deposit)}</span>
+                                                        상태: <span className="text-yellow-400">{bid.auctionStatus}</span>
                                                     </span>
                                                     <span className="text-gray-500">
-                                                        시작가: ₩{formatPrice(bid.startPrice)}
+                                                        마감: {formatDate(bid.endTime)}
                                                     </span>
                                                 </div>
                                             </div>
@@ -220,33 +257,26 @@ export default function MyPage() {
                                         <div key={sale.auctionId} className="card p-4">
                                             <div className="flex justify-between items-start mb-2">
                                                 <div className="flex-1">
-                                                    <p className="font-medium">{sale.productName}</p>
-                                                    <p className="text-sm text-gray-500">시작가: ₩{formatPrice(sale.startPrice)}</p>
+                                                    <p className="font-medium">{sale.title || `경매 #${sale.auctionId}`}</p>
+                                                    <p className="text-sm text-gray-500">입찰 {sale.bidCount ?? 0}건</p>
                                                 </div>
                                                 <div className="text-right">
                                                     <p className={`text-sm font-medium ${status.color}`}>
                                                         {status.text}
                                                     </p>
                                                     <p className="text-sm text-gray-400">
-                                                        {sale.bidCount > 0 ? `현재 ₩${formatPrice(sale.currentPrice)}` : '입찰 없음'}
+                                                        {(sale.bidCount ?? 0) > 0 ? `현재 ₩${formatPrice(sale.currentPrice ?? 0)}` : '입찰 없음'}
                                                     </p>
                                                 </div>
                                             </div>
                                             <div className="flex justify-between items-center pt-2 border-t border-gray-700/50">
                                                 <span className="text-xs text-gray-500">
-                                                    입찰 {sale.bidCount}건
+                                                    마감: {formatDate(sale.endTime)}
                                                 </span>
-                                                {sale.status === 'FAILED' && (
-                                                    <button
-                                                        className="text-xs bg-yellow-500 text-black px-3 py-1 rounded-full font-medium hover:bg-yellow-400 transition"
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            // TODO: 재등록 페이지로 이동
-                                                            alert('재등록 기능 준비 중');
-                                                        }}
-                                                    >
-                                                        🔄 재등록
-                                                    </button>
+                                                {sale.actionRequired && (
+                                                    <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full">
+                                                        조치 필요
+                                                    </span>
                                                 )}
                                             </div>
                                         </div>
@@ -259,17 +289,31 @@ export default function MyPage() {
                     {/* 거래내역 */}
                     {tab === 'wallet' && (
                         <div className="space-y-2">
-                            {mockTx.map((tx, i) => (
-                                <div key={i} className="card p-4 flex justify-between items-center">
-                                    <div>
-                                        <p className="font-medium">{tx.type}</p>
-                                        <p className="text-xs text-gray-500">{tx.date}</p>
-                                    </div>
-                                    <p className={`font-semibold ${tx.positive ? 'text-green-500' : 'text-red-500'}`}>
-                                        {tx.positive ? '+' : ''}₩{formatPrice(tx.amount)}
-                                    </p>
+                            {transactions.length === 0 ? (
+                                <div className="text-center py-12 text-gray-500">
+                                    거래 내역이 없습니다
                                 </div>
-                            ))}
+                            ) : (
+                                transactions.map((tx) => {
+                                    const isPositive = getTransactionSign(tx);
+                                    return (
+                                        <div key={tx.id} className="card p-4 flex justify-between items-center">
+                                            <div>
+                                                <p className="font-medium">{tx.typeName || tx.type}</p>
+                                                <p className="text-xs text-gray-500">{formatDate(tx.createdAt)}</p>
+                                            </div>
+                                            <p className={`font-semibold ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+                                                {isPositive ? '+' : ''}₩{formatPrice(tx.balanceDelta ?? 0)}
+                                            </p>
+                                        </div>
+                                    );
+                                })
+                            )}
+                            <Link href="/payment" className="block">
+                                <div className="card p-4 text-center hover:border-[var(--lego-yellow)]/50 transition">
+                                    <p className="text-yellow-400 font-medium">💰 예치금 충전하기</p>
+                                </div>
+                            </Link>
                         </div>
                     )}
                 </>
@@ -279,13 +323,16 @@ export default function MyPage() {
             <VerifyModal
                 isOpen={showVerifyModal}
                 onClose={() => setShowVerifyModal(false)}
-                onVerified={() => {
-                    setIsVerified(true);
-                    // 인증 완료 후 판매자 등록 진행
-                    alert('본인인증이 완료되었습니다. 이제 판매자로 등록할 수 있습니다.');
+                onVerified={async () => {
+                    // 회원 정보 새로고침
+                    const { data } = await client.GET('/api/v1/members/me');
+                    if (data?.data) {
+                        setMemberInfo(data.data);
+                    }
+                    setShowVerifyModal(false);
+                    alert('본인인증이 완료되었습니다.');
                 }}
             />
         </div>
     );
 }
-
