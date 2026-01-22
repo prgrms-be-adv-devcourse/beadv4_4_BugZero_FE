@@ -297,6 +297,16 @@ export const api = {
         }
     },
 
+    refreshAccessToken: async () => {
+        const { data, error } = await client.POST("/api/v1/auth/refresh");
+
+        if (error || !data) {
+            throw new Error(getErrorMessage(error, "세션이 만료되었습니다. 다시 로그인해주세요."));
+        }
+
+        return data.data;
+    },
+
     // 내 정보 조회
     getMe: async () => {
         const { data, error } = await client.GET("/api/v1/members/me");

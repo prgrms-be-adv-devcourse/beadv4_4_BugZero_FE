@@ -7,7 +7,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 export default function Header() {
     const pathname = usePathname();
     const router = useRouter();
-    const { accessToken, logout } = useAuthStore();
+    const { accessToken } = useAuthStore();
     const isLogin = !!accessToken;
 
     // 1. 로그인 여부와 상관없이 항상 노출되는 메뉴
@@ -19,7 +19,7 @@ export default function Header() {
     // 2. 로그인 시에만 추가로 노출되는 메뉴 (관심, 마이페이지)
     const privateNavItems = [
         { href: '/wishlist', label: '관심' },
-        { href: '/mypage', label: '마이페이지' }, // 'MY'에서 '마이페이지'로 수정
+        { href: '/mypage', label: '마이페이지' },
     ];
 
     const isActive = (href: string) => {
@@ -38,9 +38,15 @@ export default function Header() {
 
     const handleLogout = () => {
         if (!confirm('로그아웃 하시겠습니까?')) return;
-        logout();
-        alert('로그아웃 되었습니다.');
-        router.push('/');
+        try {
+            // await api.logout(); 
+        } catch (error) {
+            console.error("Logout API failed", error);
+        } finally {
+            useAuthStore.getState().clearAuth();
+            alert('로그아웃 되었습니다.');
+            router.push('/');
+        }
     };
 
     return (
@@ -68,8 +74,8 @@ export default function Header() {
                                     href={item.href}
                                     onClick={(e) => handleProtectedClick(e, item.href)}
                                     className={`text-sm transition font-medium ${isActive(item.href)
-                                            ? 'text-yellow-400 border-b-2 border-yellow-400 pb-1'
-                                            : 'text-gray-400 hover:text-white'
+                                        ? 'text-yellow-400 border-b-2 border-yellow-400 pb-1'
+                                        : 'text-gray-400 hover:text-white'
                                         }`}
                                 >
                                     {item.label}
@@ -82,8 +88,8 @@ export default function Header() {
                                     key={item.href}
                                     href={item.href}
                                     className={`text-sm transition font-medium ${isActive(item.href)
-                                            ? 'text-yellow-400 border-b-2 border-yellow-400 pb-1'
-                                            : 'text-gray-400 hover:text-white'
+                                        ? 'text-yellow-400 border-b-2 border-yellow-400 pb-1'
+                                        : 'text-gray-400 hover:text-white'
                                         }`}
                                 >
                                     {item.label}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
+import AuthInitializer from "@/components/AuthInitializer"; // ✅ 추가
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,10 +19,10 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={`${inter.className} bg-[#0a0a0a] text-white min-h-screen flex flex-col`}>
+        <AuthInitializer /> {/* ✅ 최상단에 배치하여 앱 구동 시 권한 체크 */}
         <Header />
         <main className="container mx-auto px-6 py-8 flex-1">{children}</main>
 
-        {/* Footer */}
         <footer className="border-t border-[#1a1a1a] mt-auto">
           <div className="container mx-auto px-6 py-6 flex items-center justify-between text-sm text-gray-500">
             <div className="flex items-center gap-2">
