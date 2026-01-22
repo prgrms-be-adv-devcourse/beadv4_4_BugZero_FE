@@ -111,13 +111,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * 회원 본인 조회
+         * @description 본인의 정보를 조회합니다.
+         */
         get: operations["getMe"];
         put?: never;
+        /**
+         * 소셜 로그인 이후 Member 생성(회원 가입)
+         * @description 소셜 로그인 결과(email/provider)를 받아 회원가입 처리합니다.
+         */
         post: operations["join"];
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * 회원 본인 수정
+         * @description 본인의 정보를 수정합니다.
+         */
+        patch: operations["updateMe"];
         trace?: never;
     };
     "/api/v1/internal/auctions/{productId}/{sellerUUID}": {
@@ -214,6 +226,62 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{productId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * 상품 수정
+         * @description 상품 정보를 수정합니다.
+         */
+        patch: operations["updateProduct"];
+        trace?: never;
+    };
+    "/api/v1/members/me/identity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * 회원 본인인증 정보 수정
+         * @description 본인의 연락처/실명 정보를 수정합니다.
+         */
+        patch: operations["updateIdentity"];
+        trace?: never;
+    };
+    "/api/v1/auctions/{auctionId}/startTime": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["deterMineStartAuction"];
         trace?: never;
     };
     "/api/v1/payments/me/wallet-transactions": {
@@ -633,6 +701,62 @@ export interface components {
             message?: string;
             data?: components["schemas"]["BidResponseDto"];
         };
+        ProductAuctionUpdateDto: {
+            /** Format: int64 */
+            auctionId: number;
+            /** Format: int32 */
+            startPrice?: number;
+            /** Format: int32 */
+            durationDays: number;
+        };
+        ProductImageUpdateDto: {
+            /** Format: int64 */
+            id?: number;
+            imgUrl: string;
+            /** Format: int32 */
+            sortOrder?: number;
+        };
+        ProductUpdateDto: {
+            name: string;
+            /** @enum {string} */
+            category: "스타워즈" | "오리지널" | "해리포터";
+            description: string;
+            productAuctionUpdateDto: components["schemas"]["ProductAuctionUpdateDto"];
+            productImageUpdateDtos: components["schemas"]["ProductImageUpdateDto"][];
+        };
+        MemberUpdateRequestDto: {
+            nickname: string;
+            intro?: string;
+            zipCode?: string;
+            address?: string;
+            addressDetail?: string;
+            clearFields?: ("INTRO" | "ZIPCODE" | "ADDRESS" | "ADDRESS_DETAIL")[];
+        };
+        MemberUpdateResponseDto: {
+            publicId?: string;
+            email?: string;
+            nickname?: string;
+            intro?: string;
+            address?: string;
+            addressDetail?: string;
+            zipCode?: string;
+            contactPhone?: string;
+            realName?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        SuccessResponseDtoMemberUpdateResponseDto: {
+            /** Format: int32 */
+            status?: number;
+            message?: string;
+            data?: components["schemas"]["MemberUpdateResponseDto"];
+        };
+        MemberUpdateIdentityRequestDto: {
+            realName?: string;
+            contactPhone?: string;
+        };
         PageDto: {
             /** Format: int32 */
             currentPage?: number;
@@ -890,7 +1014,7 @@ export interface operations {
     createProduct: {
         parameters: {
             query: {
-                memberUUID: string;
+                publicId: string;
             };
             header?: never;
             path?: never;
@@ -1055,6 +1179,30 @@ export interface operations {
             };
         };
     };
+    updateMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberUpdateRequestDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoMemberUpdateResponseDto"];
+                };
+            };
+        };
+    };
     createAuction: {
         parameters: {
             query?: never;
@@ -1200,6 +1348,80 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SuccessResponseDtoBidResponseDto"];
+                };
+            };
+        };
+    };
+    updateProduct: {
+        parameters: {
+            query: {
+                publicId: string;
+            };
+            header?: never;
+            path: {
+                productId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductUpdateDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoLong"];
+                };
+            };
+        };
+    };
+    updateIdentity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberUpdateIdentityRequestDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoMemberUpdateResponseDto"];
+                };
+            };
+        };
+    };
+    deterMineStartAuction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                auctionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoLong"];
                 };
             };
         };
