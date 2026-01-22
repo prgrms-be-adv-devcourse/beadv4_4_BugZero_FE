@@ -132,7 +132,27 @@ export interface paths {
         patch: operations["updateMe"];
         trace?: never;
     };
-    "/api/v1/internal/auctions/{productId}/{sellerUUID}": {
+    "/api/v1/members/me/seller": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 회원 판매자 인증
+         * @description 저장된 정보를 기반으로 SELLER로 업데이트 합니다
+         */
+        post: operations["promoteSeller"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/internal/auctions/{productId}/{publicId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -266,6 +286,22 @@ export interface paths {
          * @description 본인의 연락처/실명 정보를 수정합니다.
          */
         patch: operations["updateIdentity"];
+        trace?: never;
+    };
+    "/api/v1/internal/auctions/{publicId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["updateAuction"];
         trace?: never;
     };
     "/api/v1/auctions/{auctionId}/startTime": {
@@ -404,6 +440,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auctions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 경매 목록 조회
+         * @description 검색 조건(키워드, 카테고리, 상태)과 정렬 조건에 따라 경매 목록을 조회합니다.
+         */
+        get: operations["getAuctions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auctions/{auctionId}": {
         parameters: {
             query?: never;
@@ -487,6 +543,26 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auctions/{bookmarkId}/bookmarks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * 관심 경매 해제
+         * @description 특정 경매를 관심 목록에서 제거합니다
+         */
+        delete: operations["removeBookmark"];
         options?: never;
         head?: never;
         patch?: never;
@@ -624,6 +700,12 @@ export interface components {
             message?: string;
             data?: components["schemas"]["MemberJoinResponseDto"];
         };
+        SuccessResponseDtoVoid: {
+            /** Format: int32 */
+            status?: number;
+            message?: string;
+            data?: unknown;
+        };
         SuccessResponseDtoLong: {
             /** Format: int32 */
             status?: number;
@@ -724,8 +806,20 @@ export interface components {
             productAuctionUpdateDto: components["schemas"]["ProductAuctionUpdateDto"];
             productImageUpdateDtos: components["schemas"]["ProductImageUpdateDto"][];
         };
+        ProductUpdateResponseDto: {
+            /** Format: int64 */
+            productId?: number;
+            /** Format: int64 */
+            auctionId?: number;
+        };
+        SuccessResponseDtoProductUpdateResponseDto: {
+            /** Format: int32 */
+            status?: number;
+            message?: string;
+            data?: components["schemas"]["ProductUpdateResponseDto"];
+        };
         MemberUpdateRequestDto: {
-            nickname: string;
+            nickname?: string;
             intro?: string;
             zipCode?: string;
             address?: string;
@@ -898,6 +992,37 @@ export interface components {
             data?: components["schemas"]["MyBidResponseDto"][];
             pageDto?: components["schemas"]["PageDto"];
         };
+        AuctionSearchCondition: {
+            ids?: number[];
+            keyword?: string;
+            category?: string;
+            /** @enum {string} */
+            status?: "SCHEDULED" | "IN_PROGRESS" | "ENDED";
+            sort?: string;
+        };
+        AuctionListResponseDto: {
+            /** Format: int64 */
+            auctionId?: number;
+            /** Format: int64 */
+            productId?: number;
+            productName?: string;
+            thumbnailUrl?: string;
+            category?: string;
+            /** Format: int32 */
+            currentPrice?: number;
+            /** Format: int32 */
+            startPrice?: number;
+            /** Format: int32 */
+            bidsCount?: number;
+            /** @enum {string} */
+            auctionStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED";
+            /** Format: date-time */
+            endTime?: string;
+        };
+        PagedResponseDtoAuctionListResponseDto: {
+            data?: components["schemas"]["AuctionListResponseDto"][];
+            pageDto?: components["schemas"]["PageDto"];
+        };
         AuctionDetailResponseDto: {
             /** Format: int64 */
             auctionId?: number;
@@ -1001,6 +1126,17 @@ export interface components {
         PagedResponseDtoBidLogResponseDto: {
             data?: components["schemas"]["BidLogResponseDto"][];
             pageDto?: components["schemas"]["PageDto"];
+        };
+        SuccessResponseDtoWishlistRemoveResponseDto: {
+            /** Format: int32 */
+            status?: number;
+            message?: string;
+            data?: components["schemas"]["WishlistRemoveResponseDto"];
+        };
+        WishlistRemoveResponseDto: {
+            removed?: boolean;
+            /** Format: int64 */
+            bookmarkId?: number;
         };
     };
     responses: never;
@@ -1203,13 +1339,33 @@ export interface operations {
             };
         };
     };
+    promoteSeller: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoVoid"];
+                };
+            };
+        };
+    };
     createAuction: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 productId: number;
-                sellerUUID: string;
+                publicId: string;
             };
             cookie?: never;
         };
@@ -1375,7 +1531,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["SuccessResponseDtoLong"];
+                    "*/*": components["schemas"]["SuccessResponseDtoProductUpdateResponseDto"];
                 };
             };
         };
@@ -1400,6 +1556,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SuccessResponseDtoMemberUpdateResponseDto"];
+                };
+            };
+        };
+    };
+    updateAuction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductAuctionUpdateDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoLong"];
                 };
             };
         };
@@ -1564,6 +1746,29 @@ export interface operations {
             };
         };
     };
+    getAuctions: {
+        parameters: {
+            query: {
+                condition: components["schemas"]["AuctionSearchCondition"];
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PagedResponseDtoAuctionListResponseDto"];
+                };
+            };
+        };
+    };
     getAuctionDetail: {
         parameters: {
             query?: never;
@@ -1668,6 +1873,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": number;
+                };
+            };
+        };
+    };
+    removeBookmark: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookmarkId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoWishlistRemoveResponseDto"];
                 };
             };
         };
