@@ -1,5 +1,7 @@
 import { client } from "@/api/client";
+import { components } from "@/api/schema";
 import { getErrorMessage } from "@/api/utils";
+import { useAuthStore } from "@/store/useAuthStore";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://52.78.240.121:8080';
 // const API_BASE = 'http://localhost:8080'; // Local development server
@@ -305,7 +307,13 @@ export const api = {
             throw new Error(getErrorMessage(error, "세션이 만료되었습니다. 다시 로그인해주세요."));
         }
 
-        return data.data;
+        const tokenData = data.data;
+
+        if (tokenData && tokenData.accessToken) {
+            useAuthStore.getState().setAccessToken(tokenData.accessToken);
+        }
+
+        return tokenData;
     },
 
     // 로그아웃
@@ -352,25 +360,62 @@ export const api = {
     },
 
     // S3 Presigned URL 발급
-    getPresignedUrl: async (fileName: string, contentType: string): Promise<PresignedUrlResponse> => {
-        const res = await fetch(`${API_BASE}/api/v1/products/images/presigned-url`, {
-            method: 'POST',
-            headers: createAuthHeaders(),
-            body: JSON.stringify({ fileName, contentType })
+    getPresignedUrl: async (payload: { fileName: string; contentType: string }) => {
+        const { data, error } = await client.POST("/api/v1/products/images/presigned-url", {
+            body: payload,
         });
-        const json: SuccessResponse<PresignedUrlResponse> = await res.json();
-        return json.data;
+        if (error || !data) {
+            throw new Error(getErrorMessage(error, "업로드 권한을 가져오지 못했습니다."));
+        }
+        return data.data;
+    },
+
+    // 판매자 등록
+    promoteSeller: async () => {
+        const { data, error } = await client.POST("/api/v1/members/me/seller");
+
+        if (error) {
+            throw new Error(getErrorMessage(error, "판매자 등록에 실패했습니다."));
+        }
+
+        return data;
+    },
+
+    // 실명/연락처 (본인 인증)
+    updateIdentity: async (payload: components["schemas"]["MemberUpdateIdentityRequestDto"]) => {
+        const { data, error } = await client.PATCH("/api/v1/members/me/identity", {
+            body: payload,
+        });
+        if (error || !data) throw new Error(getErrorMessage(error, "본인 인증 실패"));
+        return data.data;
+    },
+
+    // 회원 정보 수정
+    updateMemberInfo: async (payload: components["schemas"]["MemberUpdateRequestDto"]) => {
+        const { data, error } = await client.PATCH("/api/v1/members/me", {
+            body: payload,
+        });
+        if (error || !data) throw new Error(getErrorMessage(error, "회원 정보 수정 실패"));
+        return data.data;
     },
 
     // 상품 및 경매 등록
-    createProduct: async (memberId: string, data: ProductRequest): Promise<ProductResponse> => {
-        const res = await fetch(`${API_BASE}/api/v1/products?memberUUID=${memberId}`, {
-            method: 'POST',
-            headers: createAuthHeaders(),
-            body: JSON.stringify(data)
+    createProduct: async (
+        memberPublicId: string,
+        productData: components["schemas"]["ProductRequestDto"]
+    ) => {
+        const { data, error } = await client.POST("/api/v1/products", {
+            params: {
+                query: { publicId: memberPublicId }
+            },
+            body: productData,
         });
-        const json: SuccessResponse<ProductResponse> = await res.json();
-        return json.data;
+
+        if (error || !data) {
+            throw new Error(getErrorMessage(error, "상품 등록에 실패했습니다."));
+        }
+
+        return data.data;
     },
 
 
