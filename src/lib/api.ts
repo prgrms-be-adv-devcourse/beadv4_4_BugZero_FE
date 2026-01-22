@@ -1,7 +1,6 @@
 import { client } from "@/api/client";
 import { components } from "@/api/schema";
 import { getErrorMessage } from "@/api/utils";
-import { useAuthStore } from "@/store/useAuthStore";
 import { authApi } from "@/api/auth";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://52.78.240.121:8080';
@@ -48,7 +47,7 @@ export interface BidLog {
 }
 
 // Helper to handle API responses and unwrap data
-async function handleResponseData<T>(promise: Promise<{ data?: any; error?: any }>, errorMessage: string): Promise<T> {
+async function handleResponseData<T>(promise: Promise<{ data?: unknown; error?: unknown }>, errorMessage: string): Promise<T> {
     const { data, error } = await promise;
 
     if (error) {
@@ -61,8 +60,13 @@ async function handleResponseData<T>(promise: Promise<{ data?: any; error?: any 
 
     // Check if it's a wrapper DTO (standard backend response format)
     // Most responses are wrapped in SuccessResponseDto* which has 'data', 'status', 'message'
-    if (typeof data === 'object' && 'data' in data && 'status' in data && typeof (data as any).status === 'number') {
-        return (data as any).data;
+    if (typeof data === 'object' && 'data' in data && 'status' in data) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const status = (data as any).status;
+        if (typeof status === 'number') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return (data as any).data;
+        }
     }
 
     // If it's a primitive (like number for count endpoints) or non-wrapped object (like PagedResponse)
@@ -275,7 +279,7 @@ export const api = {
         return api.updateMe(body);
     },
 
-    updateProfile: async (body: any) => {
+    updateProfile: async (body: components["schemas"]["MemberUpdateRequestDto"]) => {
         return api.updateMe(body);
     },
 

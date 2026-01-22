@@ -1,5 +1,5 @@
 import createClient from "openapi-fetch";
-import { paths, components } from "./schema";
+import { paths } from "./schema";
 import { useAuthStore } from "@/store/useAuthStore";
 import { authApi } from "./auth";
 
@@ -9,7 +9,7 @@ export const client = createClient<paths>({
     querySerializer: (params) => {
         const searchParams = new URLSearchParams();
 
-        const addParam = (key: string, value: any) => {
+        const addParam = (key: string, value: unknown) => {
             if (value === undefined || value === null) return;
             if (Array.isArray(value)) {
                 value.forEach(v => searchParams.append(key, String(v)));
@@ -45,7 +45,7 @@ client.use({
                 // authApi 내부에서 싱글톤 처리되므로 단순히 호출만 하면 됨
                 const tokenData = await authApi.refreshAccessToken();
                 token = tokenData?.accessToken || null;
-            } catch (error) {
+            } catch {
                 // 토큰 없음 - 로그인 필요
                 // console.warn("Silent refresh failed or no session");
             }
@@ -74,7 +74,7 @@ client.use({
 
                     return fetch(retryRequest);
                 }
-            } catch (error) {
+            } catch {
                 useAuthStore.getState().clearAuth();
             }
         }

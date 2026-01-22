@@ -1,10 +1,11 @@
 import { useAuthStore } from "@/store/useAuthStore";
-import { getErrorMessage } from "@/api/utils";
+import { components } from "@/api/schema";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://52.78.240.121:8080';
 
 // 싱글톤 Promise 변수: 동시에 여러 리프레시 요청이 와도 하나만 실행
-let refreshPromise: Promise<any> | null = null;
+type RefreshResponseData = components["schemas"]["SuccessResponseDtoMapStringString"]["data"];
+let refreshPromise: Promise<RefreshResponseData | undefined> | null = null;
 
 export const authApi = {
     // 엑세스 토큰 재발급 (Raw Fetch 사용 - Interceptor 순환 참조 방지)
@@ -17,7 +18,7 @@ export const authApi = {
         // 새로운 리프레시 요청 시작 및 Promise 저장
         refreshPromise = (async () => {
             try {
-                const refreshToken = getRefreshTokenFromCookie(); // 쿠키에서 가져오거나, 필요 시 로직 추가 (브라우저 자동 전송 시 생략 가능)
+                // const refreshToken = getRefreshTokenFromCookie(); // 쿠키에서 가져오거나, 필요 시 로직 추가
 
                 // openapi-fetch client가 아닌 raw fetch 사용
                 const response = await fetch(`${API_BASE}/api/v1/auth/refresh`, {

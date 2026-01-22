@@ -124,7 +124,7 @@ export default function HomePage() {
           setAuctions(MOCK_AUCTIONS);
           setPageInfo(null);
         }
-      } catch (error) {
+      } catch {
         setAuctions(MOCK_AUCTIONS);
         setPageInfo(null);
       } finally {
