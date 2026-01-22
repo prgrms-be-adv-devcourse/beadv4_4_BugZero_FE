@@ -144,13 +144,32 @@ export default function MyPage() {
                                 {isVerified && <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">인증완료</span>}
                             </div>
                             <p className="text-sm text-gray-500">{memberInfo?.email || ''}</p>
+                            {memberInfo?.intro && (
+                                <p className="text-sm text-gray-400 mt-1 line-clamp-1">{memberInfo.intro}</p>
+                            )}
                         </div>
                     </div>
                     <div className="text-right">
-                        <p className="text-sm text-gray-500">역할</p>
-                        <p className="text-xl font-bold text-[var(--lego-yellow)]">{userRole}</p>
+                        <p className="text-xs text-gray-500">역할</p>
+                        <p className="text-lg font-bold text-[var(--lego-yellow)]">{userRole}</p>
+                        {memberInfo?.createdAt && (
+                            <p className="text-[10px] text-gray-600 mt-1">가입일: {new Date(memberInfo.createdAt).toLocaleDateString()}</p>
+                        )}
                     </div>
                 </div>
+
+                {isVerified && (
+                    <div className="mt-4 pt-4 border-t border-gray-700/50 flex gap-6">
+                        <div>
+                            <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">이름</p>
+                            <p className="text-sm font-medium text-gray-300">{memberInfo?.realNameMasked}</p>
+                        </div>
+                        <div>
+                            <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">연락처</p>
+                            <p className="text-sm font-medium text-gray-300">{memberInfo?.contactPhoneMasked}</p>
+                        </div>
+                    </div>
+                )}
                 <div className="flex gap-2 mt-4 pt-4 border-t border-gray-700">
                     <Link href="/settings" className="flex-1 btn-secondary py-2 text-center text-sm rounded-lg">
                         ⚙️ 설정
