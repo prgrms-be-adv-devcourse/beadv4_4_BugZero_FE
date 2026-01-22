@@ -162,7 +162,7 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["createAuction"];
-        delete?: never;
+        delete: operations["deleteAuction"];
         options?: never;
         head?: never;
         patch?: never;
@@ -322,7 +322,11 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * 상품 삭제
+         * @description 상품 정보를 삭제합니다.
+         */
+        delete: operations["deleteProduct"];
         options?: never;
         head?: never;
         /**
@@ -1506,6 +1510,29 @@ export interface operations {
             };
         };
     };
+    deleteAuction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+                productId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoVoid"];
+                };
+            };
+        };
+    };
     createProductInspection: {
         parameters: {
             query: {
@@ -1716,6 +1743,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SuccessResponseDtoBidResponseDto"];
+                };
+            };
+        };
+    };
+    deleteProduct: {
+        parameters: {
+            query: {
+                publicId: string;
+            };
+            header?: never;
+            path: {
+                productId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoVoid"];
                 };
             };
         };

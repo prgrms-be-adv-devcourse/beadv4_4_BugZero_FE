@@ -35,22 +35,13 @@ export const client = createClient<paths>({
 
 client.use({
     async onRequest({ request }) {
-        // 무한 루프 방지
+        // refresh 요청은 인터셉터 스킵 (무한 루프 방지)
         if (request.url.includes('/api/v1/auth/refresh')) return request;
 
-        let token = useAuthStore.getState().accessToken;
+        // 현재 토큰 가져오기
+        const token = useAuthStore.getState().accessToken;
 
-        if (!token) {
-            try {
-                // authApi 내부에서 싱글톤 처리되므로 단순히 호출만 하면 됨
-                const tokenData = await authApi.refreshAccessToken();
-                token = tokenData?.accessToken || null;
-            } catch {
-                // 토큰 없음 - 로그인 필요
-                // console.warn("Silent refresh failed or no session");
-            }
-        }
-
+        // 토큰이 있으면 사용, 없으면 그냥 요청 (401 시 onResponse에서 처리)
         if (token) {
             request.headers.set("Authorization", `Bearer ${token}`);
         }
@@ -59,10 +50,10 @@ client.use({
     },
 
     async onResponse({ response, request }) {
-        // 401 만료 시 자동 재시도
+        // 401 에러 시에만 리프레시 시도 (Lazy Refresh 패턴)
         if (response.status === 401 && !request.url.includes('/api/v1/auth/refresh')) {
             try {
-                // authApi 내부에서 싱글톤 처리됨.
+                // authApi 내부에서 싱글톤 처리됨
                 const tokenData = await authApi.refreshAccessToken();
 
                 if (tokenData?.accessToken) {
@@ -75,6 +66,7 @@ client.use({
                     return fetch(retryRequest);
                 }
             } catch {
+                // 리프레시 실패 → 로그아웃
                 useAuthStore.getState().clearAuth();
             }
         }
