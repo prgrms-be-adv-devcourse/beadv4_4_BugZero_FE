@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
+import { api } from '@/lib/api';
 
 export default function Header() {
     const pathname = usePathname();
@@ -36,10 +37,10 @@ export default function Header() {
         }
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         if (!confirm('로그아웃 하시겠습니까?')) return;
         try {
-            // await api.logout(); 
+            await api.logout();
         } catch (error) {
             console.error("Logout API failed", error);
         } finally {

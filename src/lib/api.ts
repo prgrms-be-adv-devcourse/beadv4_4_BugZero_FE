@@ -297,6 +297,7 @@ export const api = {
         }
     },
 
+    // 엑세스 토큰 재발급
     refreshAccessToken: async () => {
         const { data, error } = await client.POST("/api/v1/auth/refresh");
 
@@ -305,6 +306,15 @@ export const api = {
         }
 
         return data.data;
+    },
+
+    // 로그아웃
+    logout: async () => {
+        const { data, error } = await client.POST("/api/v1/auth/logout");
+        if (error) {
+            throw new Error(getErrorMessage(error, "로그아웃 처리 중 오류가 발생했습니다."));
+        }
+        return data;
     },
 
     // 내 정보 조회
