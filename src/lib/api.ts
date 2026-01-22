@@ -1,72 +1,44 @@
 import { client } from "@/api/client";
 import { components } from "@/api/schema";
 import { getErrorMessage } from "@/api/utils";
-import { useAuthStore } from "@/store/useAuthStore";
+import { authApi } from "@/api/auth";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://52.78.240.121:8080';
-// const API_BASE = 'http://localhost:8080'; // Local development server
 
-// Generic API response type (Commonly used in BE SuccessResponseDto)
-interface SuccessResponse<T> {
-    status: string; // e.g., "OK", "CREATED"
-    data: T;
-}
+// Helper types from Schema
+export type AuctionDetailResponseDto = components["schemas"]["AuctionDetailResponseDto"];
+export type AuctionListResponseDto = components["schemas"]["AuctionListResponseDto"];
+export type PagedAuctionList = components["schemas"]["PagedResponseDtoAuctionListResponseDto"];
 
-// Note: ApiResponse was removed as it was unused
+// Removed duplicate type BidLog = ...
+export type MyBid = components["schemas"]["MyBidResponseDto"];
+export type MySale = components["schemas"]["MySaleResponseDto"];
+export type MemberInfo = components["schemas"]["MemberMeResponseDto"];
+export type WalletTransaction = components["schemas"]["WalletTransactionResponseDto"];
+export type Settlement = components["schemas"]["SettlementResponseDto"];
+export type PresignedUrlResponse = components["schemas"]["PresignedUrlResponseDto"];
 
-// Paged response type
-
-interface PagedResponse<T> {
-    content: T[];
-    totalElements: number;
-    totalPages: number;
-    size: number;
-    number: number;
-}
-
-export interface PresignedUrlResponse {
-    fileName: string;
-    presignedUrl: string;
-}
-
-export interface ProductResponse {
-    productId: number;
-    auctionId: number;
-    inspectionStatus: string;
-}
-
-export interface ProductRequest {
-    name: string;
-    category: string;
-    description: string;
-    productAuctionRequestDto: {
-        startPrice: number;
-        durationDays: number;
-    };
-    productImageRequestDto: {
-        imgUrl: string;
-        sortOrder: number;
-    }[];
-}
-
-
-// Auction types
-export interface Auction {
+// Expanded Auction type for Frontend compatibility (Adapter)
+// We use Partial/Required to force fields to be non-nullable where the UI expects them
+export interface Auction extends Omit<AuctionDetailResponseDto, "status" | "startTime" | "endTime" | "auctionId" | "productId"> {
     id: number;
+    auctionId: number;
+    productId: number;
     productName: string;
     productDescription: string;
     imageUrl?: string;
+    // Flat fields expected by UI
     startPrice: number;
     currentPrice: number;
     tickSize: number;
     bidCount: number;
-    status: 'SCHEDULED' | 'IN_PROGRESS' | 'ENDED';
+    // Required fields from DTO (overriding optionals)
+    status: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "WITHDRAWN";
     startTime: string;
     endTime: string;
-    highestBidderPublicId?: string;
-    isMyAuction?: boolean;
 }
 
+// Fix BidLog: UI expects mandatory fields
 export interface BidLog {
     id: number;
     publicId: string;
@@ -74,390 +46,382 @@ export interface BidLog {
     bidTime: string;
 }
 
-// MyBid type (내 입찰)
-export interface MyBid {
-    auctionId: number;
-    productName: string;
-    productImageUrl?: string;
-    startPrice: number;
-    currentPrice: number;
-    myBidAmount: number;
-    status: 'SCHEDULED' | 'IN_PROGRESS' | 'ENDED';
-    auctionEndTime: string;
-    isWinning: boolean;
-}
+// Helper to handle API responses and unwrap data
+async function handleResponseData<T>(promise: Promise<{ data?: unknown; error?: unknown }>, errorMessage: string): Promise<T> {
+    const { data, error } = await promise;
 
-// MySale type (내 판매)
-export interface MySale {
-    auctionId: number;
-    productId: number;
-    productName: string;
-    productImageUrl?: string;
-    startPrice: number;
-    currentPrice: number;
-    bidCount: number;
-    status: 'SCHEDULED' | 'IN_PROGRESS' | 'ENDED' | 'FAILED';
-    auctionEndTime: string;
-}
-
-// Member type
-export interface MemberInfo {
-    id: string;
-    publicId: string;
-    email: string;
-    nickname?: string;
-    role: 'USER' | 'SELLER' | 'ADMIN';
-    realName?: string;
-    contactPhone?: string;
-    address?: string;
-    addressDetail?: string;
-    zipCode?: string;
-    intro?: string;
-}
-
-// 본인인증 여부 체크 헬퍼
-export const isVerified = (member: MemberInfo | null): boolean => {
-    if (!member) return false;
-    return !!(member.realName && member.contactPhone);
-};
-
-// Payment types
-export interface WalletTransaction {
-    id: number;
-    transactionType: string;
-    balanceDelta: number;
-    balanceAfter: number;
-    createdAt: string;
-}
-
-// Helper: get auth token from localStorage
-const getAuthToken = (): string | null => {
-    if (typeof window !== 'undefined') {
-        return localStorage.getItem('accessToken');
+    if (error) {
+        throw new Error(getErrorMessage(error, errorMessage));
     }
-    return null;
-};
 
-// Helper: create headers with auth
-const createAuthHeaders = (): HeadersInit => {
-    const token = getAuthToken();
-    const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-    };
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+    if (data === undefined || data === null) {
+        throw new Error(errorMessage + " (No data received)");
     }
-    return headers;
-};
 
-// API Functions
+    // Check if it's a wrapper DTO (standard backend response format)
+    // Most responses are wrapped in SuccessResponseDto* which has 'data', 'status', 'message'
+    if (typeof data === 'object' && 'data' in data && 'status' in data) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const status = (data as any).status;
+        if (typeof status === 'number') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return (data as any).data;
+        }
+    }
+
+    // If it's a primitive (like number for count endpoints) or non-wrapped object (like PagedResponse)
+    return data as T;
+}
+
 export const api = {
-    // 경매 목록 조회 (mock - 실제 API 연동 시 수정)
-    getAuctions: async (): Promise<Auction[]> => {
-        // TODO: 실제 API 연동 시 아래 주석 해제
-        // const res = await fetch(`${API_BASE}/api/v1/auctions`);
-        // return res.json();
-
-        // Mock data for demo
-        return [
-            {
-                id: 1,
-                productName: "레고 스타워즈 밀레니엄 팔콘 75192",
-                productDescription: "7,541 피스의 대형 UCS 세트. 미개봉 상태.",
-                imageUrl: "https://images.unsplash.com/photo-1585366119957-e9730b6d0f60?w=400",
-                startPrice: 800000,
-                currentPrice: 1250000,
-                tickSize: 10000,
-                bidCount: 23,
-                status: 'IN_PROGRESS',
-                startTime: "2026-01-20T10:00:00",
-                endTime: "2026-01-22T22:00:00"
-            },
-            {
-                id: 2,
-                productName: "레고 테크닉 포르쉐 911 GT3 RS",
-                productDescription: "2,704 피스. 완벽한 디테일의 슈퍼카.",
-                imageUrl: "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=400",
-                startPrice: 350000,
-                currentPrice: 520000,
-                tickSize: 5000,
-                bidCount: 15,
-                status: 'IN_PROGRESS',
-                startTime: "2026-01-19T14:00:00",
-                endTime: "2026-01-21T20:00:00"
-            },
-            {
-                id: 3,
-                productName: "레고 해리포터 호그와트 성",
-                productDescription: "6,020 피스. 마법의 세계가 현실로.",
-                imageUrl: "https://images.unsplash.com/photo-1608889175123-8ee362201f81?w=400",
-                startPrice: 500000,
-                currentPrice: 780000,
-                tickSize: 5000,
-                bidCount: 31,
-                status: 'IN_PROGRESS',
-                startTime: "2026-01-18T09:00:00",
-                endTime: "2026-01-20T21:00:00"
-            },
-            {
-                id: 4,
-                productName: "레고 닌자고 시티 가든",
-                productDescription: "5,685 피스. 닌자고 10주년 기념 세트.",
-                imageUrl: "https://images.unsplash.com/photo-1560961911-ba7ef651a56c?w=400",
-                startPrice: 300000,
-                currentPrice: 300000,
-                tickSize: 5000,
-                bidCount: 0,
-                status: 'SCHEDULED',
-                startTime: "2026-01-25T10:00:00",
-                endTime: "2026-01-27T22:00:00"
-            }
-        ];
+    // 상품
+    createProduct: async (publicId: string, body: components["schemas"]["ProductRequestDto"]) => {
+        return handleResponseData<components["schemas"]["ProductResponseDto"]>(
+            client.POST("/api/v1/products", {
+                params: { query: { publicId } },
+                body
+            }),
+            "상품 등록에 실패했습니다."
+        );
     },
 
-    // 경매 상세 조회
-    getAuction: async (id: number): Promise<Auction> => {
-        const res = await fetch(`${API_BASE}/api/v1/auctions/${id}`, {
-            headers: createAuthHeaders(),
-        });
-        if (!res.ok) {
-            throw new Error(`Failed to fetch auction: ${res.status}`);
-        }
-        const json: SuccessResponse<Auction> = await res.json();
-        return json.data;
+    updateProduct: async (productId: number, publicId: string, body: components["schemas"]["ProductUpdateDto"]) => {
+        return handleResponseData<components["schemas"]["ProductUpdateResponseDto"]>(
+            client.PATCH("/api/v1/products/{productId}", {
+                params: { path: { productId }, query: { publicId } },
+                body
+            }),
+            "상품 수정에 실패했습니다."
+        );
     },
 
-    // 입찰하기
-    createBid: async (auctionId: number, bidAmount: number): Promise<void> => {
-        const res = await fetch(`${API_BASE}/api/v1/auctions/${auctionId}/bids`, {
-            method: 'POST',
-            headers: createAuthHeaders(),
-            body: JSON.stringify({ bidAmount })
-        });
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.message || '입찰 실패');
-        }
+    getPresignedUrl: async (body: components["schemas"]["PresignedUrlRequestDto"]) => {
+        return handleResponseData<components["schemas"]["PresignedUrlResponseDto"]>(
+            client.POST("/api/v1/products/images/presigned-url", { body }),
+            "업로드 권한을 가져오지 못했습니다."
+        );
     },
 
-    // 입찰 기록 조회
-    getBidLogs: async (auctionId: number): Promise<BidLog[]> => {
-        const res = await fetch(`${API_BASE}/api/v1/auctions/${auctionId}/bids`);
-        if (!res.ok) {
-            throw new Error(`Failed to fetch bid logs: ${res.status}`);
-        }
-        const json: SuccessResponse<PagedResponse<BidLog>> = await res.json();
-        return json.data?.content || [];
-    },
-
-    // 내 입찰 목록 조회
-    getMyBids: async (auctionStatus?: string): Promise<PagedResponse<MyBid>> => {
-        try {
-            let url = `${API_BASE}/api/v1/members/me/bids`;
-            if (auctionStatus) {
-                url += `?auctionStatus=${auctionStatus}`;
-            }
-            const res = await fetch(url, {
-                headers: createAuthHeaders(),
-            });
-            if (!res.ok) throw new Error('API error');
-            const json: SuccessResponse<PagedResponse<MyBid>> = await res.json();
-            return json.data || { content: [], totalElements: 0, totalPages: 0, size: 0, number: 0 };
-        } catch {
-            console.log('getMyBids API 실패, Mock 데이터 사용');
-
-            // Mock 데이터 반환
-            return {
-                content: [
-                    { auctionId: 1, productName: '레고 스타워즈 밀레니엄 팔콘', startPrice: 800000, currentPrice: 1250000, myBidAmount: 1250000, status: 'IN_PROGRESS', auctionEndTime: '2026-01-22T22:00:00', isWinning: true },
-                    { auctionId: 2, productName: '레고 테크닉 포르쉐 911', startPrice: 350000, currentPrice: 520000, myBidAmount: 480000, status: 'IN_PROGRESS', auctionEndTime: '2026-01-21T20:00:00', isWinning: false },
-                ],
-                totalElements: 2, totalPages: 1, size: 20, number: 0
-            };
-        }
-    },
-
-    // 내 판매 목록 조회 (판매자 전용)
-    getMySales: async (filter: string = 'ALL'): Promise<PagedResponse<MySale>> => {
-        try {
-            const res = await fetch(`${API_BASE}/api/v1/members/me/sales?filter=${filter}`, {
-                headers: createAuthHeaders(),
-            });
-            if (!res.ok) throw new Error('API error');
-            const json: SuccessResponse<PagedResponse<MySale>> = await res.json();
-            return json.data || { content: [], totalElements: 0, totalPages: 0, size: 0, number: 0 };
-        } catch {
-            console.log('getMySales API 실패, Mock 데이터 사용');
-
-            return {
-                content: [
-                    { auctionId: 3, productId: 3, productName: '레고 해리포터 호그와트 성', startPrice: 500000, currentPrice: 780000, bidCount: 31, status: 'IN_PROGRESS', auctionEndTime: '2026-01-20T21:00:00' },
-                    { auctionId: 4, productId: 4, productName: '레고 닌자고 시티 가든', startPrice: 300000, currentPrice: 300000, bidCount: 0, status: 'FAILED', auctionEndTime: '2026-01-18T22:00:00' },
-                ],
-                totalElements: 2, totalPages: 1, size: 10, number: 0
-            };
-        }
-    },
-
-    // 엑세스 토큰 재발급
-    refreshAccessToken: async () => {
-        const { data, error } = await client.POST("/api/v1/auth/refresh");
-
-        if (error || !data) {
-            throw new Error(getErrorMessage(error, "세션이 만료되었습니다. 다시 로그인해주세요."));
-        }
-
-        const tokenData = data.data;
-
-        if (tokenData && tokenData.accessToken) {
-            useAuthStore.getState().setAccessToken(tokenData.accessToken);
-        }
-
-        return tokenData;
-    },
-
-    // 로그아웃
-    logout: async () => {
-        const { data, error } = await client.POST("/api/v1/auth/logout", {});
-
-        if (error) {
-            throw new Error(getErrorMessage(error, "로그아웃 처리 중 오류가 발생했습니다."));
-        }
-        return data;
-    },
-
-    // 내 정보 조회
-    getMe: async () => {
-        const { data, error } = await client.GET("/api/v1/members/me");
-
-        if (error || !data) {
-            throw new Error(getErrorMessage(error, "내 정보를 불러오는 중 오류가 발생했습니다."));
-        }
-
-        return data.data;
-    },
-
-    // 예치금 결제 요쳥
-    requestPayment: async (amount: number) => {
-        const { data, error } = await client.POST("/api/v1/payments/charges", {
-            body: { amount },
-        });
-
-        if (error || !data) {
-            throw new Error(getErrorMessage(error, "결제 요청 중 오류가 발생했습니다."));
-        }
-
-        return data.data;
-    },
-
-    // 지갑 거래 내역 조회
-    getWalletTransactions: async (memberId: string): Promise<WalletTransaction[]> => {
-        const res = await fetch(`${API_BASE}/api/v1/payments/me/wallet-transactions?memberId=${memberId}`, {
-            headers: createAuthHeaders(),
-        });
-        const json: SuccessResponse<PagedResponse<WalletTransaction>> = await res.json();
-        return json.data?.content || [];
-    },
-
-    // S3 Presigned URL 발급
-    getPresignedUrl: async (payload: { fileName: string; contentType: string }) => {
-        const { data, error } = await client.POST("/api/v1/products/images/presigned-url", {
-            body: payload,
-        });
-        if (error || !data) {
-            throw new Error(getErrorMessage(error, "업로드 권한을 가져오지 못했습니다."));
-        }
-        return data.data;
-    },
-
-    // 판매자 등록
-    promoteSeller: async () => {
-        const { data, error } = await client.POST("/api/v1/members/me/seller");
-
-        if (error) {
-            throw new Error(getErrorMessage(error, "판매자 등록에 실패했습니다."));
-        }
-
-        return data;
-    },
-
-    // 실명/연락처 (본인 인증)
-    updateIdentity: async (payload: components["schemas"]["MemberUpdateIdentityRequestDto"]) => {
-        const { data, error } = await client.PATCH("/api/v1/members/me/identity", {
-            body: payload,
-        });
-        if (error || !data) throw new Error(getErrorMessage(error, "본인 인증 실패"));
-        return data.data;
-    },
-
-    // 회원 정보 수정
-    updateMemberInfo: async (payload: components["schemas"]["MemberUpdateRequestDto"]) => {
-        const { data, error } = await client.PATCH("/api/v1/members/me", {
-            body: payload,
-        });
-        if (error || !data) throw new Error(getErrorMessage(error, "회원 정보 수정 실패"));
-        return data.data;
-    },
-
-    // 상품 및 경매 등록
-    createProduct: async (
-        memberPublicId: string,
-        productData: components["schemas"]["ProductRequestDto"]
+    // 경매
+    getAuctions: async (
+        condition: components["schemas"]["AuctionSearchCondition"] = {},
+        pageable: components["schemas"]["Pageable"] = { page: 0, size: 10 }
     ) => {
-        const { data, error } = await client.POST("/api/v1/products", {
-            params: {
-                query: { publicId: memberPublicId }
-            },
-            body: productData,
-        });
-
-        if (error || !data) {
-            throw new Error(getErrorMessage(error, "상품 등록에 실패했습니다."));
-        }
-
-        return data.data;
+        return handleResponseData<components["schemas"]["PagedResponseDtoAuctionListResponseDto"]>(
+            client.GET("/api/v1/auctions", {
+                params: { query: { condition, pageable } }
+            }),
+            "경매 목록을 불러오는 데 실패했습니다."
+        );
     },
 
+    // Adapter Implementation: Merge Detail + List Summary
+    getAuction: async (auctionId: number): Promise<Auction> => {
+        const [detail, listWrapper] = await Promise.all([
+            handleResponseData<components["schemas"]["AuctionDetailResponseDto"]>(
+                client.GET("/api/v1/auctions/{auctionId}", {
+                    params: { path: { auctionId } }
+                }),
+                "경매 정보를 불러오는 데 실패했습니다."
+            ),
+            // Fetch summary to get product name/image
+            handleResponseData<components["schemas"]["PagedResponseDtoAuctionListResponseDto"]>(
+                client.GET("/api/v1/auctions", {
+                    params: { query: { condition: { ids: [auctionId] }, pageable: { page: 0, size: 1 } } }
+                }),
+                "경매 요약 정보를 불러오는 데 실패했습니다."
+            )
+        ]);
 
-    // 예치금 결제 승인
-    confirmPayment: async (paymentData: {
-        paymentKey: string;
-        orderId: string;
-        amount: number;
-    }) => {
-        const { data, error } = await client.POST("/api/v1/payments/charges/confirm", {
-            body: paymentData,
-        });
+        const summary = listWrapper.data?.[0];
 
-        if (error || !data) {
-            throw new Error(getErrorMessage(error, "결제 승인 중 오류가 발생했습니다."));
-        }
-
-        return data.data;
+        return {
+            ...detail,
+            id: detail.auctionId || auctionId,
+            auctionId: detail.auctionId || auctionId,
+            productId: detail.productId || 0,
+            productName: summary?.productName || "상품명 없음",
+            productDescription: "", // Not available in API
+            imageUrl: summary?.thumbnailUrl,
+            startPrice: detail.price?.startPrice || 0,
+            currentPrice: detail.price?.currentPrice || 0,
+            tickSize: detail.price?.tickSize || 0,
+            bidCount: summary?.bidsCount || 0,
+            status: detail.status || "SCHEDULED",
+            startTime: detail.startTime || "",
+            endTime: detail.endTime || ""
+        };
     },
 
-    // 보증금 계산 (시작가의 10%)
+    createAuction: async (productId: number, publicId: string, body: components["schemas"]["ProductAuctionRequestDto"]) => {
+        return handleResponseData<number>(
+            client.POST("/api/v1/internal/auctions/{productId}/{publicId}", {
+                params: { path: { productId, publicId } },
+                body
+            }),
+            "경매 생성에 실패했습니다."
+        );
+    },
+
+    updateAuction: async (publicId: string, body: components["schemas"]["ProductAuctionUpdateDto"]) => {
+        return handleResponseData<number>(
+            client.PATCH("/api/v1/internal/auctions/{publicId}", {
+                params: { path: { publicId } },
+                body
+            }),
+            "경매 수정에 실패했습니다."
+        );
+    },
+
+    withdrawAuction: async (auctionId: number) => {
+        return handleResponseData<components["schemas"]["AuctionWithdrawResponseDto"]>(
+            client.POST("/api/v1/auctions/{auctionId}/withdraw", {
+                params: { path: { auctionId } }
+            }),
+            "판매 포기에 실패했습니다."
+        );
+    },
+
+    determineStartAuction: async (auctionId: number) => {
+        return handleResponseData<number>(
+            client.PATCH("/api/v1/auctions/{auctionId}/startTime", {
+                params: { path: { auctionId } }
+            }),
+            "경매 시작 시간 결정에 실패했습니다."
+        );
+    },
+
+    getAuctionSubscribers: async (auctionId: number) => {
+        return handleResponseData<number>(
+            client.GET("/api/v1/auctions/{auctionId}/subscribers/count", {
+                params: { path: { auctionId } }
+            }),
+            "관심 인원 수 조회 실패"
+        );
+    },
+
+    // 입찰
+    getBids: async (auctionId: number, pageable: components["schemas"]["Pageable"] = { page: 0, size: 10 }) => {
+        const data = await handleResponseData<components["schemas"]["PagedResponseDtoBidLogResponseDto"]>(
+            client.GET("/api/v1/auctions/{auctionId}/bids", {
+                params: { path: { auctionId }, query: { pageable } }
+            }),
+            "입찰 기록을 불러오는 데 실패했습니다."
+        );
+        return (data.data || []) as BidLog[];
+    },
+
+    // 호환성 유지를 위해 이름 변경 (getBidLogs -> getBids 사용 권장)
+    getBidLogs: async (auctionId: number) => {
+        const data = await handleResponseData<components["schemas"]["PagedResponseDtoBidLogResponseDto"]>(
+            client.GET("/api/v1/auctions/{auctionId}/bids", {
+                params: { path: { auctionId }, query: { pageable: { page: 0, size: 100 } } }
+            }),
+            "입찰 기록을 불러오는 데 실패했습니다."
+        );
+        return (data.data || []) as BidLog[];
+    },
+
+    createBid: async (auctionId: number, bidAmount: number) => {
+        return handleResponseData<components["schemas"]["BidResponseDto"]>(
+            client.POST("/api/v1/auctions/{auctionId}/bids", {
+                params: { path: { auctionId } },
+                body: { bidAmount }
+            }),
+            "입찰에 실패했습니다."
+        );
+    },
+
+    // 낙찰/주문
+    getAuctionOrder: async (auctionId: number) => {
+        return handleResponseData<components["schemas"]["AuctionOrderResponseDto"]>(
+            client.GET("/api/v1/auctions/{auctionId}/order", {
+                params: { path: { auctionId } }
+            }),
+            "낙찰 상세 정보를 불러오는 데 실패했습니다."
+        );
+    },
+
+    auctionFinalPayment: async (auctionId: number, body: components["schemas"]["AuctionFinalPaymentRequestDto"]) => {
+        return handleResponseData<components["schemas"]["AuctionFinalPaymentResponseDto"]>(
+            client.POST("/api/v1/payments/auctions/{auctionId}", {
+                params: { path: { auctionId } },
+                body
+            }),
+            "낙찰 결제에 실패했습니다."
+        );
+    },
+
+    // 회원
+    getMe: async () => {
+        return handleResponseData<components["schemas"]["MemberMeResponseDto"]>(
+            client.GET("/api/v1/members/me"),
+            "내 정보를 불러오는 중 오류가 발생했습니다."
+        );
+    },
+
+    join: async (body: components["schemas"]["MemberJoinRequestDto"]) => {
+        return handleResponseData<components["schemas"]["MemberJoinResponseDto"]>(
+            client.POST("/api/v1/members/me", { body }),
+            "회원가입에 실패했습니다."
+        );
+    },
+
+    updateMe: async (body: components["schemas"]["MemberUpdateRequestDto"]) => {
+        return handleResponseData<components["schemas"]["MemberUpdateResponseDto"]>(
+            client.PATCH("/api/v1/members/me", { body }),
+            "회원 정보 수정에 실패했습니다."
+        );
+    },
+
+    // Alias for compatibility
+    updateMemberInfo: async (body: components["schemas"]["MemberUpdateRequestDto"]) => {
+        return api.updateMe(body);
+    },
+
+    updateProfile: async (body: components["schemas"]["MemberUpdateRequestDto"]) => {
+        return api.updateMe(body);
+    },
+
+    updateIdentity: async (body: components["schemas"]["MemberUpdateIdentityRequestDto"]) => {
+        return handleResponseData<components["schemas"]["MemberUpdateResponseDto"]>(
+            client.PATCH("/api/v1/members/me/identity", { body }),
+            "본인 인증 정보 수정에 실패했습니다."
+        );
+    },
+
+    promoteSeller: async () => {
+        return handleResponseData<void>(
+            client.POST("/api/v1/members/me/seller"),
+            "판매자 등록에 실패했습니다."
+        );
+    },
+
+    verifyParticipation: async () => {
+        return handleResponseData<void>(
+            client.GET("/api/v1/members/participation"),
+            "입찰 참여 자격 확인에 실패했습니다."
+        );
+    },
+
+    // 마이페이지 (내 활동)
+    getMySales: async (filter: "ALL" | "ONGOING" | "COMPLETED" | "ACTION_REQUIRED" = "ALL", pageable: components["schemas"]["Pageable"] = { page: 0, size: 10 }) => {
+        return handleResponseData<components["schemas"]["PagedResponseDtoMySaleResponseDto"]>(
+            client.GET("/api/v1/members/me/sales", {
+                params: { query: { filter, pageable } }
+            }),
+            "나의 판매 내역을 불러오는 데 실패했습니다."
+        );
+    },
+
+    getMyBids: async (auctionStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "WITHDRAWN", pageable: components["schemas"]["Pageable"] = { page: 0, size: 10 }) => {
+        return handleResponseData<components["schemas"]["PagedResponseDtoMyBidResponseDto"]>(
+            client.GET("/api/v1/members/me/bids", {
+                params: { query: { auctionStatus, pageable } }
+            }),
+            "나의 입찰 내역을 불러오는 데 실패했습니다."
+        );
+    },
+
+    getMyBookmarks: async (pageable: components["schemas"]["Pageable"] = { page: 0, size: 10 }) => {
+        return handleResponseData<components["schemas"]["PagedResponseDtoWishlistListResponseDto"]>(
+            client.GET("/api/v1/members/me/bookmarks", {
+                params: { query: { pageable } }
+            }),
+            "관심 목록을 불러오는 데 실패했습니다."
+        );
+    },
+
+    addBookmark: async (auctionId: number) => {
+        return handleResponseData<components["schemas"]["WishlistAddResponseDto"]>(
+            client.POST("/api/v1/auctions/{auctionId}/bookmarks", {
+                params: { path: { auctionId } }
+            }),
+            "관심 등록 실패"
+        );
+    },
+
+    removeBookmark: async (auctionId: number) => {
+        return handleResponseData<components["schemas"]["WishlistRemoveResponseDto"]>(
+            client.DELETE("/api/v1/auctions/{auctionId}/bookmarks", {
+                params: { path: { auctionId } }
+            }),
+            "관심 해제 실패"
+        );
+    },
+
+    // 결제/지갑
+    requestPayment: async (amount: number) => {
+        return handleResponseData<components["schemas"]["PaymentRequestResponseDto"]>(
+            client.POST("/api/v1/payments/charges", {
+                body: { amount }
+            }),
+            "결제 요청 중 오류가 발생했습니다."
+        );
+    },
+
+    confirmPayment: async (body: components["schemas"]["PaymentConfirmRequestDto"]) => {
+        return handleResponseData<components["schemas"]["PaymentConfirmResponseDto"]>(
+            client.POST("/api/v1/payments/charges/confirm", { body }),
+            "결제 승인 중 오류가 발생했습니다."
+        );
+    },
+
+    getWalletTransactions: async (page: number = 0, size: number = 20, transactionType?: components["schemas"]["WalletTransactionResponseDto"]["type"]) => {
+        const data = await handleResponseData<components["schemas"]["PagedResponseDtoWalletTransactionResponseDto"]>(
+            client.GET("/api/v1/payments/me/wallet-transactions", {
+                params: { query: { page, size, transactionType } }
+            }),
+            "지갑 내역 조회 실패"
+        );
+        return data.data || [];
+    },
+
+    getSettlements: async (page: number = 0, size: number = 20, status?: components["schemas"]["SettlementResponseDto"]["status"]) => {
+        const data = await handleResponseData<components["schemas"]["PagedResponseDtoSettlementResponseDto"]>(
+            client.GET("/api/v1/payments/me/settlements", {
+                params: { query: { page, size, status } }
+            }),
+            "정산 내역 조회 실패"
+        );
+        return data.data || [];
+    },
+
+    // 인증
+    login: async (body: components["schemas"]["TokenIssueDto"]) => {
+        return handleResponseData<string>(
+            client.POST("/api/v1/auth/test/login", { body }),
+            "로그인 실패"
+        );
+    },
+
+    refreshAccessToken: async () => {
+        return authApi.refreshAccessToken();
+    },
+
+    logout: async () => {
+        return handleResponseData<void>(
+            client.POST("/api/v1/auth/logout"),
+            "로그아웃 실패"
+        );
+    },
+
+    // Helpers (유지)
     calculateDeposit: (startPrice: number): number => {
         return Math.floor(startPrice * 0.1);
     },
 
-    // 호가 단위 계산
-    // 10만원 이하: 1천원 단위
-    // 10만원~100만원: 5천원 단위
-    // 100만원 이상: 1만원 단위
     getBidIncrement: (currentPrice: number): number => {
-        if (currentPrice < 100000) return 1000;        // 10만원 이하: 1천원
-        if (currentPrice < 1000000) return 5000;       // 100만원 이하: 5천원
-        return 10000;                                   // 100만원 이상: 1만원
+        if (currentPrice < 100000) return 1000;
+        if (currentPrice < 1000000) return 5000;
+        return 10000;
     },
 
-    // 다음 최소 입찰가 계산
     getNextMinBid: (currentPrice: number): number => {
         const increment = api.getBidIncrement(currentPrice);
         return currentPrice + increment;
     },
 
-    // 입찰 가능 금액 옵션 생성 (3개)
     getBidOptions: (currentPrice: number): number[] => {
         const increment = api.getBidIncrement(currentPrice);
         return [
@@ -467,27 +431,13 @@ export const api = {
         ];
     },
 
-    // SSE 구독 URL 생성
     getAuctionSubscribeUrl: (auctionId: number): string => {
         return `${API_BASE}/api/v1/auctions/${auctionId}/subscribe`;
     },
 
-    // 프로필 업데이트 (본인인증 포함)
-    updateProfile: async (data: {
-        realName?: string;
-        contactPhone?: string;
-        nickname?: string;
-        address?: string;
-        addressDetail?: string;
-        zipCode?: string;
-        intro?: string;
-    }): Promise<void> => {
-        const res = await fetch(`${API_BASE}/api/v1/members/me`, {
-            method: 'PUT',
-            headers: createAuthHeaders(),
-            body: JSON.stringify(data)
-        });
-        if (!res.ok) throw new Error('프로필 업데이트 실패');
+    // 본인인증 여부 체크 헬퍼
+    isVerified: (member: MemberInfo | null | undefined): boolean => {
+        if (!member) return false;
+        return !!(member.realNameMasked && member.contactPhoneMasked); // Masked types in response
     }
 };
-

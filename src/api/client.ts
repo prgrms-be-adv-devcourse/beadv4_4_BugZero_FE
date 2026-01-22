@@ -1,18 +1,37 @@
 import createClient from "openapi-fetch";
-import { paths, components } from "./schema"; // schema 경로를 프로젝트에 맞게 수정하세요
+import { paths } from "./schema";
 import { useAuthStore } from "@/store/useAuthStore";
-import { api } from "@/lib/api";
+import { authApi } from "./auth";
 
 export const client = createClient<paths>({
     baseUrl: process.env.NEXT_PUBLIC_API_URL,
     credentials: "include",
+    querySerializer: (params) => {
+        const searchParams = new URLSearchParams();
+
+        const addParam = (key: string, value: unknown) => {
+            if (value === undefined || value === null) return;
+            if (Array.isArray(value)) {
+                value.forEach(v => searchParams.append(key, String(v)));
+            } else {
+                searchParams.append(key, String(value));
+            }
+        };
+
+        for (const [key, value] of Object.entries(params)) {
+            // condition과 pageable 객체는 펼쳐서 파라미터로 추가 (Spring Backend 호환)
+            if (key === 'condition' || key === 'pageable') {
+                if (value && typeof value === 'object') {
+                    Object.entries(value).forEach(([k, v]) => addParam(k, v));
+                }
+            } else {
+                addParam(key, value);
+            }
+        }
+
+        return searchParams.toString();
+    }
 });
-
-// 1. 리프레시 응답의 정확한 데이터 타입 추출 (SuccessResponseDtoMapStringString['data'])
-type RefreshResponseData = components["schemas"]["SuccessResponseDtoMapStringString"]["data"];
-
-// 2. Promise에 구체적인 타입 적용 (any 제거)
-let refreshPromise: Promise<RefreshResponseData | undefined> | null = null;
 
 client.use({
     async onRequest({ request }) {
@@ -23,17 +42,12 @@ client.use({
 
         if (!token) {
             try {
-                // ✅ 싱글톤 Promise 패턴 적용
-                if (!refreshPromise) {
-                    refreshPromise = api.refreshAccessToken().finally(() => {
-                        refreshPromise = null;
-                    });
-                }
-
-                const tokenData = await refreshPromise;
+                // authApi 내부에서 싱글톤 처리되므로 단순히 호출만 하면 됨
+                const tokenData = await authApi.refreshAccessToken();
                 token = tokenData?.accessToken || null;
-            } catch (error) {
-                console.warn("Silent refresh failed or no session");
+            } catch {
+                // 토큰 없음 - 로그인 필요
+                // console.warn("Silent refresh failed or no session");
             }
         }
 
@@ -48,13 +62,8 @@ client.use({
         // 401 만료 시 자동 재시도
         if (response.status === 401 && !request.url.includes('/api/v1/auth/refresh')) {
             try {
-                if (!refreshPromise) {
-                    refreshPromise = api.refreshAccessToken().finally(() => {
-                        refreshPromise = null;
-                    });
-                }
-
-                const tokenData = await refreshPromise;
+                // authApi 내부에서 싱글톤 처리됨.
+                const tokenData = await authApi.refreshAccessToken();
 
                 if (tokenData?.accessToken) {
                     const newToken = tokenData.accessToken;
@@ -65,7 +74,7 @@ client.use({
 
                     return fetch(retryRequest);
                 }
-            } catch (error) {
+            } catch {
                 useAuthStore.getState().clearAuth();
             }
         }

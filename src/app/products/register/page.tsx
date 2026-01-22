@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -43,24 +43,32 @@ export default function ProductRegisterPage() {
         auctionDuration: '3',
     });
 
-    useEffect(() => {
-        loadMember();
-    }, []);
-
-    async function loadMember() {
+    const loadMember = useCallback(async () => {
         try {
             const info = await api.getMe();
             if (info) {
                 setMemberInfo(info);
-
-                return info; // 다음 체이닝을 위해 반환
+                return info;
             }
-        } catch (error) {
+        } catch {
             console.error('Failed to load member info');
             router.push('/login');
         }
         return null;
-    }
+    }, [router]);
+
+    useEffect(() => {
+        loadMember();
+    }, [loadMember]);
+
+    // loadMember가 다른 곳(재검증 등)에서도 쓰이므로 밖으로 빼는 게 좋다면, useCallback을 써야 함.
+    // 하지만 현재 코드 구조상 useEffect 안에서만 초기 호출되고,
+    // 나중에 verifyModal 등에서 다시 호출됨.
+    // 따라서 중복을 피하기 위해 함수 정의는 밖으로 두고, useCallback 처리 하거나
+    // 그냥 eslint-disable을 하는게 가장 간단하지만, 정석은 useCallback임.
+
+    // 재사용을 위해 원래 함수 유지 + lint fix:
+    // 그러나 useEffect가 loadMember를 의존성으로 가지려면 loadMember가 useCallback이어야 함.
 
     const categories: { value: ProductForm['category']; label: string; icon: string }[] = [
         { value: '스타워즈', label: '스타워즈', icon: '⭐' },
@@ -162,7 +170,7 @@ export default function ProductRegisterPage() {
             alert('상품이 등록되었습니다! 검수 승인 후 경매가 시작됩니다.');
             router.push('/mypage');
 
-        } catch (error: unknown) {
+        } catch (error) {
             const message = getErrorMessage(error, "상품 등록 중 오류가 발생했습니다.");
             alert(message);
         } finally {
