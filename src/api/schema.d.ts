@@ -204,6 +204,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 토큰 재발급
+         * @description 리프레시 토큰으로 액세스 토큰을 재발급합니다
+         */
+        post: operations["refresh"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 로그아웃
+         * @description 리프레시 토큰을 폐기하고 액세스 토큰을 블랙리스트 처리합니다
+         */
+        post: operations["logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auctions/{auctionId}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 판매 포기
+         * @description 경매 실패/유찰 시 상품을 더 이상 경매에 올리지 않습니다.
+         */
+        post: operations["withdraw"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auctions/{auctionId}/bookmarks": {
         parameters: {
             query?: never;
@@ -218,7 +278,11 @@ export interface paths {
          * @description 특정 경매를 관심 목록에 추가합니다
          */
         post: operations["addBookmark"];
-        delete?: never;
+        /**
+         * 관심 경매 해제
+         * @description 특정 경매를 관심 목록에서 제거합니다
+         */
+        delete: operations["removeBookmark"];
         options?: never;
         head?: never;
         patch?: never;
@@ -360,6 +424,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/members/participation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 회원 입찰시 필수 정보 존재 확인
+         * @description 회원 입찰시 필요 정보(주소, 본인인증) 존재 확인
+         */
+        get: operations["verifyParticipation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/members/me/sales": {
         parameters: {
             query?: never;
@@ -372,6 +456,26 @@ export interface paths {
          * @description 내가 등록한 경매 물품 목록을 필터(진행중/종료 등)에 따라 조회합니다. (판매자 권한 필요)
          */
         get: operations["getMySales"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/members/me/bookmarks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 내 관심 경매 목록 조회
+         * @description 내가 찜한 경매 목록을 조회합니다
+         */
+        get: operations["getMyBookmarks"];
         put?: never;
         post?: never;
         delete?: never;
@@ -543,26 +647,6 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auctions/{bookmarkId}/bookmarks": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * 관심 경매 해제
-         * @description 특정 경매를 관심 목록에서 제거합니다
-         */
-        delete: operations["removeBookmark"];
         options?: never;
         head?: never;
         patch?: never;
@@ -749,6 +833,31 @@ export interface components {
             message?: string;
             data?: string;
         };
+        SuccessResponseDtoMapStringString: {
+            /** Format: int32 */
+            status?: number;
+            message?: string;
+            data?: {
+                [key: string]: string;
+            };
+        };
+        AuctionWithdrawResponseDto: {
+            /** Format: int64 */
+            auctionId?: number;
+            /** Format: int64 */
+            productId?: number;
+            /** @enum {string} */
+            beforeStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "WITHDRAWN";
+            /** @enum {string} */
+            currentStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "WITHDRAWN";
+            message?: string;
+        };
+        SuccessResponseDtoAuctionWithdrawResponseDto: {
+            /** Format: int32 */
+            status?: number;
+            message?: string;
+            data?: components["schemas"]["AuctionWithdrawResponseDto"];
+        };
         SuccessResponseDtoWishlistAddResponseDto: {
             /** Format: int32 */
             status?: number;
@@ -885,6 +994,8 @@ export interface components {
             holdingDelta?: number;
             /** Format: int32 */
             balance?: number;
+            /** Format: int32 */
+            holdingAmount?: number;
             /** @enum {string} */
             referenceType?: "PAYMENT" | "DEPOSIT" | "AUCTION_ORDER" | "SETTLEMENT" | "REFUND";
             /** Format: int64 */
@@ -959,7 +1070,7 @@ export interface components {
             /** Format: int32 */
             bidCount?: number;
             /** @enum {string} */
-            auctionStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED";
+            auctionStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "WITHDRAWN";
             /** @enum {string} */
             tradeStatus?: "PROCESSING" | "SUCCESS" | "FAILED";
             /** Format: date-time */
@@ -969,36 +1080,6 @@ export interface components {
         PagedResponseDtoMySaleResponseDto: {
             data?: components["schemas"]["MySaleResponseDto"][];
             pageDto?: components["schemas"]["PageDto"];
-        };
-        MyBidResponseDto: {
-            /** Format: int64 */
-            bidId?: number;
-            /** Format: int64 */
-            auctionId?: number;
-            /** Format: int64 */
-            productId?: number;
-            /** Format: int64 */
-            bidAmount?: number;
-            /** Format: date-time */
-            bidTime?: string;
-            /** @enum {string} */
-            auctionStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED";
-            /** Format: int64 */
-            currentPrice?: number;
-            /** Format: date-time */
-            endTime?: string;
-        };
-        PagedResponseDtoMyBidResponseDto: {
-            data?: components["schemas"]["MyBidResponseDto"][];
-            pageDto?: components["schemas"]["PageDto"];
-        };
-        AuctionSearchCondition: {
-            ids?: number[];
-            keyword?: string;
-            category?: string;
-            /** @enum {string} */
-            status?: "SCHEDULED" | "IN_PROGRESS" | "ENDED";
-            sort?: string;
         };
         AuctionListResponseDto: {
             /** Format: int64 */
@@ -1015,9 +1096,48 @@ export interface components {
             /** Format: int32 */
             bidsCount?: number;
             /** @enum {string} */
-            auctionStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED";
+            auctionStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "WITHDRAWN";
             /** Format: date-time */
             endTime?: string;
+        };
+        PagedResponseDtoWishlistListResponseDto: {
+            data?: components["schemas"]["WishlistListResponseDto"][];
+            pageDto?: components["schemas"]["PageDto"];
+        };
+        WishlistListResponseDto: {
+            /** Format: int64 */
+            bookmarkId?: number;
+            auctionInfo?: components["schemas"]["AuctionListResponseDto"];
+        };
+        MyBidResponseDto: {
+            /** Format: int64 */
+            bidId?: number;
+            /** Format: int64 */
+            auctionId?: number;
+            /** Format: int64 */
+            productId?: number;
+            /** Format: int64 */
+            bidAmount?: number;
+            /** Format: date-time */
+            bidTime?: string;
+            /** @enum {string} */
+            auctionStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "WITHDRAWN";
+            /** Format: int64 */
+            currentPrice?: number;
+            /** Format: date-time */
+            endTime?: string;
+        };
+        PagedResponseDtoMyBidResponseDto: {
+            data?: components["schemas"]["MyBidResponseDto"][];
+            pageDto?: components["schemas"]["PageDto"];
+        };
+        AuctionSearchCondition: {
+            ids?: number[];
+            keyword?: string;
+            category?: string;
+            /** @enum {string} */
+            status?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "WITHDRAWN";
+            sort?: string;
         };
         PagedResponseDtoAuctionListResponseDto: {
             data?: components["schemas"]["AuctionListResponseDto"][];
@@ -1029,7 +1149,7 @@ export interface components {
             /** Format: int64 */
             productId?: number;
             /** @enum {string} */
-            status?: "SCHEDULED" | "IN_PROGRESS" | "ENDED";
+            status?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "WITHDRAWN";
             /** Format: date-time */
             startTime?: string;
             /** Format: date-time */
@@ -1436,6 +1556,76 @@ export interface operations {
             };
         };
     };
+    refresh: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path?: never;
+            cookie?: {
+                refreshToken?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoMapStringString"];
+                };
+            };
+        };
+    };
+    logout: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path?: never;
+            cookie?: {
+                refreshToken?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoVoid"];
+                };
+            };
+        };
+    };
+    withdraw: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                auctionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoAuctionWithdrawResponseDto"];
+                };
+            };
+        };
+    };
     addBookmark: {
         parameters: {
             query?: never;
@@ -1454,6 +1644,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SuccessResponseDtoWishlistAddResponseDto"];
+                };
+            };
+        };
+    };
+    removeBookmark: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                auctionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoWishlistRemoveResponseDto"];
                 };
             };
         };
@@ -1660,6 +1872,26 @@ export interface operations {
             };
         };
     };
+    verifyParticipation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoVoid"];
+                };
+            };
+        };
+    };
     getMySales: {
         parameters: {
             query: {
@@ -1683,10 +1915,32 @@ export interface operations {
             };
         };
     };
+    getMyBookmarks: {
+        parameters: {
+            query: {
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PagedResponseDtoWishlistListResponseDto"];
+                };
+            };
+        };
+    };
     getMyBids: {
         parameters: {
             query: {
-                auctionStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED";
+                auctionStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "WITHDRAWN";
                 pageable: components["schemas"]["Pageable"];
             };
             header?: never;
@@ -1873,28 +2127,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": number;
-                };
-            };
-        };
-    };
-    removeBookmark: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                bookmarkId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SuccessResponseDtoWishlistRemoveResponseDto"];
                 };
             };
         };
