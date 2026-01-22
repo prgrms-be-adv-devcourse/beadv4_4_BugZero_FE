@@ -297,6 +297,27 @@ export const api = {
         }
     },
 
+    // 엑세스 토큰 재발급
+    refreshAccessToken: async () => {
+        const { data, error } = await client.POST("/api/v1/auth/refresh");
+
+        if (error || !data) {
+            throw new Error(getErrorMessage(error, "세션이 만료되었습니다. 다시 로그인해주세요."));
+        }
+
+        return data.data;
+    },
+
+    // 로그아웃
+    logout: async () => {
+        const { data, error } = await client.POST("/api/v1/auth/logout", {});
+
+        if (error) {
+            throw new Error(getErrorMessage(error, "로그아웃 처리 중 오류가 발생했습니다."));
+        }
+        return data;
+    },
+
     // 내 정보 조회
     getMe: async () => {
         const { data, error } = await client.GET("/api/v1/members/me");
