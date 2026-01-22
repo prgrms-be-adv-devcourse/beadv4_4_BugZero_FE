@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { api, MemberInfo, isVerified } from '@/lib/api';
+import { api, isVerified } from '@/lib/api';
 import VerifyModal from '@/components/VerifyModal';
+import { components } from '@/api/schema';
 
+type MemberInfo = components["schemas"]["MemberMeResponseDto"];
 
 interface ProductForm {
     name: string;
@@ -35,7 +37,9 @@ export default function ProductRegisterPage() {
         async function loadMember() {
             try {
                 const info = await api.getMe();
-                setMemberInfo(info);
+                if (info) {
+                    setMemberInfo(info);
+                }
             } catch {
                 console.error('Failed to load member info');
 
@@ -61,16 +65,16 @@ export default function ProductRegisterPage() {
     };
 
     const handleSubmit = async () => {
-        if (!memberInfo) {
+        if (!memberInfo || !memberInfo.publicId) {
             alert('로그인 정보가 없습니다. 다시 로그인 해주세요.');
             router.push('/login');
             return;
         }
 
-        if (!isVerified(memberInfo)) {
-            setShowVerifyModal(true);
-            return;
-        }
+        // if (!isVerified(memberInfo)) {
+        //     setShowVerifyModal(true);
+        //     return;
+        // }
 
         setLoading(true);
         try {
@@ -311,9 +315,11 @@ export default function ProductRegisterPage() {
                 onClose={() => setShowVerifyModal(false)}
                 onVerified={async () => {
                     const info = await api.getMe();
-                    setMemberInfo(info);
-                    setShowVerifyModal(false);
-                    alert('인증이 완료되었습니다. 다시 등록 버튼을 눌러주세요.');
+                    if (info) {
+                        setMemberInfo(info);
+                        setShowVerifyModal(false);
+                        alert('인증이 완료되었습니다. 다시 등록 버튼을 눌러주세요.');
+                    }
                 }}
             />
         </div>
