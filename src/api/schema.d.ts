@@ -224,6 +224,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 로그아웃
+         * @description 리프레시 토큰을 폐기하고 액세스 토큰을 블랙리스트 처리합니다
+         */
+        post: operations["logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auctions/{auctionId}/withdraw": {
         parameters: {
             query?: never;
@@ -396,6 +416,26 @@ export interface paths {
          * @description 정산 내역을 조회합니다.
          */
         get: operations["getSettlements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/members/participation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 회원 입찰시 필수 정보 존재 확인
+         * @description 회원 입찰시 필요 정보(주소, 본인인증) 존재 확인
+         */
+        get: operations["verifyParticipation"];
         put?: never;
         post?: never;
         delete?: never;
@@ -954,6 +994,8 @@ export interface components {
             holdingDelta?: number;
             /** Format: int32 */
             balance?: number;
+            /** Format: int32 */
+            holdingAmount?: number;
             /** @enum {string} */
             referenceType?: "PAYMENT" | "DEPOSIT" | "AUCTION_ORDER" | "SETTLEMENT" | "REFUND";
             /** Format: int64 */
@@ -1538,6 +1580,30 @@ export interface operations {
             };
         };
     };
+    logout: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path?: never;
+            cookie?: {
+                refreshToken?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoVoid"];
+                };
+            };
+        };
+    };
     withdraw: {
         parameters: {
             query?: never;
@@ -1802,6 +1868,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SuccessResponseDtoPagedResponseDtoSettlementResponseDto"];
+                };
+            };
+        };
+    };
+    verifyParticipation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoVoid"];
                 };
             };
         };
