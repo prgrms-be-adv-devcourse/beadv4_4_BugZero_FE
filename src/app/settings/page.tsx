@@ -1,38 +1,84 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { client } from '@/api/client';
+import { getErrorMessage } from '@/api/utils';
+import type { components } from '@/api/schema';
 
-interface ProfileForm {
-    nickname: string;
-    email: string;
-    phone: string;
-    address: string;
-    addressDetail: string;
-}
+type MemberInfo = components['schemas']['MemberMeResponseDto'];
 
 export default function ProfileSettingsPage() {
     const router = useRouter();
-    const [form, setForm] = useState<ProfileForm>({
-        nickname: '레고덕후',
-        email: 'lego_lover@email.com',
-        phone: '010-1234-5678',
-        address: '서울특별시 강남구 테헤란로 123',
-        addressDetail: '456호',
+    const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null);
+    const [form, setForm] = useState({
+        nickname: '',
+        intro: '',
+        zipCode: '',
+        address: '',
+        addressDetail: '',
     });
     const [loading, setLoading] = useState(false);
     const [activeSection, setActiveSection] = useState<'profile' | 'password' | 'notification' | 'withdraw'>('profile');
     const [showWithdrawModal, setShowWithdrawModal] = useState(false);
     const [withdrawConfirm, setWithdrawConfirm] = useState('');
 
+    // 회원 정보 로드
+    useEffect(() => {
+        const loadMemberInfo = async () => {
+            const { data, error } = await client.GET('/api/v1/members/me');
+            if (data?.data) {
+                setMemberInfo(data.data);
+                setForm({
+                    nickname: data.data.nickname || '',
+                    intro: data.data.intro || '',
+                    zipCode: data.data.zipCode || '',
+                    address: data.data.address || '',
+                    addressDetail: data.data.addressDetail || '',
+                });
+            } else if (error) {
+                alert(getErrorMessage(error, '회원 정보를 불러올 수 없습니다.'));
+            }
+        };
+        loadMemberInfo();
+    }, []);
+
     const handleSave = async () => {
+        if (!form.nickname.trim()) {
+            alert('닉네임을 입력해주세요.');
+            return;
+        }
+
         setLoading(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            const { error } = await client.PATCH('/api/v1/members/me', {
+                body: {
+                    nickname: form.nickname,
+                    intro: form.intro,
+                    zipCode: form.zipCode,
+                    address: form.address,
+                    addressDetail: form.addressDetail,
+                    // 필드가 비어있을 경우 명시적으로 초기화하고 싶다면 clearFields를 사용할 수 있지만 우선 직접 전달
+                }
+            });
+
+            if (error) {
+                throw error;
+            }
+
             alert('저장되었습니다!');
-        } catch {
-            alert('저장 실패');
+            // 상태 업데이트하여 UI에 즉시 반영
+            setMemberInfo(prev => prev ? {
+                ...prev,
+                nickname: form.nickname,
+                intro: form.intro,
+                zipCode: form.zipCode,
+                address: form.address,
+                addressDetail: form.addressDetail,
+            } : null);
+        } catch (err) {
+            alert(getErrorMessage(err, '저장하는데 실패했습니다.'));
         } finally {
             setLoading(false);
         }
@@ -94,8 +140,8 @@ export default function ProfileSettingsPage() {
                                     🧱
                                 </div>
                                 <div>
-                                    <p className="text-white font-medium">{form.nickname}</p>
-                                    <p className="text-gray-500 text-sm">{form.email}</p>
+                                    <p className="text-white font-medium">{memberInfo?.nickname || '로딩중...'}</p>
+                                    <p className="text-gray-500 text-sm">{memberInfo?.email}</p>
                                 </div>
                             </div>
 
@@ -111,10 +157,21 @@ export default function ProfileSettingsPage() {
                                 </div>
 
                                 <div>
+                                    <label className="block text-sm text-gray-400 mb-2">자기소개</label>
+                                    <textarea
+                                        value={form.intro}
+                                        onChange={(e) => setForm({ ...form, intro: e.target.value })}
+                                        placeholder="자기소개를 입력해주세요"
+                                        rows={3}
+                                        className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500 resize-none"
+                                    />
+                                </div>
+
+                                <div>
                                     <label className="block text-sm text-gray-400 mb-2">이메일</label>
                                     <input
                                         type="email"
-                                        value={form.email}
+                                        value={memberInfo?.email || ''}
                                         disabled
                                         className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-3 text-gray-500 cursor-not-allowed"
                                     />
@@ -122,19 +179,25 @@ export default function ProfileSettingsPage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-2">연락처</label>
+                                    <label className="block text-sm text-gray-400 mb-2">연락처 (인증됨)</label>
                                     <input
                                         type="tel"
-                                        value={form.phone}
-                                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                                        placeholder="010-0000-0000"
-                                        className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
+                                        value={memberInfo?.contactPhoneMasked || '본인인증 전입니다'}
+                                        disabled
+                                        className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-3 text-gray-500 cursor-not-allowed"
                                     />
                                 </div>
 
                                 <div>
                                     <label className="block text-sm text-gray-400 mb-2">배송지 주소</label>
                                     <div className="flex gap-2 mb-2">
+                                        <input
+                                            type="text"
+                                            value={form.zipCode}
+                                            onChange={(e) => setForm({ ...form, zipCode: e.target.value })}
+                                            placeholder="우편번호"
+                                            className="w-32 bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
+                                        />
                                         <input
                                             type="text"
                                             value={form.address}
@@ -280,53 +343,55 @@ export default function ProfileSettingsPage() {
             </div>
 
             {/* 회원탈퇴 확인 모달 */}
-            {showWithdrawModal && (
-                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-                    <div className="bg-gray-800 rounded-2xl p-6 max-w-md w-full border border-gray-700">
-                        <div className="text-center mb-6">
-                            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <span className="text-4xl">⚠️</span>
+            {
+                showWithdrawModal && (
+                    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                        <div className="bg-gray-800 rounded-2xl p-6 max-w-md w-full border border-gray-700">
+                            <div className="text-center mb-6">
+                                <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <span className="text-4xl">⚠️</span>
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">정말 탈퇴하시겠습니까?</h3>
+                                <p className="text-gray-400 text-sm">
+                                    탈퇴 확인을 위해 아래에 &quot;탈퇴합니다&quot;를 입력해주세요.
+                                </p>
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-2">정말 탈퇴하시겠습니까?</h3>
-                            <p className="text-gray-400 text-sm">
-                                탈퇴 확인을 위해 아래에 &quot;탈퇴합니다&quot;를 입력해주세요.
-                            </p>
-                        </div>
 
-                        <input
-                            type="text"
-                            value={withdrawConfirm}
-                            onChange={(e) => setWithdrawConfirm(e.target.value)}
-                            placeholder="탈퇴합니다"
-                            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white text-center mb-4 focus:outline-none focus:border-red-500"
-                        />
+                            <input
+                                type="text"
+                                value={withdrawConfirm}
+                                onChange={(e) => setWithdrawConfirm(e.target.value)}
+                                placeholder="탈퇴합니다"
+                                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white text-center mb-4 focus:outline-none focus:border-red-500"
+                            />
 
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => { setShowWithdrawModal(false); setWithdrawConfirm(''); }}
-                                className="flex-1 bg-gray-700 text-white py-3 rounded-lg hover:bg-gray-600 transition"
-                            >
-                                취소
-                            </button>
-                            <button
-                                onClick={async () => {
-                                    if (withdrawConfirm === '탈퇴합니다') {
-                                        // TODO: BE API 연동
-                                        alert('회원탈퇴가 완료되었습니다.');
-                                        router.push('/');
-                                    } else {
-                                        alert('"탈퇴합니다"를 정확히 입력해주세요.');
-                                    }
-                                }}
-                                disabled={withdrawConfirm !== '탈퇴합니다'}
-                                className="flex-1 bg-red-500 text-white py-3 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-600 transition"
-                            >
-                                탈퇴하기
-                            </button>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => { setShowWithdrawModal(false); setWithdrawConfirm(''); }}
+                                    className="flex-1 bg-gray-700 text-white py-3 rounded-lg hover:bg-gray-600 transition"
+                                >
+                                    취소
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        if (withdrawConfirm === '탈퇴합니다') {
+                                            // TODO: BE API 연동
+                                            alert('회원탈퇴가 완료되었습니다.');
+                                            router.push('/');
+                                        } else {
+                                            alert('"탈퇴합니다"를 정확히 입력해주세요.');
+                                        }
+                                    }}
+                                    disabled={withdrawConfirm !== '탈퇴합니다'}
+                                    className="flex-1 bg-red-500 text-white py-3 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-600 transition"
+                                >
+                                    탈퇴하기
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }
