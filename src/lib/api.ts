@@ -1,6 +1,7 @@
 import { client } from "@/api/client";
 import { components } from "@/api/schema";
 import { getErrorMessage } from "@/api/utils";
+import { useAuthStore } from "@/store/useAuthStore";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://52.78.240.121:8080';
 // const API_BASE = 'http://localhost:8080'; // Local development server
@@ -306,7 +307,13 @@ export const api = {
             throw new Error(getErrorMessage(error, "세션이 만료되었습니다. 다시 로그인해주세요."));
         }
 
-        return data.data;
+        const tokenData = data.data;
+
+        if (tokenData && tokenData.accessToken) {
+            useAuthStore.getState().setAccessToken(tokenData.accessToken);
+        }
+
+        return tokenData;
     },
 
     // 로그아웃

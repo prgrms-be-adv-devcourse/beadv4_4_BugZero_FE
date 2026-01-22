@@ -50,7 +50,6 @@ export default function ProductRegisterPage() {
     async function loadMember() {
         try {
             const info = await api.getMe();
-            console.log(info);
             if (info) {
                 setMemberInfo(info);
 
@@ -118,9 +117,11 @@ export default function ProductRegisterPage() {
                 }
                 await api.promoteSeller();
 
+                await api.refreshAccessToken();
+
                 alert("판매자 자격이 활성화되었습니다!");
                 const updatedInfo = await loadMember(); // 정보 새로고침
-                console.log(updatedInfo);
+
                 if (!updatedInfo) return;
             }
 
