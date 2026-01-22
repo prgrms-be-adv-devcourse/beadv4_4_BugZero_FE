@@ -114,8 +114,23 @@ export default function MyPage() {
     };
 
     const getTransactionSign = (tx: WalletTransaction) => {
-        const delta = tx.balanceDelta ?? 0;
-        return delta >= 0;
+        const balanceDelta = tx.balanceDelta ?? 0;
+        const holdingDelta = tx.holdingDelta ?? 0;
+        // 보증금 동결(holdingDelta > 0)은 사용 가능 금액 감소로 취급
+        if (balanceDelta === 0 && holdingDelta !== 0) {
+            return holdingDelta < 0; // 동결 해제는 positive, 동결은 negative
+        }
+        return balanceDelta >= 0;
+    };
+
+    const getTransactionAmount = (tx: WalletTransaction) => {
+        const balanceDelta = tx.balanceDelta ?? 0;
+        const holdingDelta = tx.holdingDelta ?? 0;
+        // balanceDelta가 0이면 holdingDelta를 보여줌 (동결/해제)
+        if (balanceDelta === 0 && holdingDelta !== 0) {
+            return holdingDelta; // 동결이면 -로 표시
+        }
+        return balanceDelta;
     };
 
     return (
@@ -307,7 +322,36 @@ export default function MyPage() {
 
                     {/* 거래내역 */}
                     {tab === 'wallet' && (
-                        <div className="space-y-2">
+                        <div className="space-y-3">
+                            {/* 현재 잔고 요약 */}
+                            {transactions.length > 0 && (() => {
+                                const latestTx = transactions[0];
+                                const totalBalance = latestTx?.balance ?? 0;
+                                const holdingAmount = latestTx?.holdingAmount ?? 0;
+                                const availableBalance = totalBalance - holdingAmount;
+                                return (
+                                    <div className="card p-5 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/30">
+                                        <div className="flex justify-between items-end mb-3">
+                                            <div>
+                                                <p className="text-sm text-gray-400 mb-1">사용 가능</p>
+                                                <p className="text-2xl font-bold text-yellow-400">
+                                                    ₩{formatPrice(availableBalance)}
+                                                </p>
+                                            </div>
+                                            {holdingAmount > 0 && (
+                                                <div className="text-right">
+                                                    <p className="text-xs text-gray-500">보증금</p>
+                                                    <p className="text-sm text-gray-400">₩{formatPrice(holdingAmount)}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="pt-2 border-t border-gray-700/50 text-xs text-gray-500">
+                                            총 잔고: ₩{formatPrice(totalBalance)}
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
                             {transactions.length === 0 ? (
                                 <div className="text-center py-12 text-gray-500">
                                     거래 내역이 없습니다
@@ -321,9 +365,12 @@ export default function MyPage() {
                                                 <p className="font-medium">{tx.typeName || tx.type}</p>
                                                 <p className="text-xs text-gray-500">{formatDate(tx.createdAt)}</p>
                                             </div>
-                                            <p className={`font-semibold ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
-                                                {isPositive ? '+' : ''}₩{formatPrice(tx.balanceDelta ?? 0)}
-                                            </p>
+                                            <div className="text-right">
+                                                <p className={`font-semibold ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+                                                    {isPositive ? '+' : '-'}₩{formatPrice(getTransactionAmount(tx))}
+                                                </p>
+                                                <p className="text-xs text-gray-500">잔액: ₩{formatPrice(tx.balance ?? 0)}</p>
+                                            </div>
                                         </div>
                                     );
                                 })
