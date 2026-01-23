@@ -6,6 +6,7 @@ import { client } from '@/api/client';
 import { getErrorMessage } from '@/api/utils';
 import type { components } from '@/api/schema';
 import VerifyModal from '@/components/VerifyModal';
+import toast from 'react-hot-toast';
 
 // 타입 정의 (스키마에서 가져옴)
 type MyBid = components['schemas']['MyBidResponseDto'];
@@ -368,7 +369,7 @@ export default function MyPage() {
                         setMemberInfo(data.data);
                     }
                     setShowVerifyModal(false);
-                    alert('본인인증이 완료되었습니다.');
+                    toast.success('본인인증이 완료되었습니다.');
                 }}
             />
         </div>

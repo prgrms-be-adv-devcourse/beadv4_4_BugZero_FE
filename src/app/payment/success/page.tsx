@@ -4,6 +4,7 @@ import { useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { getErrorMessage } from '@/api/utils';
+import toast from 'react-hot-toast'; // ✅ 추가
 
 function SuccessContent() {
     const searchParams = useSearchParams();
@@ -25,13 +26,13 @@ function SuccessContent() {
                     amount,
                 });
 
-                alert('예치금 충전이 완료되었습니다! 마이페이지로 이동합니다.');
+                toast.success('예치금 충전이 완료되었습니다!');
                 router.replace('/mypage');
             } catch (error: unknown) {
                 const errorMessage = getErrorMessage(error, "결제 승인 중 알 수 없는 오류가 발생했습니다.");
 
                 console.error('[PaymentSuccess] Confirm Error:', errorMessage);
-                alert(errorMessage);
+                toast.error(errorMessage);
 
                 router.replace('/payment/fail');
             }
