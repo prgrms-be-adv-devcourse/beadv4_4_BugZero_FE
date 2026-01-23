@@ -9,6 +9,7 @@ import VerifyModal from '@/components/VerifyModal';
 import DepositModal from '@/components/DepositModal';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getErrorMessage } from '@/api/utils';
+import LikeButton from '@/components/LikeButton';
 
 function formatPrice(price: number): string {
     return new Intl.NumberFormat('ko-KR').format(price);
@@ -334,7 +335,10 @@ export default function AuctionDetailPage() {
                             {auction.status === 'IN_PROGRESS' && <ConnectionIndicator />}
                         </div>
 
-                        <h1 className="text-xl font-semibold mb-4">{auction.productName}</h1>
+                        <div className="flex justify-between items-start mb-4">
+                            <h1 className="text-xl font-semibold">{auction.productName}</h1>
+                            <LikeButton auctionId={auction.auctionId} className="p-2 bg-[#262626] rounded-full hover:bg-[#333]" />
+                        </div>
 
                         <div className="grid grid-cols-2 gap-3 mb-3">
                             <div className="bg-[#111] rounded-lg p-3">
