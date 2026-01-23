@@ -14,6 +14,8 @@ export type PagedAuctionList = components["schemas"]["PagedResponseDtoAuctionLis
 export type MyBid = components["schemas"]["MyBidResponseDto"];
 export type MySale = components["schemas"]["MySaleResponseDto"];
 export type MemberInfo = components["schemas"]["MemberMeResponseDto"];
+export type ProductInspectionResponseDto = components["schemas"]["ProductInspectionResponseDto"];
+export type ProductResponseForInspectionDto = components["schemas"]["ProductResponseForInspectionDto"];
 export type WalletTransaction = components["schemas"]["WalletTransactionResponseDto"];
 export type Wallet = components["schemas"]["WalletResponseDto"];
 export type Settlement = components["schemas"]["SettlementResponseDto"];
@@ -179,15 +181,6 @@ export const api = {
                 params: { path: { auctionId } }
             }),
             "판매 포기에 실패했습니다."
-        );
-    },
-
-    determineStartAuction: async (productId: number) => {
-        return handleResponseData<number>(
-            client.PATCH("/api/v1/auctions/{productId}/startTime", {
-                params: { path: { productId } }
-            }),
-            "경매 시작 시간 결정에 실패했습니다."
         );
     },
 
@@ -440,6 +433,35 @@ export const api = {
 
     getAuctionSubscribeUrl: (auctionId: number): string => {
         return `${API_BASE}/api/v1/auctions/${auctionId}/subscribe`;
+    },
+
+    // 관리자 - 상품 검수
+    getAdminProducts: async (
+        condition: components["schemas"]["ProductSearchForInspectionCondition"] = {},
+        pageable: components["schemas"]["Pageable"] = { page: 0, size: 10 }
+    ) => {
+        return handleResponseData<components["schemas"]["PagedResponseDtoProductResponseForInspectionDto"]>(
+            client.GET("/api/v1/products/inspections", {
+                params: { query: { condition, pageable } }
+            }),
+            "검수 목록을 불러오는 데 실패했습니다."
+        );
+    },
+
+    createProductInspection: async (body: components["schemas"]["ProductInspectionRequestDto"]) => {
+        return handleResponseData<components["schemas"]["ProductInspectionResponseDto"]>(
+            client.POST("/api/v1/products/inspections", { body }),
+            "검수 처리에 실패했습니다."
+        );
+    },
+
+    determineStartAuction: async (productId: number) => {
+        return handleResponseData<number>(
+            client.PATCH("/api/v1/auctions/{productId}/startTime", {
+                params: { path: { productId } }
+            }),
+            "경매 시작 시간 설정에 실패했습니다."
+        );
     },
 
     // 본인인증 여부 체크 헬퍼

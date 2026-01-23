@@ -12,9 +12,10 @@ import toast from 'react-hot-toast';
 export default function Header() {
     const pathname = usePathname();
     const router = useRouter();
-    const { accessToken } = useAuthStore();
+    const { accessToken, role } = useAuthStore();
     const { isSeller, fetchMemberInfo, clearMemberInfo } = useMemberStore();
     const isLogin = !!accessToken;
+    const isAdmin = role === 'ADMIN';
 
     useEffect(() => {
         if (isLogin) {
@@ -122,6 +123,19 @@ export default function Header() {
                                     {item.label}
                                 </Link>
                             ))}
+
+                            {/* 관리자 전용 메뉴 */}
+                            {isAdmin && (
+                                <Link
+                                    href="/admin/inspection"
+                                    className={`text-sm transition font-medium ${isActive('/admin/inspection')
+                                        ? 'text-red-400 border-b-2 border-red-400 pb-1'
+                                        : 'text-gray-400 hover:text-red-400'
+                                    }`}
+                                >
+                                    검수
+                                </Link>
+                            )}
                         </div>
 
                         {/* 인증 버튼 섹션 */}
