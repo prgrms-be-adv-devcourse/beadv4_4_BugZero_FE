@@ -24,6 +24,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/products/inspections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 검수를 위한 전체 상품목록 조회
+         * @description 관리자가 상품 검수 처리를 위해 모든 상품정보를 조회합니다.
+         */
+        get: operations["getAdminProducts"];
+        put?: never;
+        /**
+         * 상품 검수
+         * @description 관리자가 상품 검수에 대해 승인/반려 처리를 합니다.
+         */
+        post: operations["createProductInspection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/products/images/presigned-url": {
         parameters: {
             query?: never;
@@ -188,22 +212,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/inspections": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["createProductInspection"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/auth/withdraw": {
         parameters: {
             query?: never;
@@ -298,26 +306,6 @@ export interface paths {
          * @description 경매 실패/유찰 시 상품을 더 이상 경매에 올리지 않습니다.
          */
         post: operations["withdraw_1"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auctions/{auctionId}/relist": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 재경매 등록
-         * @description 유찰되거나 결제 실패한 경매 상품을 다시 등록합니다. (판매자 전용)
-         */
-        post: operations["relistAuction"];
         delete?: never;
         options?: never;
         head?: never;
@@ -452,7 +440,7 @@ export interface paths {
         patch: operations["updateAuction"];
         trace?: never;
     };
-    "/api/v1/auctions/{auctionId}/startTime": {
+    "/api/v1/auctions/{productId}/startTime": {
         parameters: {
             query?: never;
             header?: never;
@@ -465,7 +453,31 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
+        /**
+         * 검수승인 후 경매일정 확정
+         * @description 관리자가 검수 승인 후 해당상품의 경매일정을 확정합니다.
+         */
         patch: operations["deterMineStartAuction"];
+        trace?: never;
+    };
+    "/api/v1/products/inspections/{productId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 상품 검수정보 상세조회
+         * @description 관리자가 특정 상품의 검수 상세정보를 조회합니다.
+         */
+        get: operations["readInspection"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/payments/me/wallet": {
@@ -620,22 +632,6 @@ export interface paths {
          * @description 내가 참여한 경매 입찰 목록을 상태별로 조회합니다.
          */
         get: operations["getMyBids"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/inspections/{productId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["readInspection"];
         put?: never;
         post?: never;
         delete?: never;
@@ -802,12 +798,7 @@ export interface components {
             /** Format: int32 */
             durationDays: number;
         };
-        ProductImageRequestDto: {
-            imgUrl: string;
-            /** Format: int32 */
-            sortOrder?: number;
-        };
-        ProductRequestDto: {
+        ProductCreateRequestDto: {
             name: string;
             /** @enum {string} */
             category: "스타워즈" | "오리지널" | "해리포터";
@@ -815,7 +806,12 @@ export interface components {
             productAuctionRequestDto: components["schemas"]["ProductAuctionRequestDto"];
             productImageRequestDto: components["schemas"]["ProductImageRequestDto"][];
         };
-        ProductResponseDto: {
+        ProductImageRequestDto: {
+            imgUrl: string;
+            /** Format: int32 */
+            sortOrder?: number;
+        };
+        ProductCreateResponseDto: {
             /** Format: int64 */
             productId?: number;
             /** Format: int64 */
@@ -823,11 +819,41 @@ export interface components {
             /** @enum {string} */
             inspectionStatus?: "PENDING" | "APPROVED" | "REJECTED";
         };
-        SuccessResponseDtoProductResponseDto: {
+        SuccessResponseDtoProductCreateResponseDto: {
             /** Format: int32 */
             status?: number;
             message?: string;
-            data?: components["schemas"]["ProductResponseDto"];
+            data?: components["schemas"]["ProductCreateResponseDto"];
+        };
+        ProductInspectionRequestDto: {
+            /** Format: int64 */
+            productId: number;
+            /** @enum {string} */
+            status: "PENDING" | "APPROVED" | "REJECTED";
+            /** @enum {string} */
+            productCondition: "INSPECTION" | "MISB" | "NISB" | "MISP" | "USED";
+            reason?: string;
+        };
+        ProductInspectionResponseDto: {
+            /** Format: int64 */
+            inspectionId?: number;
+            /** Format: int64 */
+            productId?: number;
+            /** @enum {string} */
+            newStatus?: "PENDING" | "APPROVED" | "REJECTED";
+            /** @enum {string} */
+            productCondition?: "INSPECTION" | "MISB" | "NISB" | "MISP" | "USED";
+            reason?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: date-time */
+            createdAt?: string;
+        };
+        SuccessResponseDtoProductInspectionResponseDto: {
+            /** Format: int32 */
+            status?: number;
+            message?: string;
+            data?: components["schemas"]["ProductInspectionResponseDto"];
         };
         PresignedUrlRequestDto: {
             fileName: string;
@@ -936,36 +962,6 @@ export interface components {
             message?: string;
             /** Format: int64 */
             data?: number;
-        };
-        ProductInspectionRequestDto: {
-            /** Format: int64 */
-            productId: number;
-            /** @enum {string} */
-            status: "PENDING" | "APPROVED" | "REJECTED";
-            /** @enum {string} */
-            productCondition: "INSPECTION" | "MISB" | "NISB" | "MISP" | "USED";
-            reason?: string;
-        };
-        ProductInspectionResponseDto: {
-            /** Format: int64 */
-            inspectionId?: number;
-            /** Format: int64 */
-            productId?: number;
-            /** @enum {string} */
-            newStatus?: "PENDING" | "APPROVED" | "REJECTED";
-            /** @enum {string} */
-            productCondition?: "INSPECTION" | "MISB" | "NISB" | "MISP" | "USED";
-            reason?: string;
-            /** Format: date-time */
-            updatedAt?: string;
-            /** Format: date-time */
-            createdAt?: string;
-        };
-        SuccessResponseDtoProductInspectionResponseDto: {
-            /** Format: int32 */
-            status?: number;
-            message?: string;
-            data?: components["schemas"]["ProductInspectionResponseDto"];
         };
         TokenIssueDto: {
             memberPublicId: string;
@@ -1127,6 +1123,53 @@ export interface components {
             realName?: string;
             contactPhone?: string;
         };
+        ProductSearchForInspectionCondition: {
+            name?: string;
+            /** @enum {string} */
+            category?: "스타워즈" | "오리지널" | "해리포터";
+            /** @enum {string} */
+            status?: "PENDING" | "APPROVED" | "REJECTED";
+        };
+        Pageable: {
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            sort?: string[];
+        };
+        PageDto: {
+            /** Format: int32 */
+            currentPage?: number;
+            /** Format: int32 */
+            limit?: number;
+            /** Format: int64 */
+            totalItems?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
+            hasPrevious?: boolean;
+        };
+        PagedResponseDtoProductResponseForInspectionDto: {
+            data?: components["schemas"]["ProductResponseForInspectionDto"][];
+            pageDto?: components["schemas"]["PageDto"];
+        };
+        ProductResponseForInspectionDto: {
+            /** Format: int64 */
+            ProductId?: number;
+            name?: string;
+            sellerEmail?: string;
+            /** @enum {string} */
+            category?: "스타워즈" | "오리지널" | "해리포터";
+            /** @enum {string} */
+            inspectionStatus?: "PENDING" | "APPROVED" | "REJECTED";
+            thumbnail?: string;
+        };
+        SuccessResponseDtoPagedResponseDtoProductResponseForInspectionDto: {
+            /** Format: int32 */
+            status?: number;
+            message?: string;
+            data?: components["schemas"]["PagedResponseDtoProductResponseForInspectionDto"];
+        };
         SuccessResponseDtoWalletResponseDto: {
             /** Format: int32 */
             status?: number;
@@ -1141,18 +1184,6 @@ export interface components {
             balance?: number;
             /** Format: int32 */
             holdingAmount?: number;
-        };
-        PageDto: {
-            /** Format: int32 */
-            currentPage?: number;
-            /** Format: int32 */
-            limit?: number;
-            /** Format: int64 */
-            totalItems?: number;
-            /** Format: int32 */
-            totalPages?: number;
-            hasNext?: boolean;
-            hasPrevious?: boolean;
         };
         PagedResponseDtoWalletTransactionResponseDto: {
             data?: components["schemas"]["WalletTransactionResponseDto"][];
@@ -1234,13 +1265,6 @@ export interface components {
             status?: number;
             message?: string;
             data?: components["schemas"]["MemberMeResponseDto"];
-        };
-        Pageable: {
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            sort?: string[];
         };
         MySaleResponseDto: {
             /** Format: int64 */
@@ -1471,16 +1495,14 @@ export type $defs = Record<string, never>;
 export interface operations {
     createProduct: {
         parameters: {
-            query: {
-                publicId: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProductRequestDto"];
+                "application/json": components["schemas"]["ProductCreateRequestDto"];
             };
         };
         responses: {
@@ -1490,7 +1512,54 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["SuccessResponseDtoProductResponseDto"];
+                    "*/*": components["schemas"]["SuccessResponseDtoProductCreateResponseDto"];
+                };
+            };
+        };
+    };
+    getAdminProducts: {
+        parameters: {
+            query: {
+                condition: components["schemas"]["ProductSearchForInspectionCondition"];
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoPagedResponseDtoProductResponseForInspectionDto"];
+                };
+            };
+        };
+    };
+    createProductInspection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductInspectionRequestDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoProductInspectionResponseDto"];
                 };
             };
         };
@@ -1751,32 +1820,6 @@ export interface operations {
             };
         };
     };
-    createProductInspection: {
-        parameters: {
-            query: {
-                inspectorId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProductInspectionRequestDto"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SuccessResponseDtoProductInspectionResponseDto"];
-                };
-            };
-        };
-    };
     withdraw: {
         parameters: {
             query?: never;
@@ -2015,9 +2058,7 @@ export interface operations {
     };
     deleteProduct: {
         parameters: {
-            query: {
-                publicId: string;
-            };
+            query?: never;
             header?: never;
             path: {
                 productId: number;
@@ -2039,9 +2080,7 @@ export interface operations {
     };
     updateProduct: {
         parameters: {
-            query: {
-                publicId: string;
-            };
+            query?: never;
             header?: never;
             path: {
                 productId: number;
@@ -2120,7 +2159,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                auctionId: number;
+                productId: number;
             };
             cookie?: never;
         };
@@ -2133,6 +2172,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SuccessResponseDtoLong"];
+                };
+            };
+        };
+    };
+    readInspection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                productId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoProductInspectionResponseDto"];
                 };
             };
         };
@@ -2316,28 +2377,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PagedResponseDtoMyBidResponseDto"];
-                };
-            };
-        };
-    };
-    readInspection: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                productId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SuccessResponseDtoProductInspectionResponseDto"];
                 };
             };
         };

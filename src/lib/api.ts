@@ -3,7 +3,14 @@ import { components } from "@/api/schema";
 import { getErrorMessage } from "@/api/utils";
 import { authApi } from "@/api/auth";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://52.78.240.121:8080';
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://52.78.240.121:8080';
+
+export function getImageUrl(path?: string): string {
+    if (!path) return '';
+    if (path.startsWith('http') || path.startsWith('data:')) return path;
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return `${API_BASE}${cleanPath}`;
+}
 
 // Helper types from Schema
 export type AuctionDetailResponseDto = components["schemas"]["AuctionDetailResponseDto"];
@@ -76,20 +83,19 @@ async function handleResponseData<T>(promise: Promise<{ data?: unknown; error?: 
 
 export const api = {
     // 상품
-    createProduct: async (publicId: string, body: components["schemas"]["ProductRequestDto"]) => {
-        return handleResponseData<components["schemas"]["ProductResponseDto"]>(
+    createProduct: async (body: components["schemas"]["ProductCreateRequestDto"]) => {
+        return handleResponseData<components["schemas"]["ProductCreateResponseDto"]>(
             client.POST("/api/v1/products", {
-                params: { query: { publicId } },
                 body
             }),
             "상품 등록에 실패했습니다."
         );
     },
 
-    updateProduct: async (productId: number, publicId: string, body: components["schemas"]["ProductUpdateDto"]) => {
+    updateProduct: async (productId: number, body: components["schemas"]["ProductUpdateDto"]) => {
         return handleResponseData<components["schemas"]["ProductUpdateResponseDto"]>(
             client.PATCH("/api/v1/products/{productId}", {
-                params: { path: { productId }, query: { publicId } },
+                params: { path: { productId } },
                 body
             }),
             "상품 수정에 실패했습니다."
@@ -100,6 +106,33 @@ export const api = {
         return handleResponseData<components["schemas"]["PresignedUrlResponseDto"]>(
             client.POST("/api/v1/products/images/presigned-url", { body }),
             "업로드 권한을 가져오지 못했습니다."
+        );
+    },
+
+    // 관리자: 상품 검수
+    getAdminProducts: async (
+        condition: components["schemas"]["ProductSearchForInspectionCondition"] = {},
+        pageable: components["schemas"]["Pageable"] = { page: 0, size: 10 }
+    ) => {
+        return handleResponseData<components["schemas"]["PagedResponseDtoProductResponseForInspectionDto"]>(
+            client.GET("/api/v1/products/inspections", {
+                params: {
+                    query: {
+                        condition,
+                        pageable
+                    }
+                }
+            }),
+            "검수 대기 목록을 불러오는 데 실패했습니다."
+        );
+    },
+
+    createProductInspection: async (body: components["schemas"]["ProductInspectionRequestDto"]) => {
+        return handleResponseData<components["schemas"]["ProductInspectionResponseDto"]>(
+            client.POST("/api/v1/products/inspections", {
+                body
+            }),
+            "검수 결과 등록에 실패했습니다."
         );
     },
 
@@ -183,10 +216,10 @@ export const api = {
         );
     },
 
-    determineStartAuction: async (auctionId: number) => {
+    determineStartAuction: async (productId: number) => {
         return handleResponseData<number>(
-            client.PATCH("/api/v1/auctions/{auctionId}/startTime", {
-                params: { path: { auctionId } }
+            client.PATCH("/api/v1/auctions/{productId}/startTime", {
+                params: { path: { productId } }
             }),
             "경매 시작 시간 결정에 실패했습니다."
         );

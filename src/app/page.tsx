@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { api } from '@/lib/api';
+import { api, getImageUrl } from '@/lib/api';
 import { components } from '@/api/schema';
 import LikeButton from '@/components/LikeButton';
 
@@ -66,7 +66,7 @@ function AuctionCard({ auction }: { auction: Auction }) {
         <div className="relative h-48 bg-[#1a1a1a] rounded-t-xl overflow-hidden">
           {auction.thumbnailUrl ? (
             <Image
-              src={auction.thumbnailUrl}
+              src={getImageUrl(auction.thumbnailUrl)}
               alt={auction.productName ?? ''}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"

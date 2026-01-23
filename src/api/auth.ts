@@ -59,5 +59,3 @@ export const authApi = {
         return refreshPromise;
     }
 };
-
-

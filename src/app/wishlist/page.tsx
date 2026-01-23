@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { api } from '@/lib/api';
+import { api, getImageUrl } from '@/lib/api';
 import { components } from '@/api/schema';
 import LikeButton from '@/components/LikeButton';
 import { useWishlistStore } from '@/store/useWishlistStore';
@@ -94,7 +94,7 @@ export default function WishlistPage() {
                                         <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-800 flex-shrink-0 relative">
                                             {info.thumbnailUrl ? (
                                                 <Image
-                                                    src={info.thumbnailUrl}
+                                                    src={getImageUrl(info.thumbnailUrl)}
                                                     alt={info.productName || ''}
                                                     fill
                                                     className="object-cover group-hover:scale-110 transition-transform"
@@ -142,7 +142,7 @@ export default function WishlistPage() {
                                 <div key={item.bookmarkId} className="bg-[#0d0d0d] rounded-xl p-4 flex gap-4 border border-[#1a1a1a] opacity-60">
                                     <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-800 flex-shrink-0 relative grayscale">
                                         {info.thumbnailUrl ? (
-                                            <Image src={info.thumbnailUrl} alt="" fill className="object-cover" />
+                                            <Image src={getImageUrl(info.thumbnailUrl)} alt="" fill className="object-cover" />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center text-xl">🧱</div>
                                         )}

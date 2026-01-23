@@ -136,7 +136,7 @@ export default function ProductRegisterPage() {
             );
 
             // --- [5단계: 최종 상품 등록] ---
-            const productData: components["schemas"]["ProductRequestDto"] = {
+            const productData: components["schemas"]["ProductCreateRequestDto"] = {
                 name: form.name,
                 category: form.category as "스타워즈" | "오리지널" | "해리포터",
                 description: form.description,
@@ -150,7 +150,7 @@ export default function ProductRegisterPage() {
                 }))
             };
 
-            await api.createProduct(memberInfo.publicId, productData);
+            await api.createProduct(productData);
             alert('상품이 등록되었습니다! 검수 승인 후 경매가 시작됩니다.');
             router.push('/mypage');
 

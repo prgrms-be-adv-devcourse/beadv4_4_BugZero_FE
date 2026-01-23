@@ -8,8 +8,9 @@ import { api } from '@/lib/api';
 export default function Header() {
     const pathname = usePathname();
     const router = useRouter();
-    const { accessToken } = useAuthStore();
+    const { accessToken, role } = useAuthStore();
     const isLogin = !!accessToken;
+    const isAdmin = role === 'ADMIN';
 
     // 1. 로그인 여부와 상관없이 항상 노출되는 메뉴
     const publicNavItems = [
@@ -21,6 +22,11 @@ export default function Header() {
     const privateNavItems = [
         { href: '/wishlist', label: '관심' },
         { href: '/mypage', label: '마이페이지' },
+    ];
+
+    // 3. 관리자 전용 메뉴
+    const adminNavItems = [
+        { href: '/admin/inspection', label: '검수' },
     ];
 
     const isActive = (href: string) => {
@@ -85,6 +91,20 @@ export default function Header() {
 
                             {/* 로그인 전용 메뉴: 관심, 마이페이지 */}
                             {isLogin && privateNavItems.map((item) => (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    className={`text-sm transition font-medium ${isActive(item.href)
+                                        ? 'text-yellow-400 border-b-2 border-yellow-400 pb-1'
+                                        : 'text-gray-400 hover:text-white'
+                                        }`}
+                                >
+                                    {item.label}
+                                </Link>
+                            ))}
+
+                            {/* 관리자 전용 메뉴 */}
+                            {isAdmin && adminNavItems.map((item) => (
                                 <Link
                                     key={item.href}
                                     href={item.href}

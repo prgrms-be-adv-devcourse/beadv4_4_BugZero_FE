@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { api, Auction, BidLog, MemberInfo } from '@/lib/api';
+import { api, getImageUrl, Auction, BidLog, MemberInfo } from '@/lib/api';
 import VerifyModal from '@/components/VerifyModal';
 import DepositModal from '@/components/DepositModal';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -303,7 +303,7 @@ export default function AuctionDetailPage() {
                     <div className="card overflow-hidden mb-4">
                         <div className="h-80 bg-[#222]">
                             {auction.imageUrl ? (
-                                <Image src={auction.imageUrl} alt="" width={400} height={320} className="w-full h-full object-cover" />
+                                <Image src={getImageUrl(auction.imageUrl)} alt="" width={400} height={320} className="w-full h-full object-cover" />
 
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center">
