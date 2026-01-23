@@ -5,9 +5,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { useMemberStore } from '@/store/useMemberStore';
 import type { components } from "@/api/schema";
 import { getErrorMessage } from '@/api/utils';
-import toast from 'react-hot-toast'; // ✅ 추가
+import toast from 'react-hot-toast';
 
 // 스키마에서 타입 추출
 type MemberInfo = components["schemas"]["MemberMeResponseDto"];
@@ -24,8 +25,21 @@ export default function ProductRegisterPage() {
     const router = useRouter();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
-    const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null);
-    const [checkingAuth, setCheckingAuth] = useState(true);
+    const { memberInfo, isSeller, isLoaded, fetchMemberInfo } = useMemberStore();
+
+    useEffect(() => {
+        const checkAuth = async () => {
+            const info = await fetchMemberInfo();
+            if (!info) {
+                router.push('/login');
+                return;
+            }
+            if (!isSeller) {
+                router.replace('/seller/onboarding');
+            }
+        };
+        checkAuth();
+    }, [fetchMemberInfo, isSeller, router]);
 
     // 이미지 관리를 위한 상태
     const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -39,37 +53,7 @@ export default function ProductRegisterPage() {
         auctionDuration: '3',
     });
 
-    const loadMember = useCallback(async () => {
-        try {
-            const info = await api.getMe();
-            if (info) {
-                setMemberInfo(info);
-
-                // 판매자가 아니거나 필수 정보가 없으면 온보딩으로 리다이렉트
-                const hasIdentity = !!(info.realNameMasked && info.contactPhoneMasked);
-                const hasAddress = !!(info.address && info.zipCode);
-
-                if (info.role !== 'SELLER' || !hasIdentity || !hasAddress) {
-                    router.replace('/seller/onboarding');
-                    return null;
-                }
-
-                return info;
-            }
-        } catch {
-            console.error('Failed to load member info');
-            router.push('/login');
-        } finally {
-            setCheckingAuth(false);
-        }
-        return null;
-    }, [router]);
-
-    useEffect(() => {
-        loadMember();
-    }, [loadMember]);
-
-    if (checkingAuth) {
+    if (!isLoaded || !memberInfo || !isSeller) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-900">
                 <div className="w-12 h-12 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
@@ -110,7 +94,7 @@ export default function ProductRegisterPage() {
 
     const handleSubmit = async () => {
         if (!memberInfo?.publicId) {
-            alert('로그인 정보가 없습니다.');
+            toast.error('로그인 정보가 없습니다.');
             return;
         }
 
