@@ -438,6 +438,6 @@ export const api = {
     // 본인인증 여부 체크 헬퍼
     isVerified: (member: MemberInfo | null | undefined): boolean => {
         if (!member) return false;
-        return !!(member.realNameMasked && member.contactPhoneMasked); // Masked types in response
+        return !!(member.realNameMasked && member.contactPhoneMasked);
     }
 };

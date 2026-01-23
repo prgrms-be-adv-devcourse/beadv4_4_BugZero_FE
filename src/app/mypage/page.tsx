@@ -135,16 +135,6 @@ export default function MyPage() {
 
     return (
         <div className="max-w-3xl mx-auto">
-            {/* 본인인증 안내 배너 */}
-            {!isVerified && (
-                <Link href="/verify" className="block mb-6">
-                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 hover:bg-yellow-500/20 transition">
-                        <p className="text-yellow-400 text-sm font-medium">
-                            🔐 입찰 및 판매를 위해 본인인증이 필요합니다. <span className="underline">인증하기 →</span>
-                        </p>
-                    </div>
-                </Link>
-            )}
 
             {/* Profile */}
             <div className="card p-6 mb-6">
@@ -185,28 +175,10 @@ export default function MyPage() {
                         </div>
                     </div>
                 )}
-                <div className="flex gap-2 mt-4 pt-4 border-t border-gray-700">
-                    <Link href="/settings" className="flex-1 btn-secondary py-2 text-center text-sm rounded-lg">
-                        ⚙️ 설정
+                <div className="mt-4 pt-4 border-t border-gray-700/50">
+                    <Link href="/settings" className="block w-full bg-gray-700/50 text-gray-300 py-3 text-center text-sm rounded-xl font-semibold hover:bg-gray-700 transition">
+                        ⚙️ 설정 및 프로필 수정
                     </Link>
-                    {userRole === 'SELLER' ? (
-                        <Link href="/products/register" className="flex-1 lego-btn py-2 text-center text-sm rounded-lg text-black font-medium">
-                            🏪 판매자 센터
-                        </Link>
-                    ) : (
-                        <button
-                            onClick={() => {
-                                if (!isVerified) {
-                                    setShowVerifyModal(true);
-                                } else {
-                                    alert('판매자 등록 기능 준비 중입니다.');
-                                }
-                            }}
-                            className="flex-1 lego-btn py-2 text-center text-sm rounded-lg text-black font-medium"
-                        >
-                            🛒 판매자 등록
-                        </button>
-                    )}
                 </div>
             </div>
 

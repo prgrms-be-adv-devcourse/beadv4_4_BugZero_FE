@@ -165,10 +165,10 @@ export default function SellerOnboardingPage() {
     };
 
     const steps: { key: OnboardingStep; label: string }[] = [
-        { key: 'intro', label: '정책' },
-        { key: 'identity', label: '인증' },
-        { key: 'address', label: '주소' },
-        { key: 'complete', label: '완료' }
+        { key: 'intro', label: '판매자 정책' },
+        { key: 'identity', label: '본인 인증' },
+        { key: 'address', label: '배송지 입력' },
+        { key: 'complete', label: '등록 완료' }
     ];
 
     const currentStepIndex = steps.findIndex(s => s.key === step);
@@ -261,7 +261,13 @@ export default function SellerOnboardingPage() {
                         </div>
 
                         <button
-                            onClick={() => setStep('identity')}
+                            onClick={() => {
+                                if (api.isVerified(memberInfo)) {
+                                    setStep('address');
+                                } else {
+                                    setStep('identity');
+                                }
+                            }}
                             className="w-full bg-yellow-500 text-black py-5 rounded-2xl font-black text-lg hover:bg-yellow-400 transition-all"
                         >
                             정책 동의 및 판매 시작하기
@@ -405,7 +411,13 @@ export default function SellerOnboardingPage() {
 
                             <div className="flex gap-3 pt-6">
                                 <button
-                                    onClick={() => setStep('identity')}
+                                    onClick={() => {
+                                        if (api.isVerified(memberInfo)) {
+                                            setStep('intro');
+                                        } else {
+                                            setStep('identity');
+                                        }
+                                    }}
                                     className="flex-1 bg-gray-700 text-white py-4 rounded-xl font-bold hover:bg-gray-600 transition-all"
                                 >
                                     이전으로

@@ -44,6 +44,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/payments/settlement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 정산 배치 실행
+         * @description 정산 배치를 실행합니다.
+         */
+        post: operations["runSettlementJob"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/payments/charges": {
         parameters: {
             query?: never;
@@ -184,6 +204,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 회원 탈퇴
+         * @description 계정/회원/지갑을 소프트 삭제하고 토큰을 폐기합니다
+         */
+        post: operations["withdraw"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/test/login": {
         parameters: {
             query?: never;
@@ -257,7 +297,27 @@ export interface paths {
          * 판매 포기
          * @description 경매 실패/유찰 시 상품을 더 이상 경매에 올리지 않습니다.
          */
-        post: operations["withdraw"];
+        post: operations["withdraw_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auctions/{auctionId}/relist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 재경매 등록
+         * @description 유찰되거나 결제 실패한 경매 상품을 다시 등록합니다. (판매자 전용)
+         */
+        post: operations["relistAuction"];
         delete?: never;
         options?: never;
         head?: never;
@@ -388,6 +448,26 @@ export interface paths {
         patch: operations["deterMineStartAuction"];
         trace?: never;
     };
+    "/api/v1/payments/me/wallet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 내 지갑 조회
+         * @description 내 지갑 정보를 조회합니다.
+         */
+        get: operations["getMyWallet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/payments/me/wallet-transactions": {
         parameters: {
             query?: never;
@@ -468,6 +548,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/members/me/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 나의 낙찰(주문) 목록 조회
+         * @description 내가 낙찰받은 경매 목록을 결제 상태(대기/완료)에 따라 조회합니다.
+         */
+        get: operations["getMyAuctionOrders"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/members/me/bookmarks": {
         parameters: {
             query?: never;
@@ -500,6 +600,22 @@ export interface paths {
          * @description 내가 참여한 경매 입찰 목록을 상태별로 조회합니다.
          */
         get: operations["getMyBids"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inspections/{productId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["readInspection"];
         put?: never;
         post?: never;
         delete?: never;
@@ -707,6 +823,12 @@ export interface components {
             message?: string;
             data?: components["schemas"]["PresignedUrlResponseDto"];
         };
+        SuccessResponseDtoVoid: {
+            /** Format: int32 */
+            status?: number;
+            message?: string;
+            data?: unknown;
+        };
         PaymentRequestDto: {
             /** Format: int32 */
             amount: number;
@@ -788,12 +910,6 @@ export interface components {
             message?: string;
             data?: components["schemas"]["MemberJoinResponseDto"];
         };
-        SuccessResponseDtoVoid: {
-            /** Format: int32 */
-            status?: number;
-            message?: string;
-            data?: unknown;
-        };
         SuccessResponseDtoLong: {
             /** Format: int32 */
             status?: number;
@@ -820,6 +936,10 @@ export interface components {
             /** @enum {string} */
             productCondition?: "INSPECTION" | "MISB" | "NISB" | "MISP" | "USED";
             reason?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: date-time */
+            createdAt?: string;
         };
         SuccessResponseDtoProductInspectionResponseDto: {
             /** Format: int32 */
@@ -861,6 +981,29 @@ export interface components {
             status?: number;
             message?: string;
             data?: components["schemas"]["AuctionWithdrawResponseDto"];
+        };
+        AuctionRelistRequestDto: {
+            /** Format: int64 */
+            startPrice?: number;
+            /** Format: int64 */
+            tickSize?: number;
+            /** Format: int32 */
+            durationDays?: number;
+        };
+        AuctionRelistResponseDto: {
+            /** Format: int64 */
+            newAuctionId?: number;
+            /** Format: int64 */
+            productId?: number;
+            /** @enum {string} */
+            status?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "WITHDRAWN";
+            message?: string;
+        };
+        SuccessResponseDtoAuctionRelistResponseDto: {
+            /** Format: int32 */
+            status?: number;
+            message?: string;
+            data?: components["schemas"]["AuctionRelistResponseDto"];
         };
         SuccessResponseDtoWishlistAddResponseDto: {
             /** Format: int32 */
@@ -963,6 +1106,21 @@ export interface components {
         MemberUpdateIdentityRequestDto: {
             realName?: string;
             contactPhone?: string;
+        };
+        SuccessResponseDtoWalletResponseDto: {
+            /** Format: int32 */
+            status?: number;
+            message?: string;
+            data?: components["schemas"]["WalletResponseDto"];
+        };
+        WalletResponseDto: {
+            /** Format: int64 */
+            id?: number;
+            publicId?: string;
+            /** Format: int32 */
+            balance?: number;
+            /** Format: int32 */
+            holdingAmount?: number;
         };
         PageDto: {
             /** Format: int32 */
@@ -1083,6 +1241,26 @@ export interface components {
         };
         PagedResponseDtoMySaleResponseDto: {
             data?: components["schemas"]["MySaleResponseDto"][];
+            pageDto?: components["schemas"]["PageDto"];
+        };
+        MyAuctionOrderListResponseDto: {
+            /** Format: int64 */
+            orderId?: number;
+            /** Format: int64 */
+            auctionId?: number;
+            productName?: string;
+            thumbnailUrl?: string;
+            /** Format: int32 */
+            finalPrice?: number;
+            /** @enum {string} */
+            orderStatus?: "PROCESSING" | "SUCCESS" | "FAILED";
+            statusDescription?: string;
+            /** Format: date-time */
+            tradeDate?: string;
+            auctionRequired?: boolean;
+        };
+        PagedResponseDtoMyAuctionOrderListResponseDto: {
+            data?: components["schemas"]["MyAuctionOrderListResponseDto"][];
             pageDto?: components["schemas"]["PageDto"];
         };
         AuctionListResponseDto: {
@@ -1317,6 +1495,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SuccessResponseDtoPresignedUrlResponseDto"];
+                };
+            };
+        };
+    };
+    runSettlementJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoVoid"];
                 };
             };
         };
@@ -1559,6 +1757,28 @@ export interface operations {
             };
         };
     };
+    withdraw: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoVoid"];
+                };
+            };
+        };
+    };
     login: {
         parameters: {
             query?: never;
@@ -1631,7 +1851,7 @@ export interface operations {
             };
         };
     };
-    withdraw: {
+    withdraw_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -1649,6 +1869,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SuccessResponseDtoAuctionWithdrawResponseDto"];
+                };
+            };
+        };
+    };
+    relistAuction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                auctionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuctionRelistRequestDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoAuctionRelistResponseDto"];
                 };
             };
         };
@@ -1871,6 +2117,26 @@ export interface operations {
             };
         };
     };
+    getMyWallet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoWalletResponseDto"];
+                };
+            };
+        };
+    };
     getWalletTransactions: {
         parameters: {
             query?: {
@@ -1966,6 +2232,29 @@ export interface operations {
             };
         };
     };
+    getMyAuctionOrders: {
+        parameters: {
+            query: {
+                status?: "PROCESSING" | "SUCCESS" | "FAILED";
+                pageable: components["schemas"]["Pageable"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PagedResponseDtoMyAuctionOrderListResponseDto"];
+                };
+            };
+        };
+    };
     getMyBookmarks: {
         parameters: {
             query: {
@@ -2007,6 +2296,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PagedResponseDtoMyBidResponseDto"];
+                };
+            };
+        };
+    };
+    readInspection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                productId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoProductInspectionResponseDto"];
                 };
             };
         };
