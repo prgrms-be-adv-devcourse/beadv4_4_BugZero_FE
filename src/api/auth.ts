@@ -60,10 +60,4 @@ export const authApi = {
     }
 };
 
-// 쿠키 파싱 헬퍼 (필요 시)
-function getRefreshTokenFromCookie(): string | null {
-    if (typeof document === 'undefined') return null;
-    const match = document.cookie.match(new RegExp('(^| )refreshToken=([^;]+)'));
-    if (match) return match[2];
-    return null;
-}
+

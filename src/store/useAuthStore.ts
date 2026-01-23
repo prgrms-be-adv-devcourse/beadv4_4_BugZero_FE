@@ -14,7 +14,7 @@ interface AuthState {
 // localStorage 키
 const ACCESS_TOKEN_KEY = 'accessToken';
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set) => ({
     accessToken: null,
     isLoggedIn: false,
 

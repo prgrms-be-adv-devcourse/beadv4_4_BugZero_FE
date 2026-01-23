@@ -7,16 +7,18 @@ import { useEffect, useState } from "react";
 interface LikeButtonProps {
     auctionId: number;
     className?: string;
-    showCount?: boolean; // 추후 확장성을 위해
 }
 
-export default function LikeButton({ auctionId, className = "", showCount = false }: LikeButtonProps) {
+export default function LikeButton({ auctionId, className = "" }: LikeButtonProps) {
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
     const { likedAuctionIds, toggleBookmark } = useWishlistStore();
 
     // Hydration mismatch 방지: 브라우저에서만 렌더링 확정
     const [mounted, setMounted] = useState(false);
-    useEffect(() => setMounted(true), []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const isLiked = mounted && likedAuctionIds.has(auctionId);
 
