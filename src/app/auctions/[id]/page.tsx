@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { api, Auction, BidLog, MemberInfo } from '@/lib/api';
 import VerifyModal from '@/components/VerifyModal';
-
-
+import DepositModal from '@/components/DepositModal';
+import { useAuthStore } from '@/store/useAuthStore';
+import { getErrorMessage } from '@/api/utils';
 
 function formatPrice(price: number): string {
     return new Intl.NumberFormat('ko-KR').format(price);
@@ -26,7 +27,9 @@ type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
 
 export default function AuctionDetailPage() {
     const params = useParams();
+    const router = useRouter();
     const auctionId = Number(params.id);
+    const { isLoggedIn, accessToken } = useAuthStore();
 
     const [auction, setAuction] = useState<Auction | null>(null);
     const [bidLogs, setBidLogs] = useState<BidLog[]>([]);
@@ -36,20 +39,28 @@ export default function AuctionDetailPage() {
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
     const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
     const [showVerifyModal, setShowVerifyModal] = useState(false);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [showDepositModal, setShowDepositModal] = useState(false);
+    const [pendingBidAmount, setPendingBidAmount] = useState<number | null>(null);
     const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null);
-
 
     const eventSourceRef = useRef<EventSource | null>(null);
 
-    // 경매 데이터 로드
+    // 경매 데이터 및 사용자 정보 로드
     useEffect(() => {
         async function loadData() {
             try {
-                const data = await api.getAuction(auctionId);
-                setAuction(data);
-                const logs = await api.getBidLogs(auctionId);
-                setBidLogs(logs);
+                // 경매 정보 및 입찰 기록 병렬 요청
+                const promises: Promise<unknown>[] = [
+                    api.getAuction(auctionId).then(setAuction),
+                    api.getBidLogs(auctionId).then(setBidLogs)
+                ];
+
+                // 로그인 시 사용자 정보 조회
+                if (accessToken) {
+                    promises.push(api.getMe().then(setMemberInfo).catch(() => setMemberInfo(null)));
+                }
+
+                await Promise.allSettled(promises);
             } catch (error) {
                 console.error("Failed to load auction data:", error);
             } finally {
@@ -57,7 +68,7 @@ export default function AuctionDetailPage() {
             }
         }
         loadData();
-    }, [auctionId]);
+    }, [auctionId, accessToken]);
 
     // SSE 실시간 구독
     useEffect(() => {
@@ -77,42 +88,68 @@ export default function AuctionDetailPage() {
                     setLastUpdate(new Date());
                 };
 
-                eventSource.onmessage = (event) => {
+                // 최초 연결 이벤트
+                eventSource.addEventListener('connect', (event) => {
                     try {
                         const data = JSON.parse(event.data);
-                        console.log('SSE 메시지 수신:', data);
-                        setLastUpdate(new Date());
-
-                        // 새 입찰 이벤트 처리
-                        if (data.type === 'BID' || data.bidAmount) {
-                            setAuction(prev => prev ? {
-                                ...prev,
-                                currentPrice: data.currentPrice || data.bidAmount,
-                                bidCount: (prev.bidCount || 0) + 1
-                            } : null);
-
-                            // 입찰 기록에 추가
-                            if (data.publicId) {
-                                setBidLogs(prev => [{
-                                    id: Date.now(),
-                                    publicId: data.publicId,
-                                    bidAmount: data.bidAmount || data.currentPrice,
-                                    bidTime: new Date().toISOString()
-                                }, ...prev]);
-                            }
+                        console.log('SSE Connect:', data);
+                        // 연결 시점의 최신 가격 동기화
+                        if (data.currentPrice) {
+                            setAuction(prev => prev ? { ...prev, currentPrice: data.currentPrice } : null);
                         }
+                    } catch (e) {
+                        console.error('SSE Connect Parse Error', e);
+                    }
+                });
 
-                        // 경매 종료 이벤트
-                        if (data.type === 'ENDED' || data.status === 'ENDED') {
-                            setAuction(prev => prev ? { ...prev, status: 'ENDED' } : null);
-                            eventSource.close();
-                            setConnectionStatus('disconnected');
+                // 실시간 업데이트 처리 핸들러
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const handleUpdate = (data: any) => {
+                    setLastUpdate(new Date());
+
+                    // 입찰/가격 업데이트
+                    if (data.bidAmount || data.currentPrice) {
+                        const newPrice = data.bidAmount || data.currentPrice;
+                        setAuction(prev => prev ? {
+                            ...prev,
+                            currentPrice: newPrice,
+                            bidCount: (prev.bidCount || 0) + 1
+                        } : null);
+
+                        // 입찰 기록 업데이트: SSE에서 bidderName(닉네임)을 받아와서 처리
+                        if (data.bidAmount && (data.bidderName || data.publicId)) {
+                            const newLog: BidLog = {
+                                id: Date.now(), // 임시 ID
+                                publicId: data.bidderName || data.publicId, // 닉네임 우선 사용
+                                bidAmount: data.bidAmount,
+                                bidTime: new Date().toISOString()
+                            };
+                            setBidLogs(prev => [newLog, ...prev]);
+                        } else if (data.bidAmount) {
+                            // 데이터 부족 시 재조회 (fallback)
+                            api.getBidLogs(auctionId).then(setBidLogs).catch(e => console.error('입찰 기록 갱신 실패', e));
                         }
-                    } catch {
-                        console.log('SSE 데이터 파싱 실패:', event.data);
                     }
 
+                    // 경매 종료 이벤트
+                    if (data.type === 'ENDED' || data.status === 'ENDED') {
+                        setAuction(prev => prev ? { ...prev, status: 'ENDED' } : null);
+                        eventSource.close();
+                        setConnectionStatus('disconnected');
+                    }
+                };
 
+                // 이벤트 리스너 등록 (bid 이벤트 및 일반 메시지)
+                eventSource.addEventListener('bid', (event) => {
+                    try {
+                        handleUpdate(JSON.parse(event.data));
+                    } catch (e) { console.error(e); }
+                });
+
+                eventSource.onmessage = (event) => {
+                    try {
+                        handleUpdate(JSON.parse(event.data));
+                    } catch (e) { console.error(e); }
                 };
 
                 eventSource.onerror = () => {
@@ -120,7 +157,7 @@ export default function AuctionDetailPage() {
                     setConnectionStatus('disconnected');
                     eventSource.close();
 
-                    // 10초 후 재연결 시도 (서버 켜질 때까지)
+                    // 10초 후 재연결 시도
                     setTimeout(() => {
                         if (auction?.status === 'IN_PROGRESS') {
                             connect();
@@ -131,13 +168,10 @@ export default function AuctionDetailPage() {
                 console.log('SSE 연결 시도 실패 - BE 서버 확인 필요');
                 setConnectionStatus('disconnected');
             }
-
-
         };
 
         connect();
 
-        // cleanup
         return () => {
             if (eventSourceRef.current) {
                 eventSourceRef.current.close();
@@ -147,32 +181,68 @@ export default function AuctionDetailPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [auctionId, auction?.status]);
 
+    const executeBid = async (amount: number) => {
+        setBidding(true);
+        try {
+            await api.createBid(auctionId, amount);
+            setBidAmount('');
+            alert('입찰이 완료되었습니다!');
+            // 성공 시 내가 참여했음을 로컬 상태 업데이트 (모달 다시 안 뜨게)
+            setAuction(prev => prev ? { ...prev, myParticipation: { ...prev.myParticipation, hasBid: true } } : null);
+        } catch (error) {
+            const message = getErrorMessage(error, '입찰에 실패했습니다.');
+            alert(message);
+        } finally {
+            setBidding(false);
+            setShowDepositModal(false);
+            setPendingBidAmount(null);
+        }
+    };
 
+    const handleBidClick = async () => {
+        // 1. 로그인 체크
+        if (!isLoggedIn) {
+            if (confirm('로그인이 필요한 서비스입니다.\n로그인 페이지로 이동하시겠습니까?')) {
+                router.push('/login');
+            }
+            return;
+        }
 
-    const handleBid = async () => {
+        // 2. 본인 인증 체크
+        if (!api.isVerified(memberInfo)) {
+            setShowVerifyModal(true);
+            return;
+        }
+
+        // 3. API 데이터 유효성 체크
         if (!bidAmount || !auction) return;
         const amount = Number(bidAmount);
+
         if (amount <= auction.currentPrice) {
             alert('현재가보다 높은 금액을 입력해주세요');
             return;
         }
 
-        setBidding(true);
+        // 4. 첫 입찰 여부 확인
+        const hasBid = auction.myParticipation?.hasBid;
+
+        if (!hasBid) {
+            // 첫 입찰이면 보증금 모달 띄우기
+            setPendingBidAmount(amount);
+            setShowDepositModal(true);
+        } else {
+            // 재입찰이면 바로 실행
+            executeBid(amount);
+        }
+    };
+
+    // 인증 완료 후 콜백
+    const handleVerified = async () => {
         try {
-            await api.createBid(auctionId, amount);
-            setBidAmount('');
-            alert('입찰 완료!');
-            // SSE를 통해 업데이트가 오므로 여기서는 별도 처리 불필요
+            const me = await api.getMe();
+            setMemberInfo(me);
         } catch {
-
-            // API 연동 전 Mock 처리
-
-            setAuction(prev => prev ? { ...prev, currentPrice: amount, bidCount: (prev.bidCount || 0) + 1 } : null);
-            setBidLogs(prev => [{ id: Date.now(), publicId: '나', bidAmount: amount, bidTime: new Date().toISOString() }, ...prev]);
-            setBidAmount('');
-            alert('입찰 완료! (Mock)');
-        } finally {
-            setBidding(false);
+            // ignore
         }
     };
 
@@ -216,6 +286,9 @@ export default function AuctionDetailPage() {
     }
 
     const deposit = api.calculateDeposit(auction.startPrice);
+    // 내 입찰 가능 여부 (판매자 본인 여부 등은 백엔드에서 전달된 canBid로 판단)
+    // bid 객체가 없거나 canBid가 false이면 입찰 불가
+    const canBid = auction.bid?.canBid ?? false; // Default true if legacy? Or should default false. Schema has optional.
 
     return (
         <div className="max-w-5xl mx-auto">
@@ -278,6 +351,7 @@ export default function AuctionDetailPage() {
                         <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mb-4">
                             <p className="text-blue-400 text-xs">
                                 💰 입찰 보증금: <span className="font-bold">₩{formatPrice(deposit)}</span> (시작가의 10%)
+                                {!auction.myParticipation?.hasBid && <span className="block mt-1 text-[11px] opacity-70">* 첫 입찰 시에만 부과됩니다.</span>}
                             </p>
                         </div>
 
@@ -294,10 +368,11 @@ export default function AuctionDetailPage() {
                                         <button
                                             key={amount}
                                             onClick={() => setBidAmount(String(amount))}
+                                            disabled={!canBid}
                                             className={`py-3 rounded-lg text-sm font-medium transition ${bidAmount === String(amount)
                                                 ? 'bg-yellow-500 text-black'
                                                 : 'bg-gray-800 text-white hover:bg-gray-700'
-                                                }`}
+                                                } ${!canBid ? 'opacity-50 cursor-not-allowed' : ''}`}
                                         >
                                             ₩{formatPrice(amount)}
                                             {i === 0 && <span className="block text-xs opacity-70">최소</span>}
@@ -305,11 +380,13 @@ export default function AuctionDetailPage() {
                                     ))}
                                 </div>
                                 <button
-                                    onClick={handleBid}
-                                    disabled={bidding || !bidAmount}
-                                    className="w-full lego-btn py-3 text-black font-bold disabled:opacity-50"
+                                    onClick={handleBidClick}
+                                    disabled={bidding || !bidAmount || !canBid}
+                                    className="w-full lego-btn py-3 text-black font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    {bidding ? '입찰 중...' : `₩${bidAmount ? formatPrice(Number(bidAmount)) : '금액 선택'} 입찰하기`}
+                                    {bidding ? '입찰 중...' :
+                                        !canBid ? '입찰 불가 (본인 상품 또는 자격 제한)' :
+                                            `₩${bidAmount ? formatPrice(Number(bidAmount)) : '금액 선택'} 입찰하기`}
                                 </button>
                             </div>
                         )}
@@ -354,12 +431,22 @@ export default function AuctionDetailPage() {
             <VerifyModal
                 isOpen={showVerifyModal}
                 onClose={() => setShowVerifyModal(false)}
-                onVerified={() => {
-                    // 인증 완료 후 memberInfo 업데이트 (실제로는 API에서 다시 조회)
-                    setMemberInfo(prev => prev ? { ...prev, realName: '인증완료', contactPhone: '01012345678' } : null);
+                onVerified={handleVerified}
+            />
+
+            {/* 보증금 결제 모달 */}
+            <DepositModal
+                isOpen={showDepositModal}
+                depositAmount={deposit}
+                onClose={() => {
+                    setShowDepositModal(false);
+                    setPendingBidAmount(null);
                 }}
+                onConfirm={() => {
+                    if (pendingBidAmount) executeBid(pendingBidAmount);
+                }}
+                loading={bidding}
             />
         </div>
     );
 }
-
