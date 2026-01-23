@@ -151,7 +151,7 @@ export default function ProductRegisterPage() {
                 }))
             };
 
-            await api.createProduct(memberInfo.publicId, productData);
+            await api.createProduct(productData);
             toast.success('상품이 등록되었습니다! 검수 승인 후 경매가 시작됩니다.');
             router.push('/mypage');
 
