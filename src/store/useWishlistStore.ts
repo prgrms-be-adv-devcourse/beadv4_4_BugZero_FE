@@ -1,7 +1,7 @@
-
 import { create } from 'zustand';
 import { api } from '@/lib/api';
 import { useAuthStore } from './useAuthStore';
+import { toast } from 'react-hot-toast';
 
 interface WishlistStore {
     likedAuctionIds: Set<number>;
@@ -59,7 +59,7 @@ export const useWishlistStore = create<WishlistStore>((set, get) => ({
             console.error('Failed to toggle bookmark:', error);
             // Revert on failure
             set({ likedAuctionIds: likedAuctionIds });
-            alert('관심 경매 설정에 실패했습니다.');
+            toast.error('관심 경매 설정에 실패했습니다.');
         }
     },
 
