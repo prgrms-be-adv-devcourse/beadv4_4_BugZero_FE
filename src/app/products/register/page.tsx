@@ -5,8 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import VerifyModal from '@/components/VerifyModal';
-import SellerInfoModal from '@/components/SellerInfoModal';
 import type { components } from "@/api/schema";
 import { getErrorMessage } from '@/api/utils';
 
@@ -26,10 +24,7 @@ export default function ProductRegisterPage() {
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null);
-
-    // 모달 상태 관리
-    const [showVerifyModal, setShowVerifyModal] = useState(false);
-    const [showAddressModal, setShowAddressModal] = useState(false);
+    const [checkingAuth, setCheckingAuth] = useState(true);
 
     // 이미지 관리를 위한 상태
     const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -48,11 +43,23 @@ export default function ProductRegisterPage() {
             const info = await api.getMe();
             if (info) {
                 setMemberInfo(info);
+
+                // 판매자가 아니거나 필수 정보가 없으면 온보딩으로 리다이렉트
+                const hasIdentity = !!(info.realNameMasked && info.contactPhoneMasked);
+                const hasAddress = !!(info.address && info.zipCode);
+
+                if (info.role !== 'SELLER' || !hasIdentity || !hasAddress) {
+                    router.replace('/seller/onboarding');
+                    return null;
+                }
+
                 return info;
             }
         } catch {
             console.error('Failed to load member info');
             router.push('/login');
+        } finally {
+            setCheckingAuth(false);
         }
         return null;
     }, [router]);
@@ -60,6 +67,15 @@ export default function ProductRegisterPage() {
     useEffect(() => {
         loadMember();
     }, [loadMember]);
+
+    if (checkingAuth) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-900">
+                <div className="w-12 h-12 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        );
+    }
+
 
     // loadMember가 다른 곳(재검증 등)에서도 쓰이므로 밖으로 빼는 게 좋다면, useCallback을 써야 함.
     // 하지만 현재 코드 구조상 useEffect 안에서만 초기 호출되고,
@@ -99,39 +115,7 @@ export default function ProductRegisterPage() {
 
         setLoading(true);
         try {
-            // --- [1단계: 본인 인증 체크] ---
-            // Masked 데이터가 없거나 실제 값이 비어있는 경우 체크
-            if (!memberInfo.realNameMasked || !memberInfo.contactPhoneMasked) {
-                alert("판매자 등록을 위해 실명 인증이 필요합니다.");
-                setShowVerifyModal(true);
-                setLoading(false);
-                return;
-            }
-
-            // --- [2단계: 추가 정보(주소) 체크] ---
-            if (!memberInfo.address || !memberInfo.zipCode) {
-                alert("판매 물품 수거를 위해 주소 정보 등록이 필요합니다.");
-                setShowAddressModal(true);
-                setLoading(false);
-                return;
-            }
-
-            // --- [3단계: 판매자 자격 활성화 (SELLER 권한)] ---
-            if (memberInfo.role !== 'SELLER') {
-                const confirmPromote = confirm("판매자 자격이 필요합니다. 입력된 정보를 바탕으로 판매자 자격을 활성화하시겠습니까?");
-                if (!confirmPromote) {
-                    setLoading(false);
-                    return;
-                }
-                await api.promoteSeller();
-
-                await api.refreshAccessToken();
-
-                alert("판매자 자격이 활성화되었습니다!");
-                const updatedInfo = await loadMember(); // 정보 새로고침
-
-                if (!updatedInfo) return;
-            }
+            // 판매자 체크는 페이지 진입 시 이미 완료됨 (리다이렉트)
 
             // --- [4단계: S3 이미지 업로드] ---
             const uploadedS3Paths = await Promise.all(
@@ -322,20 +306,6 @@ export default function ProductRegisterPage() {
                     </div>
                 </div>
             )}
-
-            {/* 본인인증 모달 */}
-            <VerifyModal
-                isOpen={showVerifyModal}
-                onClose={() => setShowVerifyModal(false)}
-                onVerified={loadMember}
-            />
-
-            {/* 주소 등록 모달 */}
-            <SellerInfoModal
-                isOpen={showAddressModal}
-                onClose={() => setShowAddressModal(false)}
-                onUpdated={loadMember}
-            />
         </div>
     );
 }
