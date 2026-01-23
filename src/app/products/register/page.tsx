@@ -132,10 +132,7 @@ export default function ProductRegisterPage() {
                         body: file,
                         headers: { 'Content-Type': file.type }
                     });
-
-                    // presigned.url에서 query string(?...)을 제거하여 실제 접근 가능한 URL 추출
-                    const publicUrl = presigned.url.split('?')[0];
-                    return publicUrl;
+                    return presigned.s3Path;
                 })
             );
 
@@ -154,7 +151,7 @@ export default function ProductRegisterPage() {
                 }))
             };
 
-            await api.createProduct(memberInfo.publicId, productData);
+            await api.createProduct(productData);
             toast.success('상품이 등록되었습니다! 검수 승인 후 경매가 시작됩니다.');
             router.push('/mypage');
 
