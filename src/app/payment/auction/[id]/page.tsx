@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 
 
 function formatPrice(price: number): string {
@@ -43,12 +44,12 @@ export default function AuctionPaymentPage() {
 
             if (paymentMethod === 'toss') {
                 // TODO: 실제 토스페이먼츠 SDK 연동
-                alert('토스페이먼츠 결제창으로 이동합니다 (데모)');
+                toast.success('토스페이먼츠 결제창으로 이동합니다 (데모)');
             }
 
             setStep('complete');
         } catch {
-            alert('결제 실패');
+            toast.error('결제 실패');
 
             setStep('confirm');
         } finally {

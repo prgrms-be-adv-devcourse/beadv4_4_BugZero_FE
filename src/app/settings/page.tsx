@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { client } from '@/api/client';
 import { getErrorMessage } from '@/api/utils';
 import type { components } from '@/api/schema';
+import { toast } from 'react-hot-toast';
 
 type MemberInfo = components['schemas']['MemberMeResponseDto'];
 
@@ -38,7 +39,7 @@ export default function ProfileSettingsPage() {
                     addressDetail: data.data.addressDetail || '',
                 });
             } else if (error) {
-                alert(getErrorMessage(error, '회원 정보를 불러올 수 없습니다.'));
+                toast.error(getErrorMessage(error, '회원 정보를 불러올 수 없습니다.'));
             }
         };
         loadMemberInfo();
@@ -46,7 +47,7 @@ export default function ProfileSettingsPage() {
 
     const handleSave = async () => {
         if (!form.nickname.trim()) {
-            alert('닉네임을 입력해주세요.');
+            toast.error('닉네임을 입력해주세요.');
             return;
         }
 
@@ -67,7 +68,7 @@ export default function ProfileSettingsPage() {
                 throw error;
             }
 
-            alert('저장되었습니다!');
+            toast.success('저장되었습니다!');
             // 상태 업데이트하여 UI에 즉시 반영
             setMemberInfo(prev => prev ? {
                 ...prev,
@@ -78,7 +79,7 @@ export default function ProfileSettingsPage() {
                 addressDetail: form.addressDetail,
             } : null);
         } catch (err) {
-            alert(getErrorMessage(err, '저장하는데 실패했습니다.'));
+            toast.error(getErrorMessage(err, '저장하는데 실패했습니다.'));
         } finally {
             setLoading(false);
         }
@@ -376,10 +377,10 @@ export default function ProfileSettingsPage() {
                                     onClick={async () => {
                                         if (withdrawConfirm === '탈퇴합니다') {
                                             // TODO: BE API 연동
-                                            alert('회원탈퇴가 완료되었습니다.');
+                                            toast.success('회원탈퇴가 완료되었습니다.');
                                             router.push('/');
                                         } else {
-                                            alert('"탈퇴합니다"를 정확히 입력해주세요.');
+                                            toast.error('"탈퇴합니다"를 정확히 입력해주세요.');
                                         }
                                     }}
                                     disabled={withdrawConfirm !== '탈퇴합니다'}

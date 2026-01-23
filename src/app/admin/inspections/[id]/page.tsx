@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 
 
 type InspectionResult = 'PASS' | 'FAIL' | 'PENDING';
@@ -53,9 +54,9 @@ export default function ProductInspectionPage() {
         try {
             // TODO: API 연동
             await new Promise(resolve => setTimeout(resolve, 1500));
-            alert(`검수 ${finalResult === 'APPROVED' ? '승인' : '거부'} 완료!`);
+            toast.success(`검수 ${finalResult === 'APPROVED' ? '승인' : '거부'} 완료!`);
         } catch {
-            alert('처리 실패');
+            toast.error('처리 실패');
         } finally {
 
 

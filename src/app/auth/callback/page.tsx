@@ -3,6 +3,7 @@
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
+import { toast } from 'react-hot-toast';
 
 function CallbackContent() {
     const router = useRouter();
@@ -16,7 +17,7 @@ function CallbackContent() {
             setAccessToken(token);
             router.replace('/'); // replace를 써서 뒤로가기 방지
         } else {
-            alert('로그인에 실패했습니다.');
+            toast.error('로그인에 실패했습니다.');
             router.replace('/login');
         }
     }, [searchParams, setAccessToken, router]);

@@ -3,21 +3,35 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useMemberStore } from '@/store/useMemberStore';
 import { api } from '@/lib/api';
+import { useEffect } from 'react';
 
-import toast from 'react-hot-toast'; // ✅ 추가
+import toast from 'react-hot-toast';
 
 export default function Header() {
     const pathname = usePathname();
     const router = useRouter();
     const { accessToken, role } = useAuthStore();
+    const { isSeller, fetchMemberInfo, clearMemberInfo } = useMemberStore();
     const isLogin = !!accessToken;
     const isAdmin = role === 'ADMIN';
+
+    useEffect(() => {
+        if (isLogin) {
+            fetchMemberInfo();
+        } else {
+            clearMemberInfo();
+        }
+    }, [isLogin, fetchMemberInfo, clearMemberInfo]);
 
     // 1. 로그인 여부와 상관없이 항상 노출되는 메뉴
     const publicNavItems = [
         { href: '/', label: '경매' },
-        { href: '/products/register', label: '판매' },
+        {
+            href: isLogin ? (isSeller ? '/products/register' : '/seller/onboarding') : '/products/register',
+            label: '판매'
+        },
     ];
 
     // 2. 로그인 시에만 추가로 노출되는 메뉴 (관심, 마이페이지)
@@ -28,15 +42,25 @@ export default function Header() {
 
     const isActive = (href: string) => {
         if (href === '/') return pathname === '/';
+        // 판매 관련 경로는 하나로 취급하여 강조 처리
+        if (href === '/products/register' || href === '/seller/onboarding') {
+            return pathname === '/products/register' || pathname === '/seller/onboarding';
+        }
         return pathname.startsWith(href);
     };
 
     // 판매하기 등 공용 메뉴 중 권한이 필요한 경우의 클릭 핸들러
     const handleProtectedClick = (e: React.MouseEvent, href: string) => {
-        if (!isLogin && href === '/products/register') {
+        if (!isLogin && (href === '/products/register' || href === '/seller/onboarding')) {
             e.preventDefault();
             toast.error('판매 등록은 로그인 후 이용 가능합니다.');
             router.push('/login');
+            return;
+        }
+
+        // 현재 이미 그 페이지라면 추가 동작 방지 (무한 새로고침 현상 방어)
+        if (pathname === href) {
+            e.preventDefault();
         }
     };
 
@@ -74,7 +98,7 @@ export default function Header() {
                             {/* 공용 메뉴: 경매, 판매 */}
                             {publicNavItems.map((item) => (
                                 <Link
-                                    key={item.href}
+                                    key={item.label}
                                     href={item.href}
                                     onClick={(e) => handleProtectedClick(e, item.href)}
                                     className={`text-sm transition font-medium ${isActive(item.href)
@@ -107,7 +131,7 @@ export default function Header() {
                                     className={`text-sm transition font-medium ${isActive('/admin/inspection')
                                         ? 'text-red-400 border-b-2 border-red-400 pb-1'
                                         : 'text-gray-400 hover:text-red-400'
-                                        }`}
+                                    }`}
                                 >
                                     검수
                                 </Link>

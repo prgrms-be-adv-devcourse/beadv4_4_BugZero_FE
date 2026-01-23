@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { api } from '@/lib/api';
 import { getErrorMessage } from '@/api/utils';
+import { toast } from 'react-hot-toast';
 
 interface Props {
     isOpen: boolean;
@@ -30,11 +31,11 @@ export default function SellerInfoModal({ isOpen, onClose, onUpdated }: Props) {
                 addressDetail: form.addressDetail,
             });
 
-            alert("판매 정보가 성공적으로 등록되었습니다.");
+            toast.success("판매 정보가 성공적으로 등록되었습니다.");
             onUpdated();
             onClose();
         } catch (error) {
-            alert(getErrorMessage(error, "정보 저장에 실패했습니다."));
+            toast.error(getErrorMessage(error, "정보 저장에 실패했습니다."));
         } finally {
             setLoading(false);
         }
