@@ -76,20 +76,19 @@ async function handleResponseData<T>(promise: Promise<{ data?: unknown; error?: 
 
 export const api = {
     // 상품
-    createProduct: async (publicId: string, body: components["schemas"]["ProductCreateRequestDto"]) => {
+    createProduct: async (body: components["schemas"]["ProductCreateRequestDto"]) => {
         return handleResponseData<components["schemas"]["ProductCreateResponseDto"]>(
             client.POST("/api/v1/products", {
-                params: { query: { publicId } },
                 body
             }),
             "상품 등록에 실패했습니다."
         );
     },
 
-    updateProduct: async (productId: number, publicId: string, body: components["schemas"]["ProductUpdateDto"]) => {
+    updateProduct: async (productId: number, body: components["schemas"]["ProductUpdateDto"]) => {
         return handleResponseData<components["schemas"]["ProductUpdateResponseDto"]>(
             client.PATCH("/api/v1/products/{productId}", {
-                params: { path: { productId }, query: { publicId } },
+                params: { path: { productId } },
                 body
             }),
             "상품 수정에 실패했습니다."
@@ -183,10 +182,10 @@ export const api = {
         );
     },
 
-    determineStartAuction: async (auctionId: number) => {
+    determineStartAuction: async (productId: number) => {
         return handleResponseData<number>(
-            client.PATCH("/api/v1/auctions/{auctionId}/startTime", {
-                params: { path: { auctionId } }
+            client.PATCH("/api/v1/auctions/{productId}/startTime", {
+                params: { path: { productId } }
             }),
             "경매 시작 시간 결정에 실패했습니다."
         );
