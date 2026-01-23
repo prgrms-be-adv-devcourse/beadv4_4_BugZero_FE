@@ -5,6 +5,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { api } from '@/lib/api';
 
+import toast from 'react-hot-toast'; // ✅ 추가
+
 export default function Header() {
     const pathname = usePathname();
     const router = useRouter();
@@ -32,7 +34,7 @@ export default function Header() {
     const handleProtectedClick = (e: React.MouseEvent, href: string) => {
         if (!isLogin && href === '/products/register') {
             e.preventDefault();
-            alert('판매 등록은 로그인 후 이용 가능합니다.');
+            toast.error('판매 등록은 로그인 후 이용 가능합니다.');
             router.push('/login');
         }
     };
@@ -45,7 +47,7 @@ export default function Header() {
             console.error("Logout API failed", error);
         } finally {
             useAuthStore.getState().clearAuth();
-            alert('로그아웃 되었습니다.');
+            toast.success('로그아웃 되었습니다.');
             router.push('/');
         }
     };

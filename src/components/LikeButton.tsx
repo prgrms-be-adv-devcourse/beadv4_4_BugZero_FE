@@ -9,6 +9,8 @@ interface LikeButtonProps {
     className?: string;
 }
 
+import toast from "react-hot-toast"; // ✅ 추가
+
 export default function LikeButton({ auctionId, className = "" }: LikeButtonProps) {
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
     const { likedAuctionIds, toggleBookmark } = useWishlistStore();
@@ -27,7 +29,7 @@ export default function LikeButton({ auctionId, className = "" }: LikeButtonProp
         e.stopPropagation();
 
         if (!isLoggedIn) {
-            alert('로그인이 필요한 서비스입니다.');
+            toast.error('로그인이 필요한 서비스입니다.');
             return;
         }
 

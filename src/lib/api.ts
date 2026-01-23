@@ -76,8 +76,8 @@ async function handleResponseData<T>(promise: Promise<{ data?: unknown; error?: 
 
 export const api = {
     // 상품
-    createProduct: async (publicId: string, body: components["schemas"]["ProductRequestDto"]) => {
-        return handleResponseData<components["schemas"]["ProductResponseDto"]>(
+    createProduct: async (publicId: string, body: components["schemas"]["ProductCreateRequestDto"]) => {
+        return handleResponseData<components["schemas"]["ProductCreateResponseDto"]>(
             client.POST("/api/v1/products", {
                 params: { query: { publicId } },
                 body

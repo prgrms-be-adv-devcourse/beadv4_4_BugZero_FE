@@ -4,12 +4,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { api, Auction, BidLog, MemberInfo } from '@/lib/api';
+import { api, Auction, BidLog, MemberInfo, Wallet } from '@/lib/api';
 import VerifyModal from '@/components/VerifyModal';
 import DepositModal from '@/components/DepositModal';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getErrorMessage } from '@/api/utils';
 import LikeButton from '@/components/LikeButton';
+import toast from 'react-hot-toast';
 
 function formatPrice(price: number): string {
     return new Intl.NumberFormat('ko-KR').format(price);
@@ -43,6 +44,7 @@ export default function AuctionDetailPage() {
     const [showDepositModal, setShowDepositModal] = useState(false);
     const [pendingBidAmount, setPendingBidAmount] = useState<number | null>(null);
     const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null);
+    const [wallet, setWallet] = useState<Wallet | null>(null);
 
     const eventSourceRef = useRef<EventSource | null>(null);
 
@@ -56,9 +58,10 @@ export default function AuctionDetailPage() {
                     api.getBidLogs(auctionId).then(setBidLogs)
                 ];
 
-                // 로그인 시 사용자 정보 조회
+                // 로그인 시 사용자 정보 및 지갑 정보 조회
                 if (accessToken) {
                     promises.push(api.getMe().then(setMemberInfo).catch(() => setMemberInfo(null)));
+                    promises.push(api.getMyWallet().then(setWallet).catch(() => setWallet(null))); // ✅ 추가
                 }
 
                 await Promise.allSettled(promises);
@@ -187,12 +190,17 @@ export default function AuctionDetailPage() {
         try {
             await api.createBid(auctionId, amount);
             setBidAmount('');
-            alert('입찰이 완료되었습니다!');
+            toast.success('입찰이 완료되었습니다!');
             // 성공 시 내가 참여했음을 로컬 상태 업데이트 (모달 다시 안 뜨게)
             setAuction(prev => prev ? { ...prev, myParticipation: { ...prev.myParticipation, hasBid: true } } : null);
+
+            // 수동 갱신
+            api.getAuction(auctionId).then(setAuction);
+            api.getBidLogs(auctionId).then(setBidLogs);
+            api.getMyWallet().then(setWallet).catch(() => { });
         } catch (error) {
             const message = getErrorMessage(error, '입찰에 실패했습니다.');
-            alert(message);
+            toast.error(message);
         } finally {
             setBidding(false);
             setShowDepositModal(false);
@@ -219,8 +227,17 @@ export default function AuctionDetailPage() {
         if (!bidAmount || !auction) return;
         const amount = Number(bidAmount);
 
+        if (auction.bid && !auction.bid.canBid) {
+            if (auction.bid.isMyHighestBid) {
+                toast.error('이미 현재 최고가 입찰자입니다.');
+            } else {
+                toast.error('입찰할 수 없는 상태입니다.');
+            }
+            return;
+        }
+
         if (amount <= auction.currentPrice) {
-            alert('현재가보다 높은 금액을 입력해주세요');
+            toast.error('현재가보다 높은 금액을 입력해주세요');
             return;
         }
 
@@ -228,7 +245,15 @@ export default function AuctionDetailPage() {
         const hasBid = auction.myParticipation?.hasBid;
 
         if (!hasBid) {
-            // 첫 입찰이면 보증금 모달 띄우기
+            // 보증금 모달 띄우기 전 최신 잔액 확인
+            try {
+                const w = await api.getMyWallet();
+                setWallet(w);
+            } catch (error) {
+                const message = getErrorMessage(error, '지갑 정보를 가져올 수 없습니다.');
+                toast.error(message);
+                return; // 에러 발생 시 모달을 띄우지 않고 중단
+            }
             setPendingBidAmount(amount);
             setShowDepositModal(true);
         } else {
@@ -287,6 +312,9 @@ export default function AuctionDetailPage() {
     }
 
     const deposit = api.calculateDeposit(auction.startPrice);
+    // 사용 가능 잔액 = 전체 잔액 - 보류 금액(보증금 등)
+    const availableBalance = wallet ? (wallet.balance || 0) - (wallet.holdingAmount || 0) : null;
+
     // 내 입찰 가능 여부 (판매자 본인 여부 등은 백엔드에서 전달된 canBid로 판단)
     // bid 객체가 없거나 canBid가 false이면 입찰 불가
     const canBid = auction.bid?.canBid ?? false; // Default true if legacy? Or should default false. Schema has optional.
@@ -372,11 +400,11 @@ export default function AuctionDetailPage() {
                                         <button
                                             key={amount}
                                             onClick={() => setBidAmount(String(amount))}
-                                            disabled={!canBid}
+                                            disabled={!canBid && api.isVerified(memberInfo)}
                                             className={`py-3 rounded-lg text-sm font-medium transition ${bidAmount === String(amount)
                                                 ? 'bg-yellow-500 text-black'
                                                 : 'bg-gray-800 text-white hover:bg-gray-700'
-                                                } ${!canBid ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                } ${(!canBid && api.isVerified(memberInfo)) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                         >
                                             ₩{formatPrice(amount)}
                                             {i === 0 && <span className="block text-xs opacity-70">최소</span>}
@@ -385,12 +413,15 @@ export default function AuctionDetailPage() {
                                 </div>
                                 <button
                                     onClick={handleBidClick}
-                                    disabled={bidding || !bidAmount || !canBid}
-                                    className="w-full lego-btn py-3 text-black font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled={bidding || (api.isVerified(memberInfo) && (!canBid || !bidAmount))}
+                                    className="w-full lego-btn py-4 text-black font-black rounded-2xl hover:bg-yellow-400 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-lg shadow-yellow-500/10 active:scale-[0.98]"
                                 >
-                                    {bidding ? '입찰 중...' :
-                                        !canBid ? '입찰 불가 (본인 상품 또는 자격 제한)' :
-                                            `₩${bidAmount ? formatPrice(Number(bidAmount)) : '금액 선택'} 입찰하기`}
+                                    {bidding ? '입찰 처리 중...' :
+                                        !isLoggedIn ? '로그인 후 입찰하기' :
+                                            !api.isVerified(memberInfo) ? '🔒 본인인증 후 입찰하기' :
+                                                auction.bid?.isMyHighestBid ? '🥇 현재 최고가 입찰 중' :
+                                                    !canBid ? '입찰 불가 상품' :
+                                                        `₩${bidAmount ? formatPrice(Number(bidAmount)) : '금액 선택'} 입찰하기`}
                                 </button>
                             </div>
                         )}
@@ -442,6 +473,7 @@ export default function AuctionDetailPage() {
             <DepositModal
                 isOpen={showDepositModal}
                 depositAmount={deposit}
+                balance={availableBalance}
                 onClose={() => {
                     setShowDepositModal(false);
                     setPendingBidAmount(null);

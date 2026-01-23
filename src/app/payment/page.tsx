@@ -5,6 +5,7 @@ import { getErrorMessage } from "@/api/utils";
 import VerifyModal from "@/components/VerifyModal";
 import { api } from "@/lib/api";
 import { loadTossPayments } from "@tosspayments/payment-sdk";
+import toast from "react-hot-toast"; // ✅ 추가
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -95,7 +96,7 @@ export default function PaymentPage() {
             }
 
             console.error('[PaymentPage] Charge Error:', message);
-            alert(message);
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -161,12 +162,12 @@ export default function PaymentPage() {
                         if (info) {
                             setMemberInfo(info);
                             setShowVerifyModal(false);
-                            alert('본인 인증이 완료되었습니다.');
+                            toast.success('본인 인증이 완료되었습니다.');
                         }
 
                     } catch (error) {
                         const message = getErrorMessage(error, "인증 정보를 갱신하지 못했습니다.");
-                        alert(message);
+                        toast.error(message);
                     }
                 }}
             />
