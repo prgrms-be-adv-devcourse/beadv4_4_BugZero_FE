@@ -30,10 +30,20 @@ export default function PaymentPage() {
 
                 if (info) {
                     setMemberInfo(info);
+                    // 지갑 정보 조회
+                    try {
+                        const wallet = await api.getMyWallet();
+                        if (wallet) {
+                            // 사용 가능 잔액 = 전체 잔액 - 보류 금액(보증금 등)
+                            const available = (wallet.balance || 0) - (wallet.holdingAmount || 0);
+                            setBalance(available);
+                        }
+                    } catch (e) {
+                        console.error("Failed to load wallet info", e);
+                    }
+                } else {
+                    setBalance(0);
                 }
-
-                // 지갑을 조회하여 잔액을 얻어으는 api 구현 필요
-                setBalance(0);
             } catch (error: unknown) {
                 const message = getErrorMessage(error, "사용자 정보를 불러오지 못했습니다.");
                 console.error('[PaymentPage] Load Data Error:', message);

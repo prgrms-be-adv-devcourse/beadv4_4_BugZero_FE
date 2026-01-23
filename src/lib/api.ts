@@ -15,6 +15,7 @@ export type MyBid = components["schemas"]["MyBidResponseDto"];
 export type MySale = components["schemas"]["MySaleResponseDto"];
 export type MemberInfo = components["schemas"]["MemberMeResponseDto"];
 export type WalletTransaction = components["schemas"]["WalletTransactionResponseDto"];
+export type Wallet = components["schemas"]["WalletResponseDto"];
 export type Settlement = components["schemas"]["SettlementResponseDto"];
 export type PresignedUrlResponse = components["schemas"]["PresignedUrlResponseDto"];
 
@@ -364,6 +365,13 @@ export const api = {
         return handleResponseData<components["schemas"]["PaymentConfirmResponseDto"]>(
             client.POST("/api/v1/payments/charges/confirm", { body }),
             "결제 승인 중 오류가 발생했습니다."
+        );
+    },
+
+    getMyWallet: async () => {
+        return handleResponseData<components["schemas"]["WalletResponseDto"]>(
+            client.GET("/api/v1/payments/me/wallet"),
+            "지갑 정보를 불러오는 데 실패했습니다."
         );
     },
 

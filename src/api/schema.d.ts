@@ -324,6 +324,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auctions/{auctionId}/relist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 재경매 등록
+         * @description 유찰되거나 결제 실패한 경매 상품을 다시 등록합니다. (판매자 전용)
+         */
+        post: operations["relistAuction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auctions/{auctionId}/bookmarks": {
         parameters: {
             query?: never;
