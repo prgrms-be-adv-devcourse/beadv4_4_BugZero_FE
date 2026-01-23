@@ -132,7 +132,10 @@ export default function ProductRegisterPage() {
                         body: file,
                         headers: { 'Content-Type': file.type }
                     });
-                    return presigned.s3Path;
+
+                    // presigned.url에서 query string(?...)을 제거하여 실제 접근 가능한 URL 추출
+                    const publicUrl = presigned.url.split('?')[0];
+                    return publicUrl;
                 })
             );
 

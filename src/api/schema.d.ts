@@ -31,8 +31,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * 검수를 위한 전체 상품목록 조회
+         * @description 관리자가 상품 검수 처리를 위해 모든 상품정보를 조회합니다.
+         */
         get: operations["getAdminProducts"];
         put?: never;
+        /**
+         * 상품 검수
+         * @description 관리자가 상품 검수에 대해 승인/반려 처리를 합니다.
+         */
         post: operations["createProductInspection"];
         delete?: never;
         options?: never;
@@ -432,7 +440,7 @@ export interface paths {
         patch: operations["updateAuction"];
         trace?: never;
     };
-    "/api/v1/auctions/{auctionId}/startTime": {
+    "/api/v1/auctions/{productId}/startTime": {
         parameters: {
             query?: never;
             header?: never;
@@ -445,6 +453,10 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
+        /**
+         * 검수승인 후 경매일정 확정
+         * @description 관리자가 검수 승인 후 해당상품의 경매일정을 확정합니다.
+         */
         patch: operations["deterMineStartAuction"];
         trace?: never;
     };
@@ -455,6 +467,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * 상품 검수정보 상세조회
+         * @description 관리자가 특정 상품의 검수 상세정보를 조회합니다.
+         */
         get: operations["readInspection"];
         put?: never;
         post?: never;
@@ -1479,9 +1495,7 @@ export type $defs = Record<string, never>;
 export interface operations {
     createProduct: {
         parameters: {
-            query: {
-                publicId: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -1528,9 +1542,7 @@ export interface operations {
     };
     createProductInspection: {
         parameters: {
-            query: {
-                inspectorId: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -2046,9 +2058,7 @@ export interface operations {
     };
     deleteProduct: {
         parameters: {
-            query: {
-                publicId: string;
-            };
+            query?: never;
             header?: never;
             path: {
                 productId: number;
@@ -2070,9 +2080,7 @@ export interface operations {
     };
     updateProduct: {
         parameters: {
-            query: {
-                publicId: string;
-            };
+            query?: never;
             header?: never;
             path: {
                 productId: number;
@@ -2151,7 +2159,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                auctionId: number;
+                productId: number;
             };
             cookie?: never;
         };
