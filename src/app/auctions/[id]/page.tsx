@@ -137,7 +137,11 @@ export default function AuctionDetailPage() {
                         setAuction(prev => prev ? {
                             ...prev,
                             currentPrice: newPrice,
-                            bidCount: (prev.bidCount || 0) + 1
+                            bidCount: (prev.bidCount || 0) + 1,
+                            bid: prev.bid ? {
+                                ...prev.bid,
+                                minBidPrice: newPrice + api.getBidIncrement(newPrice)
+                            } : undefined
                         } : null);
 
                         // 입찰 기록 업데이트: SSE에서 bidderName(닉네임)을 받아와서 처리
@@ -258,14 +262,10 @@ export default function AuctionDetailPage() {
             return;
         }
 
-        // 첫 입찰(bidCount === 0)인 경우 현재가(=시작가)부터 입찰 가능
-        if (auction.bidCount === 0) {
-            if (amount < auction.currentPrice) {
-                toast.error('시작가 이상의 금액을 입력해주세요');
-                return;
-            }
-        } else if (amount <= auction.currentPrice) {
-            toast.error('현재가보다 높은 금액을 입력해주세요');
+        // 최소 입찰가 체크 (백엔드 제공 minBidPrice 기준)
+        const minBidPrice = auction.bid?.minBidPrice || auction.currentPrice;
+        if (amount < minBidPrice) {
+            toast.error(`최소 ₩${formatPrice(minBidPrice)} 이상 입찰해주세요`);
             return;
         }
 
@@ -533,7 +533,7 @@ export default function AuctionDetailPage() {
                                     </span>
                                 </div>
                                 <div className="grid grid-cols-3 gap-2 mb-3">
-                                    {api.getBidOptions(auction.currentPrice, auction.bidCount || 0).map((amount, i) => (
+                                    {api.getBidOptions(auction.currentPrice, auction.bid?.minBidPrice || auction.currentPrice).map((amount, i) => (
                                         <button
                                             key={amount}
                                             onClick={() => setBidAmount(String(amount))}

@@ -429,9 +429,9 @@ export const api = {
         return currentPrice + increment;
     },
 
-    getBidOptions: (currentPrice: number, bidCount: number): number[] => {
+    getBidOptions: (currentPrice: number, minBidPrice: number): number[] => {
         const increment = api.getBidIncrement(currentPrice);
-        const start = bidCount === 0 ? currentPrice : currentPrice + increment;
+        const start = minBidPrice;
         return [
             start,
             start + increment,
