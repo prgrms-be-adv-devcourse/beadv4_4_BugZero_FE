@@ -114,7 +114,7 @@ export default function ProductRegisterPage() {
                         body: file,
                         headers: { 'Content-Type': file.type }
                     });
-                    return presigned.url;
+                    return presigned.s3Path;
                 })
             );
 
