@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 
 interface WishlistStore {
     likedAuctionIds: Set<number>;
+    bookmarkIdsByAuctionId: Map<number, number>;
     isLoaded: boolean;
     fetchMyBookmarks: () => Promise<void>;
     toggleBookmark: (auctionId: number) => Promise<void>;
@@ -13,12 +14,13 @@ interface WishlistStore {
 
 export const useWishlistStore = create<WishlistStore>((set, get) => ({
     likedAuctionIds: new Set(),
+    bookmarkIdsByAuctionId: new Map(),
     isLoaded: false,
 
     fetchMyBookmarks: async () => {
         const { isLoggedIn } = useAuthStore.getState();
         if (!isLoggedIn) {
-            set({ likedAuctionIds: new Set(), isLoaded: true });
+            set({ likedAuctionIds: new Set(), bookmarkIdsByAuctionId: new Map(), isLoaded: true });
             return;
         }
 
@@ -27,8 +29,19 @@ export const useWishlistStore = create<WishlistStore>((set, get) => ({
             // 실제 프로덕션에서는 전체를 다 가져오거나, 페이지별로 체크해야 하지만
             // 현재 구조상 '찜 여부' 필드가 없으므로 리스트를 먼저 로드하는 방식 사용
             const response = await api.getMyBookmarks({ page: 0, size: 100 });
-            const ids = new Set((response.data || []).map(item => item.auctionInfo?.auctionId).filter((id): id is number => !!id));
-            set({ likedAuctionIds: ids, isLoaded: true });
+            const ids = new Set<number>();
+            const idMap = new Map<number, number>();
+            (response.data || []).forEach((item) => {
+                const auctionId = item.auctionInfo?.auctionId;
+                const bookmarkId = item.bookmarkId;
+                if (typeof auctionId === 'number') {
+                    ids.add(auctionId);
+                }
+                if (typeof auctionId === 'number' && typeof bookmarkId === 'number') {
+                    idMap.set(auctionId, bookmarkId);
+                }
+            });
+            set({ likedAuctionIds: ids, bookmarkIdsByAuctionId: idMap, isLoaded: true });
         } catch (error) {
             console.error('Failed to fetch bookmarks:', error);
             // 에러 나도 로드 상태는 true로 변경하여 무한 로딩 방지
@@ -37,8 +50,14 @@ export const useWishlistStore = create<WishlistStore>((set, get) => ({
     },
 
     toggleBookmark: async (auctionId: number) => {
-        const { likedAuctionIds } = get();
-        const isLiked = likedAuctionIds.has(auctionId);
+        let { likedAuctionIds, bookmarkIdsByAuctionId } = get();
+        let isLiked = likedAuctionIds.has(auctionId);
+
+        if (isLiked && !bookmarkIdsByAuctionId.has(auctionId)) {
+            await get().fetchMyBookmarks();
+            ({ likedAuctionIds, bookmarkIdsByAuctionId } = get());
+            isLiked = likedAuctionIds.has(auctionId);
+        }
 
         // Optimistic Update
         const newSet = new Set(likedAuctionIds);
@@ -51,7 +70,14 @@ export const useWishlistStore = create<WishlistStore>((set, get) => ({
 
         try {
             if (isLiked) {
-                await api.removeBookmark(auctionId);
+                const bookmarkId = bookmarkIdsByAuctionId.get(auctionId);
+                if (typeof bookmarkId !== 'number') {
+                    throw new Error('bookmarkId is missing for removal');
+                }
+                await api.removeBookmark(bookmarkId);
+                const nextMap = new Map(bookmarkIdsByAuctionId);
+                nextMap.delete(auctionId);
+                set({ bookmarkIdsByAuctionId: nextMap });
             } else {
                 await api.addBookmark(auctionId);
             }
@@ -64,6 +90,6 @@ export const useWishlistStore = create<WishlistStore>((set, get) => ({
     },
 
     reset: () => {
-        set({ likedAuctionIds: new Set(), isLoaded: false });
+        set({ likedAuctionIds: new Set(), bookmarkIdsByAuctionId: new Map(), isLoaded: false });
     }
 }));

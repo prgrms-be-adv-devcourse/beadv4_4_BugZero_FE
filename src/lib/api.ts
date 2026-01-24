@@ -350,10 +350,10 @@ export const api = {
         );
     },
 
-    removeBookmark: async (auctionId: number) => {
+    removeBookmark: async (bookmarkId: number) => {
         return handleResponseData<components["schemas"]["WishlistRemoveResponseDto"]>(
-            client.DELETE("/api/v1/auctions/{auctionId}/bookmarks", {
-                params: { path: { auctionId } }
+            client.DELETE("/api/v1/auctions/{bookmarkId}/bookmarks", {
+                params: { path: { bookmarkId } }
             }),
             "관심 해제 실패"
         );
