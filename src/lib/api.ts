@@ -109,9 +109,21 @@ export const api = {
         condition: components["schemas"]["AuctionSearchCondition"] = {},
         pageable: components["schemas"]["Pageable"] = { page: 0, size: 10 }
     ) => {
+        // 백엔드(@ModelAttribute)는 평탄화된 쿼리 파라미터를 기대하므로 Nesting을 제거
+        // 또한 undefined 나 null 인 필드는 제외하여 백엔드에서 기본값이 잘 적용되도록 함
+        const queryParams = {
+            ...condition,
+            ...pageable
+        };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const cleanQuery = Object.fromEntries(
+            Object.entries(queryParams).filter(([_, v]) => v != null && v !== "")
+        ) as any;
+
         return handleResponseData<components["schemas"]["PagedResponseDtoAuctionListResponseDto"]>(
             client.GET("/api/v1/auctions", {
-                params: { query: { condition, pageable } }
+                params: { query: cleanQuery }
             }),
             "경매 목록을 불러오는 데 실패했습니다."
         );

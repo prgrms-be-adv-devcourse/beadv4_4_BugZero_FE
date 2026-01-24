@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { api } from '@/lib/api';
 import { components } from '@/api/schema';
 import LikeButton from '@/components/LikeButton';
@@ -101,11 +102,25 @@ function AuctionCard({ auction }: { auction: Auction }) {
 }
 
 export default function HomePage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  // URL에서 현재 필터와 페이지 읽기
+  const filter = (searchParams.get('filter') as 'ALL' | 'IN_PROGRESS' | 'SCHEDULED' | 'ENDED') || 'ALL';
+  const currentPage = Number(searchParams.get('page')) || 0;
+
   const [auctions, setAuctions] = useState<Auction[]>([]);
-  const [pageInfo, setPageInfo] = useState<PageDto | null>(null); // ✅ 페이지 정보 상태 추가
-  const [currentPage, setCurrentPage] = useState(0); // ✅ 현재 페이지 상태 (0부터 시작)
+  const [pageInfo, setPageInfo] = useState<PageDto | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'ALL' | 'IN_PROGRESS' | 'SCHEDULED' | 'ENDED'>('ALL');
+
+  // URL 파라미터 업데이트 함수
+  const updateUrl = (newFilter: string, newPage: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('filter', newFilter);
+    params.set('page', newPage.toString());
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   useEffect(() => {
     async function load() {
@@ -119,15 +134,17 @@ export default function HomePage() {
           size: 12
         });
 
-        if (res && res.data && res.data.length > 0) {
+        if (res && res.data) {
           setAuctions(res.data);
           setPageInfo(res.pageDto ?? null); // ✅ 서버에서 준 페이지 정보 저장
         } else {
-          setAuctions(MOCK_AUCTIONS);
+          setAuctions([]);
           setPageInfo(null);
         }
-      } catch {
-        setAuctions(MOCK_AUCTIONS);
+      } catch (error) {
+        console.error("API Fetch Error:", error);
+        // 네트워크 에러 등 실패 시에만 목 데이터 표시
+        setAuctions(MOCK_AUCTIONS.filter(a => filter === 'ALL' || a.auctionStatus === filter));
         setPageInfo(null);
       } finally {
         setLoading(false);
@@ -138,8 +155,11 @@ export default function HomePage() {
 
   // 필터 변경 시 페이지를 0으로 리셋
   const handleFilterChange = (newFilter: typeof filter) => {
-    setFilter(newFilter);
-    setCurrentPage(0);
+    updateUrl(newFilter, 0);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    updateUrl(filter, newPage);
   };
 
   return (
@@ -177,7 +197,7 @@ export default function HomePage() {
             <div className="flex justify-center items-center gap-2 mt-12">
               <button
                 disabled={!pageInfo.hasPrevious}
-                onClick={() => setCurrentPage(prev => prev - 1)}
+                onClick={() => handlePageChange(currentPage - 1)}
                 className="p-2 text-gray-400 hover:text-white disabled:opacity-30"
               >
                 &lt; 이전
@@ -186,7 +206,7 @@ export default function HomePage() {
               {[...Array(pageInfo.totalPages)].map((_, i) => (
                 <button
                   key={i}
-                  onClick={() => setCurrentPage(i)}
+                  onClick={() => handlePageChange(i)}
                   className={`w-8 h-8 rounded ${currentPage === i ? 'bg-yellow-500 text-black font-bold' : 'bg-gray-800 text-gray-400'
                     }`}
                 >
@@ -196,7 +216,7 @@ export default function HomePage() {
 
               <button
                 disabled={!pageInfo.hasNext}
-                onClick={() => setCurrentPage(prev => prev + 1)}
+                onClick={() => handlePageChange(currentPage + 1)}
                 className="p-2 text-gray-400 hover:text-white disabled:opacity-30"
               >
                 다음 &gt;
