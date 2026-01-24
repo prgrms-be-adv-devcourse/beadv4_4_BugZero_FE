@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { api } from '@/lib/api';
 import { components } from '@/api/schema';
-import LikeButton from '@/components/LikeButton';
 
 type Auction = components["schemas"]["AuctionListResponseDto"];
 type PageDto = components["schemas"]["PageDto"];
@@ -82,7 +81,6 @@ function AuctionCard({ auction }: { auction: Auction }) {
             {auction.auctionStatus === 'IN_PROGRESS' && <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5 animate-pulse"></span>}
             {auction.auctionStatus === 'IN_PROGRESS' ? 'LIVE' : auction.auctionStatus === 'SCHEDULED' ? '예정' : '종료'}
           </div>
-          <LikeButton auctionId={auction.auctionId!} className="absolute top-3 right-3 p-2 bg-black/50 rounded-full hover:bg-black/70 backdrop-blur-sm z-10" />
         </div>
         <div className="p-4 bg-[#111] rounded-b-xl border-t border-[#1a1a1a] flex-1 flex flex-col justify-between">
           <h3 className="font-semibold mb-1 line-clamp-2 group-hover:text-yellow-400 transition">
