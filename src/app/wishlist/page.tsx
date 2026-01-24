@@ -48,7 +48,7 @@ export default function WishlistPage() {
             }
         }
         load();
-    }, [likedAuctionIds]); // 찜 해제 시 목록 갱신을 위해 의존성 추가
+    }, []); // 찜 해제 시 목록 갱신을 방지하기 위해 의존성 제거 (유저가 페이지를 떠나거나 새로고침할 때만 반영)
 
     // API 응답 구조에 맞게 매핑
     const activeItems = wishlist.filter(item => item.auctionInfo?.auctionStatus === 'IN_PROGRESS' || item.auctionInfo?.auctionStatus === 'SCHEDULED');
