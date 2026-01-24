@@ -21,16 +21,6 @@ export type Wallet = components["schemas"]["WalletResponseDto"];
 export type Settlement = components["schemas"]["SettlementResponseDto"];
 export type PresignedUrlResponse = components["schemas"]["PresignedUrlResponseDto"];
 
-// Manually defining missing schemas after npm run gen removed them
-export interface MemberJoinRequestDto {
-    email: string;
-}
-
-export interface MemberJoinResponseDto {
-    nickname: string;
-    memberPublicId: string;
-}
-
 
 // Expanded Auction type for Frontend compatibility (Adapter)
 // We use Partial/Required to force fields to be non-nullable where the UI expects them
@@ -126,15 +116,14 @@ export const api = {
             ...condition,
             ...pageable
         };
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const cleanQuery = Object.fromEntries(
-            Object.entries(queryParams).filter(([_, v]) => v != null && v !== "")
-        ) as any;
+            Object.entries(queryParams).filter(([k, v]) => k && v != null && v !== "")
+        );
 
         return handleResponseData<components["schemas"]["PagedResponseDtoAuctionListResponseDto"]>(
             client.GET("/api/v1/auctions", {
-                params: { query: cleanQuery }
+                // @ts-expect-error - Backend expects flattened query parameters for @ModelAttribute
+                params: { query: cleanQuery as unknown }
             }),
             "경매 목록을 불러오는 데 실패했습니다."
         );
@@ -152,7 +141,8 @@ export const api = {
             // Fetch summary to get product name/image
             handleResponseData<components["schemas"]["PagedResponseDtoAuctionListResponseDto"]>(
                 client.GET("/api/v1/auctions", {
-                    params: { query: { condition: { ids: [auctionId] }, pageable: { page: 0, size: 1 } } }
+                    // @ts-expect-error - Backend expects flattened query parameters for @ModelAttribute
+                    params: { query: { ids: [auctionId], page: 0, size: 1 } as unknown }
                 }),
                 "경매 요약 정보를 불러오는 데 실패했습니다."
             )
@@ -275,14 +265,6 @@ export const api = {
             "내 정보를 불러오는 중 오류가 발생했습니다."
         );
     },
-
-    join: async (body: MemberJoinRequestDto) => {
-        return handleResponseData<MemberJoinResponseDto>(
-            client.POST("/api/v1/members/me" as any, { body }),
-            "회원가입에 실패했습니다."
-        );
-    },
-
 
     updateMe: async (body: components["schemas"]["MemberUpdateRequestDto"]) => {
         return handleResponseData<components["schemas"]["MemberUpdateResponseDto"]>(
