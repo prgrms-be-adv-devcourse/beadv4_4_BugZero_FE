@@ -27,12 +27,18 @@ export default function MySalesPage() {
     const [hasMore, setHasMore] = useState(false);
     const pageSize = 20;
 
+    // Hydration check to prevent premature redirect
+    const [mounted, setMounted] = useState(false);
     useEffect(() => {
-        if (role && role !== 'SELLER') {
+        setMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (mounted && role && role !== 'SELLER') {
             alert('판매자만 이용 가능한 메뉴입니다.');
             router.push('/mypage');
         }
-    }, [role, router]);
+    }, [role, router, mounted]);
 
     const loadSales = useCallback(async (pageNum: number) => {
         setLoading(true);
