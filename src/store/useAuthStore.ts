@@ -15,6 +15,7 @@ interface AuthState {
 
 // localStorage 키
 const ACCESS_TOKEN_KEY = 'accessToken';
+const USER_ROLE_KEY = 'userRole';
 
 export const useAuthStore = create<AuthState>((set) => ({
     accessToken: null,
@@ -34,10 +35,18 @@ export const useAuthStore = create<AuthState>((set) => ({
         });
     },
 
-    setRole: (role) => set({ role }),
+    setRole: (role) => {
+        if (role) {
+            localStorage.setItem(USER_ROLE_KEY, role);
+        } else {
+            localStorage.removeItem(USER_ROLE_KEY);
+        }
+        set({ role });
+    },
 
     clearAuth: () => {
         localStorage.removeItem(ACCESS_TOKEN_KEY);
+        localStorage.removeItem(USER_ROLE_KEY);
         set({
             accessToken: null,
             isLoggedIn: false,
@@ -48,8 +57,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     loadTokenFromStorage: () => {
         if (typeof window === 'undefined') return null;
         const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+        const role = localStorage.getItem(USER_ROLE_KEY);
+
         if (token) {
-            set({ accessToken: token, isLoggedIn: true });
+            set({
+                accessToken: token,
+                isLoggedIn: true,
+                role: role
+            });
         }
         return token;
     },
