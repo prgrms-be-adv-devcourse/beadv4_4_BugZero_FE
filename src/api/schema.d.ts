@@ -318,11 +318,7 @@ export interface paths {
          * @description 특정 경매를 관심 목록에 추가합니다
          */
         post: operations["addBookmark"];
-        /**
-         * 관심 경매 해제
-         * @description 특정 경매를 관심 목록에서 제거합니다
-         */
-        delete: operations["removeBookmark"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -779,6 +775,26 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auctions/{bookmarkId}/bookmarks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * 관심 경매 해제
+         * @description 특정 경매를 관심 목록에서 제거합니다
+         */
+        delete: operations["removeBookmark"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1899,28 +1915,6 @@ export interface operations {
             };
         };
     };
-    removeBookmark: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                auctionId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SuccessResponseDtoWishlistRemoveResponseDto"];
-                };
-            };
-        };
-    };
     getBids: {
         parameters: {
             query: {
@@ -2507,6 +2501,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": number;
+                };
+            };
+        };
+    };
+    removeBookmark: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookmarkId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoWishlistRemoveResponseDto"];
                 };
             };
         };
