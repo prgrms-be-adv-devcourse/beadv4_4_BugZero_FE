@@ -11,9 +11,10 @@ interface PaymentModalProps {
     onSubmit: (data: AuctionFinalPaymentRequestDto) => Promise<void>;
     productName: string;
     finalPrice: number;
+    auctionId: number;
 }
 
-export default function PaymentModal({ isOpen, onClose, onSubmit, productName, finalPrice }: PaymentModalProps) {
+export default function PaymentModal({ isOpen, onClose, onSubmit, productName, finalPrice, auctionId }: PaymentModalProps) {
     const [formData, setFormData] = useState<AuctionFinalPaymentRequestDto>({
         receiverName: '',
         phone: '',
