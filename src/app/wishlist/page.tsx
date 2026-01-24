@@ -27,7 +27,7 @@ function getTimeRemaining(endDate?: string): string {
 export default function WishlistPage() {
     const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const likedAuctionIds = useWishlistStore(state => state.likedAuctionIds);
+    const { fetchMyBookmarks } = useWishlistStore();
 
     // 찜 목록 변경 시 리스트 다시 불러오기 (혹은 로컬 필터링)
     useEffect(() => {

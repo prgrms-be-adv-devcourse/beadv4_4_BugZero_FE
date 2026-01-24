@@ -248,7 +248,7 @@ export default function AuctionDetailPage() {
         const amount = Number(bidAmount);
 
         if (auction.bid && !auction.bid.canBid) {
-            if ((auction.bid as any).isSeller) {
+            if (auction.bid.isSeller) {
                 toast.error('본인의 경매에는 입찰할 수 없습니다.');
             } else if (auction.bid.isMyHighestBid) {
                 toast.error('이미 현재 최고가 입찰자입니다.');
@@ -556,8 +556,8 @@ export default function AuctionDetailPage() {
                                     {bidding ? '입찰 처리 중...' :
                                         !isLoggedIn ? '로그인 후 입찰하기' :
                                             !api.isVerified(memberInfo) ? '🔒 본인인증 후 입찰하기' :
-                                                (auction.bid as any)?.isMyHighestBid ? '🥇 현재 최고가 입찰 중' :
-                                                    (auction.bid as any)?.isSeller ? '내가 등록한 경매' :
+                                                auction.bid?.isMyHighestBid ? '🥇 현재 최고가 입찰 중' :
+                                                    auction.bid?.isSeller ? '내가 등록한 경매' :
                                                         !canBid ? '입찰 불가 상품' :
                                                             `₩${bidAmount ? formatPrice(Number(bidAmount)) : '금액 선택'} 입찰하기`}
                                 </button>

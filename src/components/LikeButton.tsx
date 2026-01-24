@@ -16,20 +16,10 @@ export default function LikeButton({ auctionId, className = "" }: LikeButtonProp
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
     const { likedAuctionIds, toggleBookmark } = useWishlistStore();
     const [isAnimate, setIsAnimate] = useState(false);
-    const prevLiked = useRef(false);
 
     // Hydration mismatch 방지
     const isClient = useSyncExternalStore(emptySubscribe, () => true, () => false);
     const isLiked = isClient && likedAuctionIds.has(auctionId);
-
-    useEffect(() => {
-        if (isLiked && !prevLiked.current) {
-            setIsAnimate(true);
-            const timer = setTimeout(() => setIsAnimate(false), 600);
-            return () => clearTimeout(timer);
-        }
-        prevLiked.current = isLiked;
-    }, [isLiked]);
 
     const handleClick = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -38,6 +28,12 @@ export default function LikeButton({ auctionId, className = "" }: LikeButtonProp
         if (!isLoggedIn) {
             toast.error('로그인이 필요한 서비스입니다.');
             return;
+        }
+
+        // 새롭게 찜하는 경우에만 애니메이션 실행
+        if (!isLiked) {
+            setIsAnimate(true);
+            setTimeout(() => setIsAnimate(false), 600);
         }
 
         toggleBookmark(auctionId);
