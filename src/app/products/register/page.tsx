@@ -103,19 +103,28 @@ export default function ProductRegisterPage() {
             // 판매자 체크는 페이지 진입 시 이미 완료됨 (리다이렉트)
 
             // --- [4단계: S3 이미지 업로드] ---
+            // 1. 각 파일별로 Presigned URL 요청 및 업로드 병렬 처리
             const uploadedS3Paths = await Promise.all(
                 imageFiles.map(async (file) => {
+                    // 1-1. Presigned URL 요청
                     const presigned = await api.getPresignedUrl({
                         fileName: file.name,
                         contentType: file.type
                     });
-                    if (!presigned?.url || !presigned?.s3Path) throw new Error("업로드 권한을 얻지 못했습니다.");
 
+                    if (!presigned || !presigned.url || !presigned.s3Path) {
+                        throw new Error(`이미지(${file.name}) 업로드 권한을 얻지 못했습니다.`);
+                    }
+
+                    // 1-2. S3로 직접 업로드 (PUT)
                     await fetch(presigned.url, {
                         method: 'PUT',
                         body: file,
-                        headers: { 'Content-Type': file.type }
+                        headers: {
+                            'Content-Type': file.type
+                        }
                     });
+
                     return presigned.s3Path;
                 })
             );
@@ -131,7 +140,7 @@ export default function ProductRegisterPage() {
                 },
                 productImageRequestDto: uploadedS3Paths.map((path, i) => ({
                     imgUrl: path,
-                    sortOrder: i
+                    sortOrder: i + 1 // 1-based ordering likely preferrable, or 0-based depending on backend
                 }))
             };
 
@@ -141,6 +150,7 @@ export default function ProductRegisterPage() {
 
         } catch (error) {
             const message = getErrorMessage(error, "상품 등록 중 오류가 발생했습니다.");
+            console.error("Product registration error:", error);
             toast.error(message);
         } finally {
             setLoading(false);

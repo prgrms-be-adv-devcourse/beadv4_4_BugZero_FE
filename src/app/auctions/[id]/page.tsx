@@ -11,6 +11,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { getErrorMessage } from '@/api/utils';
 import LikeButton from '@/components/LikeButton';
 import toast from 'react-hot-toast';
+import { sanitizeImageUrl } from "@/lib/utils";
 
 function formatPrice(price: number): string {
     return new Intl.NumberFormat('ko-KR').format(price);
@@ -319,6 +320,8 @@ export default function AuctionDetailPage() {
     // bid 객체가 없거나 canBid가 false이면 입찰 불가
     const canBid = auction.bid?.canBid ?? false; // Default true if legacy? Or should default false. Schema has optional.
 
+    const imageUrl = auction ? sanitizeImageUrl(auction.imageUrl) : null;
+
     return (
         <div className="max-w-5xl mx-auto">
             <Link href="/" className="text-gray-400 hover:text-white transition text-sm mb-6 inline-block">
@@ -330,8 +333,8 @@ export default function AuctionDetailPage() {
                 <div>
                     <div className="card overflow-hidden mb-4">
                         <div className="h-80 bg-[#222]">
-                            {auction.imageUrl ? (
-                                <Image src={auction.imageUrl} alt="" width={400} height={320} className="w-full h-full object-cover" />
+                            {imageUrl ? (
+                                <Image src={imageUrl} alt="" width={400} height={320} className="w-full h-full object-cover" />
 
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center">

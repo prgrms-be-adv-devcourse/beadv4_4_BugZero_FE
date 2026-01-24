@@ -59,14 +59,19 @@ function getTimeRemaining(endDate?: string): string {
   return `${hours}시간`;
 }
 
+
+import { sanitizeImageUrl } from "@/lib/utils";
+
 function AuctionCard({ auction }: { auction: Auction }) {
+  const imageUrl = sanitizeImageUrl(auction.thumbnailUrl);
+
   return (
     <Link href={`/auctions/${auction.auctionId}`}>
       <div className="card cursor-pointer group hover:border-[#333] h-full flex flex-col">
         <div className="relative h-48 bg-[#1a1a1a] rounded-t-xl overflow-hidden">
-          {auction.thumbnailUrl ? (
+          {imageUrl ? (
             <Image
-              src={auction.thumbnailUrl}
+              src={imageUrl}
               alt={auction.productName ?? ''}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"

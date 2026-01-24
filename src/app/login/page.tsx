@@ -62,15 +62,7 @@ export default function LoginPage() {
                             {loading === 'google' ? '로그인 중...' : 'Google로 시작하기'}
                         </button>
 
-                        {/* Naver */}
-                        <button
-                            onClick={() => handleSocialLogin('naver')}
-                            disabled={loading !== null}
-                            className="w-full flex items-center justify-center gap-3 bg-[#03C75A] text-white py-3.5 px-4 rounded-lg font-medium hover:bg-[#02B351] transition disabled:opacity-50"
-                        >
-                            <span className="font-bold text-lg">N</span>
-                            {loading === 'naver' ? '로그인 중...' : '네이버로 시작하기'}
-                        </button>
+
                     </div>
                 </div>
 
