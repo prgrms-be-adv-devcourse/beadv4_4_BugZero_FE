@@ -45,7 +45,7 @@ export default function AuthInitializer() {
         };
 
         initAuth();
-    }, [loadTokenFromStorage]);
+    }, [loadTokenFromStorage, setRole]);
 
     return null;
 }

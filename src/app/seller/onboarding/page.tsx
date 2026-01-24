@@ -6,9 +6,7 @@ import Link from 'next/link';
 import { api } from '@/lib/api';
 import { authApi } from '@/api/auth';
 import { useMemberStore } from '@/store/useMemberStore';
-import type { components } from '@/api/schema';
 
-type MemberInfo = components['schemas']['MemberMeResponseDto'];
 type OnboardingStep = 'intro' | 'identity' | 'address' | 'complete';
 
 export default function SellerOnboardingPage() {

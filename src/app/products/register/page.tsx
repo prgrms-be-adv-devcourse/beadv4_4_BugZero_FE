@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -10,8 +10,6 @@ import type { components } from "@/api/schema";
 import { getErrorMessage } from '@/api/utils';
 import toast from 'react-hot-toast';
 
-// 스키마에서 타입 추출
-type MemberInfo = components["schemas"]["MemberMeResponseDto"];
 
 interface ProductForm {
     name: string;

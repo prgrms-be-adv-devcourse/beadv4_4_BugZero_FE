@@ -22,6 +22,7 @@ export type Wallet = components["schemas"]["WalletResponseDto"];
 export type Settlement = components["schemas"]["SettlementResponseDto"];
 export type PresignedUrlResponse = components["schemas"]["PresignedUrlResponseDto"];
 
+
 // Expanded Auction type for Frontend compatibility (Adapter)
 // We use Partial/Required to force fields to be non-nullable where the UI expects them
 export interface Auction extends Omit<AuctionDetailResponseDto, "status" | "startTime" | "endTime" | "auctionId" | "productId"> {
@@ -110,9 +111,20 @@ export const api = {
         condition: components["schemas"]["AuctionSearchCondition"] = {},
         pageable: components["schemas"]["Pageable"] = { page: 0, size: 10 }
     ) => {
+        // 백엔드(@ModelAttribute)는 평탄화된 쿼리 파라미터를 기대하므로 Nesting을 제거
+        // 또한 undefined 나 null 인 필드는 제외하여 백엔드에서 기본값이 잘 적용되도록 함
+        const queryParams = {
+            ...condition,
+            ...pageable
+        };
+        const cleanQuery = Object.fromEntries(
+            Object.entries(queryParams).filter(([k, v]) => k && v != null && v !== "")
+        );
+
         return handleResponseData<components["schemas"]["PagedResponseDtoAuctionListResponseDto"]>(
             client.GET("/api/v1/auctions", {
-                params: { query: { condition, pageable } }
+                // @ts-expect-error - Backend expects flattened query parameters for @ModelAttribute
+                params: { query: cleanQuery as unknown }
             }),
             "경매 목록을 불러오는 데 실패했습니다."
         );
@@ -130,7 +142,8 @@ export const api = {
             // Fetch summary to get product name/image
             handleResponseData<components["schemas"]["PagedResponseDtoAuctionListResponseDto"]>(
                 client.GET("/api/v1/auctions", {
-                    params: { query: { condition: { ids: [auctionId] }, pageable: { page: 0, size: 1 } } }
+                    // @ts-expect-error - Backend expects flattened query parameters for @ModelAttribute
+                    params: { query: { ids: [auctionId], page: 0, size: 1 } as unknown }
                 }),
                 "경매 요약 정보를 불러오는 데 실패했습니다."
             )
@@ -251,13 +264,6 @@ export const api = {
         return handleResponseData<components["schemas"]["MemberMeResponseDto"]>(
             client.GET("/api/v1/members/me"),
             "내 정보를 불러오는 중 오류가 발생했습니다."
-        );
-    },
-
-    join: async (body: components["schemas"]["MemberJoinRequestDto"]) => {
-        return handleResponseData<components["schemas"]["MemberJoinResponseDto"]>(
-            client.POST("/api/v1/members/me", { body }),
-            "회원가입에 실패했습니다."
         );
     },
 

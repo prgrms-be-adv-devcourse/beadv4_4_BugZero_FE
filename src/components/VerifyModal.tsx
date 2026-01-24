@@ -13,6 +13,10 @@ interface VerifyModalProps {
 
 type VerifyStep = 'input' | 'verify';
 
+// 정규식 - 판매자 온보딩과 동일 (매 렌더링마다 재생성 방지를 위해 컴포넌트 외부로 이동)
+const NAME_REGEX = /^[가-힣A-Za-z]{1,10}$/;
+const PHONE_REGEX = /^01[016789]-\d{3,4}-\d{4}$/;
+
 export default function VerifyModal({ isOpen, onClose, onVerified }: VerifyModalProps) {
     const [step, setStep] = useState<VerifyStep>('input');
     const [form, setForm] = useState({
@@ -22,12 +26,8 @@ export default function VerifyModal({ isOpen, onClose, onVerified }: VerifyModal
     });
     const [loading, setLoading] = useState(false);
 
-    // 정규식 - 판매자 온보딩과 동일
-    const nameRegex = /^[가-힣A-Za-z]{1,10}$/;
-    const phoneRegex = /^01[016789]-\d{3,4}-\d{4}$/;
-
     const isValidInput = useMemo(() => {
-        return nameRegex.test(form.realName) && phoneRegex.test(form.contactPhone);
+        return NAME_REGEX.test(form.realName) && PHONE_REGEX.test(form.contactPhone);
     }, [form.realName, form.contactPhone]);
 
     // 전화번호 하이픈 자동 생성
@@ -46,7 +46,7 @@ export default function VerifyModal({ isOpen, onClose, onVerified }: VerifyModal
             // 실제 환경에서는 여기서 SMS 발송 API 호출
             await new Promise(resolve => setTimeout(resolve, 800));
             setStep('verify');
-        } catch (error) {
+        } catch {
             toast.error('인증번호 발송에 실패했습니다.');
         } finally {
             setLoading(false);
@@ -106,9 +106,9 @@ export default function VerifyModal({ isOpen, onClose, onVerified }: VerifyModal
                                 value={form.realName}
                                 onChange={(e) => setForm({ ...form, realName: e.target.value })}
                                 placeholder="성함을 입력해주세요"
-                                className={`w-full bg-[#1a1a1a] border ${form.realName && !nameRegex.test(form.realName) ? 'border-red-500/50' : 'border-[#262626]'} rounded-xl px-4 py-4 text-white focus:outline-none focus:border-yellow-500 transition-all`}
+                                className={`w-full bg-[#1a1a1a] border ${form.realName && !NAME_REGEX.test(form.realName) ? 'border-red-500/50' : 'border-[#262626]'} rounded-xl px-4 py-4 text-white focus:outline-none focus:border-yellow-500 transition-all`}
                             />
-                            {form.realName && !nameRegex.test(form.realName) && (
+                            {form.realName && !NAME_REGEX.test(form.realName) && (
                                 <p className="text-[10px] text-red-400 ml-1">한글 또는 영문 1-10자로 입력해주세요.</p>
                             )}
                         </div>
@@ -120,7 +120,7 @@ export default function VerifyModal({ isOpen, onClose, onVerified }: VerifyModal
                                 onChange={(e) => setForm({ ...form, contactPhone: formatPhone(e.target.value) })}
                                 placeholder="010-0000-0000"
                                 maxLength={13}
-                                className={`w-full bg-[#1a1a1a] border ${form.contactPhone && !phoneRegex.test(form.contactPhone) ? 'border-red-500/50' : 'border-[#262626]'} rounded-xl px-4 py-4 text-white focus:outline-none focus:border-yellow-500 transition-all`}
+                                className={`w-full bg-[#1a1a1a] border ${form.contactPhone && !PHONE_REGEX.test(form.contactPhone) ? 'border-red-500/50' : 'border-[#262626]'} rounded-xl px-4 py-4 text-white focus:outline-none focus:border-yellow-500 transition-all`}
                             />
                         </div>
 

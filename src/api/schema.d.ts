@@ -148,34 +148,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/members/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 회원 본인 조회
-         * @description 본인의 정보를 조회합니다.
-         */
-        get: operations["getMe"];
-        put?: never;
-        /**
-         * 소셜 로그인 이후 Member 생성(회원 가입)
-         * @description 소셜 로그인 결과(email/provider)를 받아 회원가입 처리합니다.
-         */
-        post: operations["join"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * 회원 본인 수정
-         * @description 본인의 정보를 수정합니다.
-         */
-        patch: operations["updateMe"];
-        trace?: never;
-    };
     "/api/v1/members/me/seller": {
         parameters: {
             query?: never;
@@ -402,6 +374,30 @@ export interface paths {
          * @description 상품 정보를 수정합니다.
          */
         patch: operations["updateProduct"];
+        trace?: never;
+    };
+    "/api/v1/members/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 회원 본인 조회
+         * @description 본인의 정보를 조회합니다.
+         */
+        get: operations["getMe"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * 회원 본인 수정
+         * @description 본인의 정보를 수정합니다.
+         */
+        patch: operations["updateMe"];
         trace?: never;
     };
     "/api/v1/members/me/identity": {
@@ -942,19 +938,6 @@ export interface components {
             status?: number;
             message?: string;
             data?: components["schemas"]["AuctionFinalPaymentResponseDto"];
-        };
-        MemberJoinRequestDto: {
-            email?: string;
-        };
-        MemberJoinResponseDto: {
-            nickname?: string;
-            memberPublicId?: string;
-        };
-        SuccessResponseDtoMemberJoinResponseDto: {
-            /** Format: int32 */
-            status?: number;
-            message?: string;
-            data?: components["schemas"]["MemberJoinResponseDto"];
         };
         SuccessResponseDtoLong: {
             /** Format: int32 */
@@ -1682,74 +1665,6 @@ export interface operations {
             };
         };
     };
-    getMe: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SuccessResponseDtoMemberMeResponseDto"];
-                };
-            };
-        };
-    };
-    join: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MemberJoinRequestDto"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SuccessResponseDtoMemberJoinResponseDto"];
-                };
-            };
-        };
-    };
-    updateMe: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MemberUpdateRequestDto"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SuccessResponseDtoMemberUpdateResponseDto"];
-                };
-            };
-        };
-    };
     promoteSeller: {
         parameters: {
             query?: never;
@@ -2100,6 +2015,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SuccessResponseDtoProductUpdateResponseDto"];
+                };
+            };
+        };
+    };
+    getMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoMemberMeResponseDto"];
+                };
+            };
+        };
+    };
+    updateMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberUpdateRequestDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoMemberUpdateResponseDto"];
                 };
             };
         };

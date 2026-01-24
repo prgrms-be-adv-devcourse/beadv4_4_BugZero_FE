@@ -2,7 +2,7 @@
 
 import { useAuthStore } from "@/store/useAuthStore";
 import { useWishlistStore } from "@/store/useWishlistStore";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 interface LikeButtonProps {
     auctionId: number;
@@ -11,18 +11,16 @@ interface LikeButtonProps {
 
 import toast from "react-hot-toast"; // ✅ 추가
 
+const emptySubscribe = () => () => { };
+
 export default function LikeButton({ auctionId, className = "" }: LikeButtonProps) {
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
     const { likedAuctionIds, toggleBookmark } = useWishlistStore();
 
-    // Hydration mismatch 방지: 브라우저에서만 렌더링 확정
-    const [mounted, setMounted] = useState(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+    // Hydration mismatch 방지: 브라우저에서만 실시간 상태 확인
+    const isClient = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
-    const isLiked = mounted && likedAuctionIds.has(auctionId);
+    const isLiked = isClient && likedAuctionIds.has(auctionId);
 
     const handleClick = (e: React.MouseEvent) => {
         e.preventDefault();
