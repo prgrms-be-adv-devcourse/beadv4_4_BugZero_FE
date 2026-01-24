@@ -3,7 +3,7 @@ import { components } from "@/api/schema";
 import { getErrorMessage } from "@/api/utils";
 import { authApi } from "@/api/auth";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://52.78.240.121:8080';
 
 // Helper types from Schema
 export type AuctionDetailResponseDto = components["schemas"]["AuctionDetailResponseDto"];
@@ -418,24 +418,11 @@ export const api = {
         return Math.floor(startPrice * 0.1);
     },
 
-    getBidIncrement: (currentPrice: number): number => {
-        if (currentPrice < 100000) return 1000;
-        if (currentPrice < 1000000) return 5000;
-        return 10000;
-    },
-
-    getNextMinBid: (currentPrice: number): number => {
-        const increment = api.getBidIncrement(currentPrice);
-        return currentPrice + increment;
-    },
-
-    getBidOptions: (currentPrice: number, minBidPrice: number): number[] => {
-        const increment = api.getBidIncrement(currentPrice);
-        const start = minBidPrice;
+    getBidOptions: (minBidPrice: number, tickSize: number): number[] => {
         return [
-            start,
-            start + increment,
-            start + increment * 2,
+            minBidPrice,
+            minBidPrice + tickSize,
+            minBidPrice + tickSize * 2,
         ];
     },
 
