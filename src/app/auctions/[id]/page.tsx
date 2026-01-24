@@ -140,7 +140,7 @@ export default function AuctionDetailPage() {
                             bidCount: (prev.bidCount || 0) + 1,
                             bid: prev.bid ? {
                                 ...prev.bid,
-                                minBidPrice: newPrice + api.getBidIncrement(newPrice)
+                                minBidPrice: newPrice + (prev.tickSize || 0)
                             } : undefined
                         } : null);
 
@@ -529,11 +529,11 @@ export default function AuctionDetailPage() {
                                 <div className="flex items-center justify-between mb-2">
                                     <label className="text-sm text-gray-400">입찰 금액 선택</label>
                                     <span className="text-xs text-gray-500">
-                                        호가 단위: ₩{formatPrice(api.getBidIncrement(auction.currentPrice))}
+                                        호가 단위: ₩{formatPrice(auction.tickSize)}
                                     </span>
                                 </div>
                                 <div className="grid grid-cols-3 gap-2 mb-3">
-                                    {api.getBidOptions(auction.currentPrice, auction.bid?.minBidPrice || auction.currentPrice).map((amount, i) => (
+                                    {api.getBidOptions(auction.bid?.minBidPrice || auction.currentPrice, auction.tickSize).map((amount, i) => (
                                         <button
                                             key={amount}
                                             onClick={() => setBidAmount(String(amount))}
