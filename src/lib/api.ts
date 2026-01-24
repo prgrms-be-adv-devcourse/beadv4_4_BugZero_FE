@@ -21,6 +21,17 @@ export type Wallet = components["schemas"]["WalletResponseDto"];
 export type Settlement = components["schemas"]["SettlementResponseDto"];
 export type PresignedUrlResponse = components["schemas"]["PresignedUrlResponseDto"];
 
+// Manually defining missing schemas after npm run gen removed them
+export interface MemberJoinRequestDto {
+    email: string;
+}
+
+export interface MemberJoinResponseDto {
+    nickname: string;
+    memberPublicId: string;
+}
+
+
 // Expanded Auction type for Frontend compatibility (Adapter)
 // We use Partial/Required to force fields to be non-nullable where the UI expects them
 export interface Auction extends Omit<AuctionDetailResponseDto, "status" | "startTime" | "endTime" | "auctionId" | "productId"> {
@@ -265,12 +276,13 @@ export const api = {
         );
     },
 
-    join: async (body: components["schemas"]["MemberJoinRequestDto"]) => {
-        return handleResponseData<components["schemas"]["MemberJoinResponseDto"]>(
-            client.POST("/api/v1/members/me", { body }),
+    join: async (body: MemberJoinRequestDto) => {
+        return handleResponseData<MemberJoinResponseDto>(
+            client.POST("/api/v1/members/me" as any, { body }),
             "회원가입에 실패했습니다."
         );
     },
+
 
     updateMe: async (body: components["schemas"]["MemberUpdateRequestDto"]) => {
         return handleResponseData<components["schemas"]["MemberUpdateResponseDto"]>(
