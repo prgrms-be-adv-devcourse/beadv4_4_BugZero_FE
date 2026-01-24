@@ -9,7 +9,6 @@ import toast from 'react-hot-toast';
 export default function MyPage() {
     const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null);
     const [showVerifyModal, setShowVerifyModal] = useState(false);
-    const [loading, setLoading] = useState(true);
 
     // 본인인증 여부 판단
     const isVerified = api.isVerified(memberInfo);
@@ -25,8 +24,6 @@ export default function MyPage() {
                 }
             } catch (error) {
                 console.error('회원 정보 로드 실패:', error);
-            } finally {
-                setLoading(false);
             }
         };
         loadMemberInfo();
@@ -63,7 +60,7 @@ export default function MyPage() {
                 </div>
 
                 {memberInfo?.intro && (
-                    <p className="text-sm text-gray-400 mb-6 bg-gray-800/50 p-3 rounded-lg">"{memberInfo.intro}"</p>
+                    <p className="text-sm text-gray-400 mb-6 bg-gray-800/50 p-3 rounded-lg">&quot;{memberInfo.intro}&quot;</p>
                 )}
 
 

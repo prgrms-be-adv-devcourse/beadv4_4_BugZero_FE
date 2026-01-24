@@ -148,8 +148,8 @@ export default function MyOrdersPage() {
                             await api.auctionFinalPayment(selectedOrder.auctionId, formData);
                             toast.success('결제가 완료되었습니다.');
                             loadOrders(page); // Reload list to update status
-                        } catch (error: any) {
-                            toast.error(error.message || '결제 처리에 실패했습니다.');
+                        } catch (error) {
+                            toast.error((error as Error).message || '결제 처리에 실패했습니다.');
                             throw error; // Re-throw to handle loading state in modal
                         }
                     }}
