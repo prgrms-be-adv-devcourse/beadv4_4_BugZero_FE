@@ -13,6 +13,7 @@ export type PagedAuctionList = components["schemas"]["PagedResponseDtoAuctionLis
 // Removed duplicate type BidLog = ...
 export type MyBid = components["schemas"]["MyBidResponseDto"];
 export type MySale = components["schemas"]["MySaleResponseDto"];
+export type MyAuctionOrder = components["schemas"]["MyAuctionOrderListResponseDto"];
 export type MemberInfo = components["schemas"]["MemberMeResponseDto"];
 export type ProductInspectionResponseDto = components["schemas"]["ProductInspectionResponseDto"];
 export type ProductResponseForInspectionDto = components["schemas"]["ProductResponseForInspectionDto"];
@@ -313,6 +314,15 @@ export const api = {
                 params: { query: { auctionStatus, pageable } }
             }),
             "나의 입찰 내역을 불러오는 데 실패했습니다."
+        );
+    },
+
+    getMyAuctionOrders: async (status?: "PROCESSING" | "SUCCESS" | "FAILED", pageable: components["schemas"]["Pageable"] = { page: 0, size: 10 }) => {
+        return handleResponseData<components["schemas"]["PagedResponseDtoMyAuctionOrderListResponseDto"]>(
+            client.GET("/api/v1/members/me/orders", {
+                params: { query: { status, pageable } }
+            }),
+            "나의 낙찰 내역을 불러오는 데 실패했습니다."
         );
     },
 
