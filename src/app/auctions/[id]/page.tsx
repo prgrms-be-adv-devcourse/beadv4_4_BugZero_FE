@@ -45,6 +45,8 @@ export default function AuctionDetailPage() {
     const [pendingBidAmount, setPendingBidAmount] = useState<number | null>(null);
     const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null);
     const [wallet, setWallet] = useState<Wallet | null>(null);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [isGalleryOpen, setIsGalleryOpen] = useState(false);
 
     const eventSourceRef = useRef<EventSource | null>(null);
 
@@ -73,6 +75,24 @@ export default function AuctionDetailPage() {
         }
         loadData();
     }, [auctionId, accessToken]);
+
+    // Keyboard navigation for gallery
+    useEffect(() => {
+        if (!isGalleryOpen || !auction?.imageUrls) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setIsGalleryOpen(false);
+            if (e.key === 'ArrowRight') {
+                setCurrentImageIndex((prev) => (prev + 1) % auction.imageUrls!.length);
+            }
+            if (e.key === 'ArrowLeft') {
+                setCurrentImageIndex((prev) => (prev - 1 + auction.imageUrls!.length) % auction.imageUrls!.length);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isGalleryOpen, auction?.imageUrls]);
 
     // SSE 실시간 구독
     useEffect(() => {
@@ -117,7 +137,11 @@ export default function AuctionDetailPage() {
                         setAuction(prev => prev ? {
                             ...prev,
                             currentPrice: newPrice,
-                            bidCount: (prev.bidCount || 0) + 1
+                            bidCount: (prev.bidCount || 0) + 1,
+                            bid: prev.bid ? {
+                                ...prev.bid,
+                                minBidPrice: newPrice + (prev.tickSize || 0)
+                            } : undefined
                         } : null);
 
                         // 입찰 기록 업데이트: SSE에서 bidderName(닉네임)을 받아와서 처리
@@ -228,7 +252,9 @@ export default function AuctionDetailPage() {
         const amount = Number(bidAmount);
 
         if (auction.bid && !auction.bid.canBid) {
-            if (auction.bid.isMyHighestBid) {
+            if (auction.bid.isSeller) {
+                toast.error('본인의 경매에는 입찰할 수 없습니다.');
+            } else if (auction.bid.isMyHighestBid) {
                 toast.error('이미 현재 최고가 입찰자입니다.');
             } else {
                 toast.error('입찰할 수 없는 상태입니다.');
@@ -236,8 +262,10 @@ export default function AuctionDetailPage() {
             return;
         }
 
-        if (amount <= auction.currentPrice) {
-            toast.error('현재가보다 높은 금액을 입력해주세요');
+        // 최소 입찰가 체크 (백엔드 제공 minBidPrice 기준)
+        const minBidPrice = auction.bid?.minBidPrice || auction.currentPrice;
+        if (amount < minBidPrice) {
+            toast.error(`최소 ₩${formatPrice(minBidPrice)} 이상 입찰해주세요`);
             return;
         }
 
@@ -293,6 +321,77 @@ export default function AuctionDetailPage() {
         );
     };
 
+    const FullscreenGallery = () => {
+        if (!isGalleryOpen || !auction?.imageUrls) return null;
+
+        return (
+            <div
+                className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center animate-in fade-in duration-300"
+                onClick={() => setIsGalleryOpen(false)}
+            >
+                {/* Close Button */}
+                <button
+                    onClick={() => setIsGalleryOpen(false)}
+                    className="absolute top-6 right-6 text-white/70 hover:text-white p-2 z-[110] transition-colors"
+                    aria-label="닫기"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                </button>
+
+                {/* Navigation Buttons (Large) */}
+                {auction.imageUrls.length > 1 && (
+                    <>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setCurrentImageIndex((prev) => (prev - 1 + auction.imageUrls!.length) % auction.imageUrls!.length);
+                            }}
+                            className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-4 transition-all hover:scale-110 active:scale-90 z-[110]"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                        </button>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setCurrentImageIndex((prev) => (prev + 1) % auction.imageUrls!.length);
+                            }}
+                            className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-4 transition-all hover:scale-110 active:scale-90 z-[110]"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+                        </button>
+                    </>
+                )}
+
+                {/* Main Image Container */}
+                <div className="relative max-w-[90vw] max-h-[85vh] flex items-center justify-center select-none" onClick={(e) => e.stopPropagation()}>
+                    <Image
+                        src={auction.imageUrls[currentImageIndex]}
+                        alt=""
+                        width={1200}
+                        height={800}
+                        className="max-h-[85vh] w-auto object-contain shadow-2xl rounded-lg"
+                        priority
+                    />
+
+                    {/* Image Counter Indicator */}
+                    <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
+                        <div className="text-white/80 font-medium text-sm">
+                            {currentImageIndex + 1} / {auction.imageUrls.length}
+                        </div>
+                        <div className="flex gap-1.5">
+                            {auction.imageUrls.map((_, i) => (
+                                <div
+                                    key={i}
+                                    className={`w-1 h-1 rounded-full transition-all border-[0.5px] border-black/20 ${i === currentImageIndex ? 'bg-[var(--lego-yellow)] w-3' : 'bg-gray-400/80'}`}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     if (loading) {
         return (
             <div className="text-center py-20">
@@ -328,11 +427,50 @@ export default function AuctionDetailPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Left: Image */}
                 <div>
-                    <div className="card overflow-hidden mb-4">
-                        <div className="h-80 bg-[#222]">
-                            {auction.imageUrl ? (
-                                <Image src={auction.imageUrl} alt="" width={400} height={320} className="w-full h-full object-cover" />
+                    <div className="card overflow-hidden mb-4 relative group">
+                        <div className="h-80 bg-[#222] relative">
+                            {auction.imageUrls && auction.imageUrls.length > 0 ? (
+                                <>
+                                    <Image
+                                        src={auction.imageUrls[currentImageIndex]}
+                                        alt=""
+                                        width={400}
+                                        height={320}
+                                        className="w-full h-full object-cover transition-opacity duration-300 cursor-zoom-in group-hover:scale-105 transition-transform duration-500"
+                                        onClick={() => setIsGalleryOpen(true)}
+                                    />
 
+                                    {/* Navigation Buttons */}
+                                    {auction.imageUrls.length > 1 && (
+                                        <>
+                                            <button
+                                                onClick={() => setCurrentImageIndex((prev) => (prev - 1 + auction.imageUrls!.length) % auction.imageUrls!.length)}
+                                                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                                aria-label="이전 이미지"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                                            </button>
+                                            <button
+                                                onClick={() => setCurrentImageIndex((prev) => (prev + 1) % auction.imageUrls!.length)}
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                                aria-label="다음 이미지"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+                                            </button>
+
+                                            {/* Indicators */}
+                                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+                                                {auction.imageUrls.map((_, i) => (
+                                                    <button
+                                                        key={i}
+                                                        onClick={() => setCurrentImageIndex(i)}
+                                                        className={`w-1.5 h-1.5 rounded-full transition-all border-[0.5px] border-black/20 ${i === currentImageIndex ? 'bg-[var(--lego-yellow)] w-3' : 'bg-gray-300'}`}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </>
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center">
                                     <span className="text-6xl">🧱</span>
@@ -365,7 +503,6 @@ export default function AuctionDetailPage() {
 
                         <div className="flex justify-between items-start mb-4">
                             <h1 className="text-xl font-semibold">{auction.productName}</h1>
-                            <LikeButton auctionId={auction.auctionId} className="p-2 bg-[#262626] rounded-full hover:bg-[#333]" />
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 mb-3">
@@ -392,11 +529,11 @@ export default function AuctionDetailPage() {
                                 <div className="flex items-center justify-between mb-2">
                                     <label className="text-sm text-gray-400">입찰 금액 선택</label>
                                     <span className="text-xs text-gray-500">
-                                        호가 단위: ₩{formatPrice(api.getBidIncrement(auction.currentPrice))}
+                                        호가 단위: ₩{formatPrice(auction.tickSize)}
                                     </span>
                                 </div>
                                 <div className="grid grid-cols-3 gap-2 mb-3">
-                                    {api.getBidOptions(auction.currentPrice).map((amount, i) => (
+                                    {api.getBidOptions(auction.bid?.minBidPrice || auction.currentPrice, auction.tickSize).map((amount, i) => (
                                         <button
                                             key={amount}
                                             onClick={() => setBidAmount(String(amount))}
@@ -420,15 +557,19 @@ export default function AuctionDetailPage() {
                                         !isLoggedIn ? '로그인 후 입찰하기' :
                                             !api.isVerified(memberInfo) ? '🔒 본인인증 후 입찰하기' :
                                                 auction.bid?.isMyHighestBid ? '🥇 현재 최고가 입찰 중' :
-                                                    !canBid ? '입찰 불가 상품' :
-                                                        `₩${bidAmount ? formatPrice(Number(bidAmount)) : '금액 선택'} 입찰하기`}
+                                                    auction.bid?.isSeller ? '내가 등록한 경매' :
+                                                        !canBid ? '입찰 불가 상품' :
+                                                            `₩${bidAmount ? formatPrice(Number(bidAmount)) : '금액 선택'} 입찰하기`}
                                 </button>
                             </div>
                         )}
 
-                        <div className="text-sm text-gray-500 flex gap-4">
-                            <span>시작: {formatDate(auction.startTime)}</span>
-                            <span>종료: {formatDate(auction.endTime)}</span>
+                        <div className="flex items-center justify-between">
+                            <div className="text-sm text-gray-500 flex gap-4">
+                                <span>시작: {auction.startTime ? formatDate(auction.startTime) : '미정'}</span>
+                                <span>종료: {auction.endTime ? formatDate(auction.endTime) : '미정'}</span>
+                            </div>
+                            <LikeButton auctionId={auction.auctionId} className="p-2.5 bg-[#181818] rounded-xl hover:bg-[#222] border border-gray-800/50 shadow-inner" />
                         </div>
                     </div>
 
@@ -483,6 +624,8 @@ export default function AuctionDetailPage() {
                 }}
                 loading={bidding}
             />
+
+            <FullscreenGallery />
         </div>
     );
 }

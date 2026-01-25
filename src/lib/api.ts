@@ -31,7 +31,7 @@ export interface Auction extends Omit<AuctionDetailResponseDto, "status" | "star
     productId: number;
     productName: string;
     productDescription: string;
-    imageUrl?: string;
+    imageUrls?: string[];
     // Flat fields expected by UI
     startPrice: number;
     currentPrice: number;
@@ -130,39 +130,30 @@ export const api = {
         );
     },
 
-    // Adapter Implementation: Merge Detail + List Summary
+    // Simplified: Now use the enriched detail API directly
     getAuction: async (auctionId: number): Promise<Auction> => {
-        const [detail, listWrapper] = await Promise.all([
-            handleResponseData<components["schemas"]["AuctionDetailResponseDto"]>(
-                client.GET("/api/v1/auctions/{auctionId}", {
-                    params: { path: { auctionId } }
-                }),
-                "경매 정보를 불러오는 데 실패했습니다."
-            ),
-            // Fetch summary to get product name/image
-            handleResponseData<components["schemas"]["PagedResponseDtoAuctionListResponseDto"]>(
-                client.GET("/api/v1/auctions", {
-                    // @ts-expect-error - Backend expects flattened query parameters for @ModelAttribute
-                    params: { query: { ids: [auctionId], page: 0, size: 1 } as unknown }
-                }),
-                "경매 요약 정보를 불러오는 데 실패했습니다."
-            )
-        ]);
+        const detail = await handleResponseData<components["schemas"]["AuctionDetailResponseDto"]>(
+            client.GET("/api/v1/auctions/{auctionId}", {
+                params: { path: { auctionId } }
+            }),
+            "경매 정보를 불러오는 데 실패했습니다."
+        );
 
-        const summary = listWrapper.data?.[0];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const d = detail as any;
 
         return {
             ...detail,
             id: detail.auctionId || auctionId,
             auctionId: detail.auctionId || auctionId,
             productId: detail.productId || 0,
-            productName: summary?.productName || "상품명 없음",
-            productDescription: "", // Not available in API
-            imageUrl: summary?.thumbnailUrl,
+            productName: d.productName || "상품명 없음",
+            productDescription: d.productDescription || "",
+            imageUrls: d.imageUrls || (d?.thumbnailUrl ? [d.thumbnailUrl] : []),
             startPrice: detail.price?.startPrice || 0,
             currentPrice: detail.price?.currentPrice || 0,
             tickSize: detail.price?.tickSize || 0,
-            bidCount: summary?.bidsCount || 0,
+            bidCount: d.bidsCount || 0,
             status: detail.status || "SCHEDULED",
             startTime: detail.startTime || "",
             endTime: detail.endTime || ""
@@ -350,10 +341,10 @@ export const api = {
         );
     },
 
-    removeBookmark: async (bookmarkId: number) => {
+    removeBookmark: async (auctionId: number) => {
         return handleResponseData<components["schemas"]["WishlistRemoveResponseDto"]>(
-            client.DELETE("/api/v1/auctions/{bookmarkId}/bookmarks", {
-                params: { path: { bookmarkId } }
+            client.DELETE("/api/v1/auctions/{auctionId}/bookmarks", {
+                params: { path: { auctionId } }
             }),
             "관심 해제 실패"
         );
@@ -427,23 +418,11 @@ export const api = {
         return Math.floor(startPrice * 0.1);
     },
 
-    getBidIncrement: (currentPrice: number): number => {
-        if (currentPrice < 100000) return 1000;
-        if (currentPrice < 1000000) return 5000;
-        return 10000;
-    },
-
-    getNextMinBid: (currentPrice: number): number => {
-        const increment = api.getBidIncrement(currentPrice);
-        return currentPrice + increment;
-    },
-
-    getBidOptions: (currentPrice: number): number[] => {
-        const increment = api.getBidIncrement(currentPrice);
+    getBidOptions: (minBidPrice: number, tickSize: number): number[] => {
         return [
-            currentPrice + increment,
-            currentPrice + increment * 2,
-            currentPrice + increment * 3,
+            minBidPrice,
+            minBidPrice + tickSize,
+            minBidPrice + tickSize * 2,
         ];
     },
 
