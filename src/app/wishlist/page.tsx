@@ -245,7 +245,7 @@ export default function WishlistPage() {
                                     </div>
 
                                     <div onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} className="flex items-center pr-2">
-                                        <LikeButton auctionId={info.auctionId!} className="p-2 text-gray-600 hover:text-red-400 grayscale transition-all" />
+                                        <LikeButton auctionId={info.auctionId!} className="p-3 hover:bg-white/5 rounded-full" />
                                     </div>
                                 </div>
                             );
