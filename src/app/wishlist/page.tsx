@@ -40,6 +40,14 @@ export default function WishlistPage() {
                 const res = await api.getMyBookmarks({ page: 0, size: 100 });
                 if (res && res.data) {
                     setWishlist(res.data);
+
+                    // 스토어 상태 동기화 (LikeButton이 올바른 상태를 표시하도록)
+                    const ids = new Set(
+                        res.data
+                            .map(item => item.auctionInfo?.auctionId)
+                            .filter((id): id is number => !!id)
+                    );
+                    useWishlistStore.setState({ likedAuctionIds: ids, isLoaded: true });
                 }
             } catch (e) {
                 console.error("Failed to load wishlist", e);
@@ -237,7 +245,7 @@ export default function WishlistPage() {
                                     </div>
 
                                     <div onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} className="flex items-center pr-2">
-                                        <LikeButton auctionId={info.auctionId!} className="p-2 text-gray-600 hover:text-red-400 grayscale transition-all" />
+                                        <LikeButton auctionId={info.auctionId!} className="p-3 hover:bg-white/5 rounded-full" />
                                     </div>
                                 </div>
                             );
