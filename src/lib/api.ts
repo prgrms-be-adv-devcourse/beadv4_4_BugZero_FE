@@ -3,7 +3,7 @@ import { components } from "@/api/schema";
 import { getErrorMessage } from "@/api/utils";
 import { authApi } from "@/api/auth";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://52.78.240.121:8080';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://rarego.duckdns.org';
 
 // Helper types from Schema
 export type AuctionDetailResponseDto = components["schemas"]["AuctionDetailResponseDto"];
