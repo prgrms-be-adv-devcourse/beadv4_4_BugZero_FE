@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 
 // BE OAuth2 엔드포인트
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://52.78.240.121:8080';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://rarego.duckdns.org';
 
 export default function LoginPage() {
     const [loading, setLoading] = useState<string | null>(null);

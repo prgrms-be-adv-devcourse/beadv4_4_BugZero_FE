@@ -1,7 +1,7 @@
 import { useAuthStore } from "@/store/useAuthStore";
 import { components } from "@/api/schema";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://52.78.240.121:8080';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://rarego.duckdns.org';
 
 // 싱글톤 Promise 변수: 동시에 여러 리프레시 요청이 와도 하나만 실행
 type RefreshResponseData = components["schemas"]["SuccessResponseDtoMapStringString"]["data"];
