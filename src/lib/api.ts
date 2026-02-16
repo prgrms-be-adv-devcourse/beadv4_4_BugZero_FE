@@ -21,6 +21,7 @@ export type WalletTransaction = components["schemas"]["WalletTransactionResponse
 export type Wallet = components["schemas"]["WalletResponseDto"];
 export type Settlement = components["schemas"]["SettlementResponseDto"];
 export type PresignedUrlResponse = components["schemas"]["PresignedUrlResponseDto"];
+export type Notification = components["schemas"]["NotificationResponseDto"];
 
 
 // Expanded Auction type for Frontend compatibility (Adapter)
@@ -160,25 +161,7 @@ export const api = {
         };
     },
 
-    createAuction: async (productId: number, publicId: string, body: components["schemas"]["ProductAuctionRequestDto"]) => {
-        return handleResponseData<number>(
-            client.POST("/api/v1/internal/auctions/{productId}/{publicId}", {
-                params: { path: { productId, publicId } },
-                body
-            }),
-            "경매 생성에 실패했습니다."
-        );
-    },
 
-    updateAuction: async (publicId: string, body: components["schemas"]["ProductAuctionUpdateDto"]) => {
-        return handleResponseData<number>(
-            client.PATCH("/api/v1/internal/auctions/{publicId}", {
-                params: { path: { publicId } },
-                body
-            }),
-            "경매 수정에 실패했습니다."
-        );
-    },
 
     withdrawAuction: async (auctionId: number) => {
         return handleResponseData<components["schemas"]["AuctionWithdrawResponseDto"]>(
@@ -324,7 +307,7 @@ export const api = {
     },
 
     getMyBookmarks: async (pageable: components["schemas"]["Pageable"] = { page: 0, size: 10 }) => {
-        return handleResponseData<components["schemas"]["PagedResponseDtoWishlistListResponseDto"]>(
+        return handleResponseData<components["schemas"]["PagedResponseDtoAuctionBookmarkListResponseDto"]>(
             client.GET("/api/v1/members/me/bookmarks", {
                 params: { query: { pageable } }
             }),
@@ -333,7 +316,7 @@ export const api = {
     },
 
     addBookmark: async (auctionId: number) => {
-        return handleResponseData<components["schemas"]["WishlistAddResponseDto"]>(
+        return handleResponseData<components["schemas"]["AuctionAddBookmarkResponseDto"]>(
             client.POST("/api/v1/auctions/{auctionId}/bookmarks", {
                 params: { path: { auctionId } }
             }),
@@ -342,7 +325,7 @@ export const api = {
     },
 
     removeBookmark: async (auctionId: number) => {
-        return handleResponseData<components["schemas"]["WishlistRemoveResponseDto"]>(
+        return handleResponseData<components["schemas"]["AuctionRemoveBookmarkResponseDto"]>(
             client.DELETE("/api/v1/auctions/{auctionId}/bookmarks", {
                 params: { path: { auctionId } }
             }),
@@ -374,7 +357,7 @@ export const api = {
         );
     },
 
-    getWalletTransactions: async (page: number = 0, size: number = 20, transactionType?: components["schemas"]["WalletTransactionResponseDto"]["type"]) => {
+    getWalletTransactions: async (page: number = 0, size: number = 20, transactionType?: "TOPUP_DONE" | "DEPOSIT_HOLD" | "DEPOSIT_RELEASE" | "DEPOSIT_USED" | "DEPOSIT_FORFEITED" | "AUCTION_PAYMENT" | "REFUND_DONE" | "SETTLEMENT_PAID" | "SETTLEMENT_FEE") => {
         const data = await handleResponseData<components["schemas"]["PagedResponseDtoWalletTransactionResponseDto"]>(
             client.GET("/api/v1/payments/me/wallet-transactions", {
                 params: { query: { page, size, transactionType } }
@@ -384,7 +367,7 @@ export const api = {
         return data.data || [];
     },
 
-    getSettlements: async (page: number = 0, size: number = 20, status?: components["schemas"]["SettlementResponseDto"]["status"]) => {
+    getSettlements: async (page: number = 0, size: number = 20, status?: "READY" | "DONE" | "CANCELED" | "FAILED") => {
         const data = await handleResponseData<components["schemas"]["PagedResponseDtoSettlementResponseDto"]>(
             client.GET("/api/v1/payments/me/settlements", {
                 params: { query: { page, size, status } }
@@ -463,5 +446,35 @@ export const api = {
     isVerified: (member: MemberInfo | null | undefined): boolean => {
         if (!member) return false;
         return !!(member.realNameMasked && member.contactPhoneMasked);
+    },
+
+    // 알림
+    getNotifications: async (onlyUnread: boolean = false, pageable: components["schemas"]["Pageable"] = { page: 0, size: 10 }) => {
+        return handleResponseData<components["schemas"]["PagedResponseDtoNotificationResponseDto"]>(
+            client.GET("/api/v1/notifications", {
+                params: { query: { onlyUnread, pageable } }
+            }),
+            "알림 목록을 불러오는 데 실패했습니다."
+        );
+    },
+
+    getUnreadNotificationCount: async () => {
+        return handleResponseData<components["schemas"]["NotificationUnreadCountResponseDto"]>(
+            client.GET("/api/v1/notifications/unread-count"),
+            "읽지 않은 알림 개수를 불러오는 데 실패했습니다."
+        );
+    },
+
+    markNotificationAsRead: async (id: number) => {
+        return handleResponseData<void>(
+            client.PATCH("/api/v1/notifications/{id}/read", {
+                params: { path: { id } }
+            }),
+            "알림 읽음 처리에 실패했습니다."
+        );
+    },
+
+    getNotificationSubscribeUrl: (): string => {
+        return `${API_BASE}/api/v1/notifications/subscribe`;
     }
 };

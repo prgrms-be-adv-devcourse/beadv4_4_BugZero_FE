@@ -14,7 +14,7 @@ import toast from 'react-hot-toast';
 interface ProductForm {
     name: string;
     description: string;
-    category: "스타워즈" | "오리지널" | "해리포터" | "";
+    category: "STARWARS" | "ORIGINAL" | "HARRYPOTTER" | "TECHNIC" | "ICONS" | "IDEAS" | "ARCHITECTURE" | "NINJAGO" | "CITY" | "ETC" | "";
     startPrice: string;
     auctionDuration: string;
 }
@@ -70,9 +70,16 @@ export default function ProductRegisterPage() {
     // 그러나 useEffect가 loadMember를 의존성으로 가지려면 loadMember가 useCallback이어야 함.
 
     const categories: { value: ProductForm['category']; label: string; icon: string }[] = [
-        { value: '스타워즈', label: '스타워즈', icon: '⭐' },
-        { value: '해리포터', label: '해리포터', icon: '🧙' },
-        { value: '오리지널', label: '오리지널', icon: '🎨' },
+        { value: 'STARWARS', label: '스타워즈', icon: '⭐' },
+        { value: 'HARRYPOTTER', label: '해리포터', icon: '🧙' },
+        { value: 'ORIGINAL', label: '오리지널', icon: '🎨' },
+        { value: 'TECHNIC', label: '테크닉', icon: '🔧' },
+        { value: 'ICONS', label: '아이콘', icon: '🏰' },
+        { value: 'IDEAS', label: '아이디어', icon: '💡' },
+        { value: 'ARCHITECTURE', label: '아키텍처', icon: '🏛️' },
+        { value: 'NINJAGO', label: '닌자고', icon: '🥷' },
+        { value: 'CITY', label: '시티', icon: '🏙️' },
+        { value: 'ETC', label: '기타', icon: '📦' },
     ];
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,7 +128,7 @@ export default function ProductRegisterPage() {
             // --- [5단계: 최종 상품 등록] ---
             const productData: components["schemas"]["ProductCreateRequestDto"] = {
                 name: form.name,
-                category: form.category as "스타워즈" | "오리지널" | "해리포터",
+                category: form.category as "STARWARS" | "ORIGINAL" | "HARRYPOTTER" | "TECHNIC" | "ICONS" | "IDEAS" | "ARCHITECTURE" | "NINJAGO" | "CITY" | "ETC",
                 description: form.description,
                 productAuctionRequestDto: {
                     startPrice: Number(form.startPrice),
