@@ -8,7 +8,7 @@ import { components } from '@/api/schema';
 import LikeButton from '@/components/LikeButton';
 import { useWishlistStore } from '@/store/useWishlistStore';
 
-type WishlistItem = components["schemas"]["WishlistListResponseDto"];
+type WishlistItem = components["schemas"]["AuctionBookmarkListResponseDto"];
 
 function formatPrice(price?: number): string {
     return new Intl.NumberFormat('ko-KR').format(price ?? 0);
