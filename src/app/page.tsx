@@ -149,6 +149,7 @@ function HomePageContent() {
   const filter = (searchParams.get('filter') as 'ALL' | 'IN_PROGRESS' | 'SCHEDULED' | 'ENDED') || 'ALL';
   const category = searchParams.get('category') || '';
   const keyword = searchParams.get('keyword') || '';
+  const sort = (searchParams.get('sort') as 'NEWEST' | 'CLOSING_SOON') || 'NEWEST';
   const currentPage = Number(searchParams.get('page')) || 0;
 
   const [searchTerm, setSearchTerm] = useState(keyword);
@@ -157,7 +158,7 @@ function HomePageContent() {
   const [loading, setLoading] = useState(true);
 
   // URL 파라미터 업데이트 함수
-  const updateUrl = (params: { filter?: string; category?: string; keyword?: string; page?: number }) => {
+  const updateUrl = (params: { filter?: string; category?: string; keyword?: string; page?: number; sort?: string }) => {
     const newParams = new URLSearchParams(searchParams.toString());
 
     if (params.filter !== undefined) newParams.set('filter', params.filter);
@@ -168,6 +169,10 @@ function HomePageContent() {
     if (params.keyword !== undefined) {
       if (params.keyword) newParams.set('keyword', params.keyword);
       else newParams.delete('keyword');
+    }
+    if (params.sort !== undefined) {
+      if (params.sort === 'NEWEST') newParams.delete('sort');
+      else newParams.set('sort', params.sort);
     }
     if (params.page !== undefined) newParams.set('page', params.page.toString());
 
@@ -194,6 +199,8 @@ function HomePageContent() {
           condition.category = CATEGORY_MAP[category];
         }
         if (keyword) condition.keyword = keyword;
+        if (sort === 'CLOSING_SOON') condition.sort = 'CLOSING_SOON';
+        // if NEWEST, we don't set it (default)
 
         const res = await api.getAuctions(condition, {
           page: currentPage,
@@ -209,19 +216,29 @@ function HomePageContent() {
         }
       } catch (error) {
         console.error("API Fetch Error:", error);
-        setAuctions(MOCK_AUCTIONS.filter(a => {
+
+        const filtered = MOCK_AUCTIONS.filter(a => {
           const matchFilter = filter === 'ALL' || a.auctionStatus === filter;
-          const matchCategory = !category || true; // Mock doesn't have category field properly populated to check
+          const matchCategory = !category || true;
           const matchKeyword = !keyword || a.productName?.includes(keyword);
           return matchFilter && matchCategory && matchKeyword;
-        }));
+        });
+
+        if (sort === 'CLOSING_SOON') {
+          filtered.sort((a, b) => new Date(a.endTime || '').getTime() - new Date(b.endTime || '').getTime());
+        } else {
+          // NEWEST logic (Mock doesn't have createdAt, so just ID reverse for now)
+          filtered.sort((a, b) => (b.auctionId || 0) - (a.auctionId || 0));
+        }
+
+        setAuctions(filtered);
         setPageInfo(null);
       } finally {
         setLoading(false);
       }
     }
     load();
-  }, [filter, category, keyword, currentPage]);
+  }, [filter, category, keyword, sort, currentPage]);
 
   const handleSearchKeys = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -240,6 +257,10 @@ function HomePageContent() {
   const handleCategoryChange = (newCategory: string) => {
     const val = newCategory === 'ALL' ? '' : newCategory;
     updateUrl({ category: val, page: 0 });
+  };
+
+  const handleSortChange = (newSort: string) => {
+    updateUrl({ sort: newSort, page: 0 });
   };
 
   const handlePageChange = (newPage: number) => {
@@ -289,18 +310,37 @@ function HomePageContent() {
           })}
         </div>
 
-        {/* Status Filter */}
-        <div className="flex justify-center gap-2 pt-2 border-t border-[#1a1a1a] w-fit mx-auto px-6">
-          {(['ALL', 'IN_PROGRESS', 'SCHEDULED', 'ENDED'] as const).map(f => (
+        {/* Status Filter & Sort */}
+        <div className="flex justify-center items-center gap-4 pt-2 border-t border-[#1a1a1a] w-fit mx-auto px-6">
+          <div className="flex gap-2">
+            {(['ALL', 'IN_PROGRESS', 'SCHEDULED', 'ENDED'] as const).map(f => (
+              <button
+                key={f}
+                onClick={() => handleFilterChange(f)}
+                className={`text-sm font-medium transition-all px-2 py-1 ${filter === f ? 'text-yellow-500' : 'text-gray-500 hover:text-gray-300'
+                  }`}
+              >
+                {f === 'ALL' ? '전체 상태' : f === 'IN_PROGRESS' ? '진행 중' : f === 'SCHEDULED' ? '예정' : f === 'ENDED' ? '종료' : f}
+              </button>
+            ))}
+          </div>
+
+          <div className="w-px h-4 bg-[#333]"></div>
+
+          <div className="flex gap-2">
             <button
-              key={f}
-              onClick={() => handleFilterChange(f)}
-              className={`text-sm font-medium transition-all px-2 py-1 ${filter === f ? 'text-yellow-500' : 'text-gray-500 hover:text-gray-300'
-                }`}
+              onClick={() => handleSortChange('NEWEST')}
+              className={`text-sm font-medium transition-all px-2 py-1 ${sort === 'NEWEST' ? 'text-yellow-500' : 'text-gray-500 hover:text-gray-300'}`}
             >
-              {f === 'ALL' ? '전체 상태' : f === 'IN_PROGRESS' ? '진행 중' : f === 'SCHEDULED' ? '예정' : f === 'ENDED' ? '종료' : f}
+              최신순
             </button>
-          ))}
+            <button
+              onClick={() => handleSortChange('CLOSING_SOON')}
+              className={`text-sm font-medium transition-all px-2 py-1 ${sort === 'CLOSING_SOON' ? 'text-yellow-500' : 'text-gray-500 hover:text-gray-300'}`}
+            >
+              마감임박순
+            </button>
+          </div>
         </div>
       </div>
 
