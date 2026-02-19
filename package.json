@@ -28,10 +28,10 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.1.4",
+    "eslint": "^10.0.0",
+    "eslint-config-next": "^0.2.4",
     "husky": "^9.1.7",
-    "openapi-typescript": "^7.10.1",
+    "openapi-typescript": "^7.13.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
