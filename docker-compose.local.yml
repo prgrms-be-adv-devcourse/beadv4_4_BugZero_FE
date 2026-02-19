@@ -1,0 +1,19 @@
+services:
+  frontend:
+    build:
+      context: .
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost}
+    image: rarego-frontend:local
+    container_name: rarego-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost}
+    restart: always
+    networks:
+      - rarego-network
+
+networks:
+  rarego-network:
+    external: true
