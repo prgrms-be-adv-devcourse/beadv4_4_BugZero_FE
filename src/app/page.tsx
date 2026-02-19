@@ -12,6 +12,19 @@ import { useWishlistStore } from '@/store/useWishlistStore';
 type Auction = components["schemas"]["AuctionListResponseDto"];
 type PageDto = components["schemas"]["PageDto"];
 
+const CATEGORY_MAP: Record<string, components["schemas"]["AuctionSearchCondition"]["category"]> = {
+  '스타워즈': 'STARWARS',
+  '해리포터': 'HARRYPOTTER',
+  '오리지널': 'ORIGINAL',
+  '테크닉': 'TECHNIC',
+  '아이콘': 'ICONS',
+  '아이디어': 'IDEAS',
+  '아키텍처': 'ARCHITECTURE',
+  '닌자고': 'NINJAGO',
+  '시티': 'CITY',
+  '기타': 'ETC'
+};
+
 // Icons
 function SearchIcon({ className }: { className?: string }) {
   return (
@@ -177,7 +190,9 @@ function HomePageContent() {
       try {
         const condition: components["schemas"]["AuctionSearchCondition"] = {};
         if (filter !== 'ALL') condition.status = filter;
-        if (category) condition.category = category;
+        if (category && CATEGORY_MAP[category]) {
+          condition.category = CATEGORY_MAP[category];
+        }
         if (keyword) condition.keyword = keyword;
 
         const res = await api.getAuctions(condition, {
@@ -257,7 +272,7 @@ function HomePageContent() {
 
         {/* Categories */}
         <div className="flex justify-center gap-2 flex-wrap">
-          {(['ALL', '스타워즈', '오리지널', '해리포터'] as const).map(c => {
+          {(['ALL', ...Object.keys(CATEGORY_MAP)]).map(c => {
             const isActive = c === 'ALL' ? !category : category === c;
             return (
               <button

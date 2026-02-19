@@ -5,7 +5,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useMemberStore } from '@/store/useMemberStore';
 import { api } from '@/lib/api';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useNotificationStore } from '@/store/useNotificationStore';
+import NotificationDropdown from './Notification/NotificationDropdown';
 
 import toast from 'react-hot-toast';
 
@@ -16,14 +18,19 @@ export default function Header() {
     const { isSeller, fetchMemberInfo, clearMemberInfo } = useMemberStore();
     const isLogin = !!accessToken;
     const isAdmin = role === 'ADMIN';
+    const { unreadCount, connect, disconnect, fetchUnreadCount } = useNotificationStore();
+    const [showNotifications, setShowNotifications] = useState(false);
 
     useEffect(() => {
         if (isLogin) {
             fetchMemberInfo();
+            connect();
+            fetchUnreadCount();
         } else {
             clearMemberInfo();
+            disconnect();
         }
-    }, [isLogin, fetchMemberInfo, clearMemberInfo]);
+    }, [isLogin, fetchMemberInfo, clearMemberInfo, connect, disconnect, fetchUnreadCount]);
 
     // 1. 로그인 여부와 상관없이 항상 노출되는 메뉴
     const publicNavItems = [
@@ -131,12 +138,34 @@ export default function Header() {
                                     className={`text-sm transition font-medium ${isActive('/admin/inspection')
                                         ? 'text-red-400 border-b-2 border-red-400 pb-1'
                                         : 'text-gray-400 hover:text-red-400'
-                                    }`}
+                                        }`}
                                 >
                                     검수
                                 </Link>
                             )}
                         </div>
+
+                        {/* 알림 아이콘 (로그인 시) */}
+                        {isLogin && (
+                            <div className="relative">
+                                <button
+                                    onClick={() => setShowNotifications(!showNotifications)}
+                                    className="text-gray-400 hover:text-white transition p-2 relative"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                                    </svg>
+                                    {unreadCount > 0 && (
+                                        <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
+                                            {unreadCount > 99 ? '99+' : unreadCount}
+                                        </span>
+                                    )}
+                                </button>
+                                {showNotifications && (
+                                    <NotificationDropdown onClose={() => setShowNotifications(false)} />
+                                )}
+                            </div>
+                        )}
 
                         {/* 인증 버튼 섹션 */}
                         <div className="flex items-center gap-4">
