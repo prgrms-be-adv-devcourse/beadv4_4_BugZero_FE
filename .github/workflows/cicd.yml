@@ -79,33 +79,47 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Copy docker-compose.yml to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          port: 22
-          source: "docker-compose.yml"
-          target: "~/frontend"
+      - name: Set Short SHA
+        run: echo "SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
 
-      - name: Deploy to EC2 via SSH
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Set lowercase image name
+        id: image
+        run: echo "name=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+      - name: Update K8S Image Tag
+        run: |
+          IMAGE_TAG="sha-${{ env.SHORT_SHA }}"
+          sed -i "s|newName: .*|newName: ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}|" k8s/kustomization.yaml
+          sed -i "s|newTag: .*|newTag: ${IMAGE_TAG}|" k8s/kustomization.yaml
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          port: 22
-          script: |
-            mkdir -p ~/frontend
-            cd ~/frontend
-            
-            # 환경 변수 설정
-            echo "DOCKER_IMAGE=${{ env.REGISTRY }}/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]'):${{ github.ref_name }}" > .env.deploy
-            echo "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}" >> .env.deploy
-            echo "NEXT_PUBLIC_TOSS_CLIENT_KEY=${{ secrets.NEXT_PUBLIC_TOSS_CLIENT_KEY }}" >> .env.deploy
-            
-            docker login ${{ env.REGISTRY }} -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-            docker compose --env-file .env.deploy pull
-            docker compose --env-file .env.deploy up -d
-            docker image prune -f
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      - name: Get EC2 Instance ID
+        id: get-instance
+        run: |
+          INSTANCE_ID=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=team3-server" \
+                      "Name=instance-state-name,Values=running" \
+            --query "Reservations[0].Instances[0].InstanceId" \
+            --output text)
+          echo "instance_id=$INSTANCE_ID" >> $GITHUB_OUTPUT
+
+      - name: Deploy to K8S via SSM
+        run: |
+          K8S_FILES_BASE64=$(tar -czf - -C k8s . | base64 -w 0)
+
+          aws ssm send-command \
+            --instance-ids ${{ steps.get-instance.outputs.instance_id }} \
+            --document-name "AWS-RunShellScript" \
+            --parameters commands="[
+              \"mkdir -p /tmp/k8s\",
+              \"echo '$K8S_FILES_BASE64' | base64 -d | tar -xzf - -C /tmp/k8s\",
+              \"kubectl --kubeconfig /etc/kubernetes/admin.conf apply -k /tmp/k8s/\",
+              \"rm -rf /tmp/k8s\"
+            ]" \
+            --output text
