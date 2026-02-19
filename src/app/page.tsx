@@ -216,23 +216,22 @@ function HomePageContent() {
         }
       } catch (error) {
         console.error("API Fetch Error:", error);
-        setAuctions(MOCK_AUCTIONS.filter(a => {
-          // Mock sorting logic
-          let filtered = MOCK_AUCTIONS.filter(a => {
-            const matchFilter = filter === 'ALL' || a.auctionStatus === filter;
-            const matchCategory = !category || true;
-            const matchKeyword = !keyword || a.productName?.includes(keyword);
-            return matchFilter && matchCategory && matchKeyword;
-          });
 
-          if (sort === 'CLOSING_SOON') {
-            filtered.sort((a, b) => new Date(a.endTime || '').getTime() - new Date(b.endTime || '').getTime());
-          } else {
-            // NEWEST logic (Mock doesn't have createdAt, so just ID reverse for now)
-            filtered.sort((a, b) => (b.auctionId || 0) - (a.auctionId || 0));
-          }
-          return filtered;
-        }));
+        const filtered = MOCK_AUCTIONS.filter(a => {
+          const matchFilter = filter === 'ALL' || a.auctionStatus === filter;
+          const matchCategory = !category || true;
+          const matchKeyword = !keyword || a.productName?.includes(keyword);
+          return matchFilter && matchCategory && matchKeyword;
+        });
+
+        if (sort === 'CLOSING_SOON') {
+          filtered.sort((a, b) => new Date(a.endTime || '').getTime() - new Date(b.endTime || '').getTime());
+        } else {
+          // NEWEST logic (Mock doesn't have createdAt, so just ID reverse for now)
+          filtered.sort((a, b) => (b.auctionId || 0) - (a.auctionId || 0));
+        }
+
+        setAuctions(filtered);
         setPageInfo(null);
       } finally {
         setLoading(false);
