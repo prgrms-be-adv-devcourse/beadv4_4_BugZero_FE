@@ -476,5 +476,20 @@ export const api = {
 
     getNotificationSubscribeUrl: (): string => {
         return `${API_BASE}/api/v1/notifications/subscribe`;
+    },
+
+    // AI 가격 추천
+    getInternalPriceGuide: async (body: components["schemas"]["AiInternalPriceRequestDto"]) => {
+        return handleResponseData<components["schemas"]["AiInternalPriceResponseDto"][]>(
+            client.POST("/api/v1/products/recommendations/internal-price", { body }),
+            "내부 시세 추천을 불러오는 데 실패했습니다."
+        );
+    },
+
+    // SSE 엔드포인트는 EventSource를 사용해야 하므로 URL만 제공하거나 별도 처리 필요
+    // 여기서는 fetch로 호출 시 스트림 처리가 필요함.
+    // UI에서 EventSource를 직접 쓰는게 나을 수 있으나, POST 요청이라 fetch + Reader 사용해야 함.
+    getExternalPriceGuideUrl: (): string => {
+        return `${API_BASE}/api/v1/products/recommendations/external-price`;
     }
 };

@@ -156,7 +156,7 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        ProductAuctionRequestDto: {
+        ProductAuctionCreateDto: {
             /** Format: int32 */
             startPrice?: number;
             /** Format: int32 */
@@ -167,7 +167,7 @@ export interface components {
             /** @enum {string} */
             category: "STARWARS" | "ORIGINAL" | "HARRYPOTTER" | "TECHNIC" | "ICONS" | "IDEAS" | "ARCHITECTURE" | "NINJAGO" | "CITY" | "ETC";
             description: string;
-            productAuctionRequestDto: components["schemas"]["ProductAuctionRequestDto"];
+            productAuctionCreateDto: components["schemas"]["ProductAuctionCreateDto"];
             productImageRequestDto: components["schemas"]["ProductImageRequestDto"][];
         };
         ProductImageRequestDto: {

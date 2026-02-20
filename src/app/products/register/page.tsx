@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useMemberStore } from '@/store/useMemberStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import type { components } from "@/api/schema";
 import { getErrorMessage } from '@/api/utils';
 import toast from 'react-hot-toast';
@@ -50,6 +51,12 @@ export default function ProductRegisterPage() {
         startPrice: '',
         auctionDuration: '3',
     });
+
+    // --- [AI 가격 추천 관련 상태] ---
+    const [internalPrices, setInternalPrices] = useState<components["schemas"]["AiInternalPriceResponseDto"][] | null>(null);
+    const [externalPriceText, setExternalPriceText] = useState<string>("");
+    const [isRecommending, setIsRecommending] = useState(false);
+    const [showRecommendations, setShowRecommendations] = useState(false);
 
     if (!isLoaded || !memberInfo || !isSeller) {
         return (
@@ -130,7 +137,7 @@ export default function ProductRegisterPage() {
                 name: form.name,
                 category: form.category as "STARWARS" | "ORIGINAL" | "HARRYPOTTER" | "TECHNIC" | "ICONS" | "IDEAS" | "ARCHITECTURE" | "NINJAGO" | "CITY" | "ETC",
                 description: form.description,
-                productAuctionRequestDto: {
+                productAuctionCreateDto: {
                     startPrice: Number(form.startPrice),
                     durationDays: Number(form.auctionDuration)
                 },
@@ -151,6 +158,86 @@ export default function ProductRegisterPage() {
             setLoading(false);
         }
     };
+
+    const handleGetRecommendations = async () => {
+        if (!form.name || !form.category) {
+            toast.error("상품명과 카테고리를 먼저 입력해주세요.");
+            return;
+        }
+
+        setIsRecommending(true);
+        setShowRecommendations(true);
+        setInternalPrices(null);
+        setExternalPriceText(""); // 초기화
+
+        // 1. 내부 시세 (단건 호출)
+        try {
+            const internalData = await api.getInternalPriceGuide({
+                category: form.category as "STARWARS" | "ORIGINAL" | "HARRYPOTTER" | "TECHNIC" | "ICONS" | "IDEAS" | "ARCHITECTURE" | "NINJAGO" | "CITY" | "ETC",
+                condition: "MISB", // 기본값 설정 (추후 입력받을 수도 있음)
+                name: form.name,
+                description: form.description
+            });
+            setInternalPrices(internalData);
+        } catch (e) {
+            console.error(e);
+            toast.error("내부 시세 추천 실패");
+        }
+
+        // 2. 외부 시세 (SSE 스트리밍)
+        try {
+            const token = useAuthStore.getState().accessToken;
+
+            const response = await fetch(api.getExternalPriceGuideUrl(), {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { "Authorization": `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({
+                    category: form.category,
+                    condition: "MISB",
+                    name: form.name
+                })
+            });
+
+            if (!response.body) return;
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                const chunk = decoder.decode(value);
+                // SSE 형식 파싱 (data: ... )
+                const lines = chunk.split("\n");
+                for (const line of lines) {
+                    if (line.startsWith("data:")) {
+                        // "data:" 접두어 제거 및 앞뒤 공백 제거하지 않음 (공백도 중요할 수 있음)
+                        // 보통 SSE는 "data: hello" 형태.
+                        // 토큰 단위로 온다면 "data: 안", "data: 녕"...
+                        const data = line.replace("data:", "");
+                        // 엔터 처리를 위해 특수 시그널이 있는지 확인하거나, 그냥 쭉 이어붙임.
+                        // 만약 실제 줄바꿈이 필요하면 \n을 data에 포함해서 주는지 확인 필요.
+                        // 일반적으로 LLM 스트리밍응답은 줄바꿈 문자를 포함함.
+                        if (data) {
+                            setExternalPriceText(prev => prev + data);
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            console.error(e);
+            // 스트리밍 중 에러가 발생해도, 이미 받은 데이터가 있으면 실패로 간주하지 않음
+            // (ERR_INCOMPLETE_CHUNKED_ENCODING 등으로 인해 끊겨도 내용은 다 들어왔을 수 있음)
+            if (!externalPriceText) {
+                toast.error("외부 시세 추천을 불러오지 못했습니다.");
+            }
+        } finally {
+            setIsRecommending(false);
+        }
+    };
+
 
     return (
         <div className="max-w-3xl mx-auto py-10 px-4">
@@ -258,7 +345,85 @@ export default function ProductRegisterPage() {
             {step === 3 && (
                 <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 space-y-6">
                     <div>
-                        <label className="block text-sm text-gray-400 mb-2">경매 시작가 *</label>
+                        <div className="flex justify-between items-center mb-2">
+                            <label className="block text-sm text-gray-400">경매 시작가 *</label>
+                            <button
+                                onClick={handleGetRecommendations}
+                                disabled={isRecommending}
+                                className="text-xs bg-indigo-600 px-3 py-1 rounded text-white hover:bg-indigo-700 transition flex items-center gap-1"
+                            >
+                                {isRecommending ? (
+                                    <>
+                                        <span className="animate-spin">⏳</span> 분석 중...
+                                    </>
+                                ) : (
+                                    <>🤖 AI 가격 추천</>
+                                )}
+                            </button>
+                        </div>
+
+                        {/* AI 가격 추천 결과 영역 */}
+                        {showRecommendations && (
+                            <div className="mb-4 bg-gray-900 p-4 rounded-lg border border-indigo-900/50">
+                                <h3 className="text-sm font-bold text-indigo-400 mb-3 flex items-center gap-2">
+                                    <span>💡 AI 추천 리포트</span>
+                                </h3>
+
+                                <div className="space-y-4">
+                                    {/* 내부 시세 데이터 */}
+                                    <div>
+                                        <p className="text-xs text-gray-500 mb-2">BeAdv 내부 거래 데이터 분석</p>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {internalPrices ? (
+                                                internalPrices.length > 0 ? (
+                                                    internalPrices.map((item, idx) => (
+                                                        <button
+                                                            key={idx}
+                                                            onClick={() => setForm({ ...form, startPrice: String(item.finalPrice || item.startPrice || 0) })}
+                                                            className="text-left p-2 bg-gray-800 rounded border border-gray-700 hover:border-indigo-500 transition group"
+                                                        >
+                                                            <div className="text-xs text-gray-400 truncate w-full">{item.productName}</div>
+                                                            <div className="text-indigo-400 font-bold group-hover:text-indigo-300">
+                                                                ₩ {(item.finalPrice || item.startPrice || 0).toLocaleString()}
+                                                            </div>
+                                                        </button>
+                                                    ))
+                                                ) : (
+                                                    <div className="col-span-2 text-xs text-gray-600 text-center py-2">유사한 거래 내역이 없습니다.</div>
+                                                )
+                                            ) : (
+                                                <div className="col-span-2 flex justify-center py-2">
+                                                    <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* 외부 시세 데이터 (Streaming) */}
+                                    <div>
+                                        <p className="text-xs text-gray-500 mb-2">외부 시세 (BrickLink, eBay 등)</p>
+                                        <div className="space-y-1 max-h-32 overflow-y-auto custom-scrollbar bg-gray-800/50 p-3 rounded">
+                                            {externalPriceText ? (
+                                                <div className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">
+                                                    {externalPriceText.split('-').map((line, index) => (
+                                                        index === 0 && line.trim() === '' ? null : (
+                                                            <div key={index}>
+                                                                {index > 0 ? '- ' : ''}{line.trim()}
+                                                            </div>
+                                                        )
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                isRecommending && (
+                                                    <div className="text-xs text-gray-600 animate-pulse">외부 데이터를 수집하고 있습니다...</div>
+                                                )
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="relative">
                             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">₩</span>
                             <input
