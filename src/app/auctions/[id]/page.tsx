@@ -134,21 +134,38 @@ export default function AuctionDetailPage() {
                     // 입찰/가격 업데이트
                     if (data.bidAmount || data.currentPrice) {
                         const newPrice = data.bidAmount || data.currentPrice;
-                        setAuction(prev => prev ? {
-                            ...prev,
-                            currentPrice: newPrice,
-                            bidCount: (prev.bidCount || 0) + 1,
-                            bid: prev.bid ? {
-                                ...prev.bid,
-                                minBidPrice: newPrice + (prev.tickSize || 0)
-                            } : undefined
-                        } : null);
+
+                        // 내 입찰인지 확인 (닉네임이나 publicId로 비교)
+                        const isMyBid = memberInfo && (
+                            (data.publicId && data.publicId === memberInfo.publicId) ||
+                            (data.bidderName && data.bidderName === memberInfo.nickname)
+                        );
+
+                        setAuction(prev => {
+                            if (!prev) return null;
+
+                            const isSeller = prev.bid?.isSeller;
+
+                            return {
+                                ...prev,
+                                currentPrice: newPrice,
+                                bidCount: (prev.bidCount || 0) + 1,
+                                bid: prev.bid ? {
+                                    ...prev.bid,
+                                    minBidPrice: newPrice + (prev.tickSize || 0),
+                                    highestBidderId: isMyBid ? -1 : (prev.bid.highestBidderId || 0), // ID는 알 수 없으므로 임시 처리
+                                    isMyHighestBid: !!isMyBid,
+                                    canBid: !isSeller && !isMyBid // 내가 최고입찰자가 아니면 입찰 가능 (판매자 제외)
+                                } : undefined
+                            };
+                        });
 
                         // 입찰 기록 업데이트: SSE에서 bidderName(닉네임)을 받아와서 처리
                         if (data.bidAmount && (data.bidderName || data.publicId)) {
                             const newLog: BidLog = {
                                 id: Date.now(), // 임시 ID
-                                publicId: data.bidderName || data.publicId, // 닉네임 우선 사용
+                                publicId: data.publicId,
+                                nickname: data.bidderName, // 닉네임 우선 사용
                                 bidAmount: data.bidAmount,
                                 bidTime: new Date().toISOString()
                             };
@@ -171,13 +188,17 @@ export default function AuctionDetailPage() {
                 eventSource.addEventListener('bid', (event) => {
                     try {
                         handleUpdate(JSON.parse(event.data));
-                    } catch (e) { console.error(e); }
+                    } catch (e) {
+                        console.error(e);
+                    }
                 });
 
                 eventSource.onmessage = (event) => {
                     try {
                         handleUpdate(JSON.parse(event.data));
-                    } catch (e) { console.error(e); }
+                    } catch (e) {
+                        console.error(e);
+                    }
                 };
 
                 eventSource.onerror = () => {
@@ -207,7 +228,7 @@ export default function AuctionDetailPage() {
             }
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [auctionId, auction?.status]);
+    }, [auctionId, auction?.status, memberInfo?.publicId, memberInfo?.nickname]);
 
     const executeBid = async (amount: number) => {
         setBidding(true);
@@ -589,7 +610,7 @@ export default function AuctionDetailPage() {
                                             {i + 1}
                                         </span>
                                         <div>
-                                            <p className={`font-medium text-sm ${i === 0 ? 'text-[var(--lego-yellow)]' : 'text-white'}`}>{log.publicId}</p>
+                                            <p className={`font-medium text-sm ${i === 0 ? 'text-[var(--lego-yellow)]' : 'text-white'}`}>{log.nickname || log.publicId}</p>
                                             <p className="text-xs text-gray-500">{formatDate(log.bidTime)}</p>
                                         </div>
                                     </div>
