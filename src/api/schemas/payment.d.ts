@@ -297,6 +297,7 @@ export interface components {
             feeAmount?: number;
             /** Format: int32 */
             settlementAmount?: number;
+            productName?: string;
             status?: string;
             /** Format: date-time */
             createdAt?: string;

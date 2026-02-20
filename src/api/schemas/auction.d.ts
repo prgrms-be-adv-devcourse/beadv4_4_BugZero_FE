@@ -620,6 +620,7 @@ export interface components {
             /** Format: int64 */
             id?: number;
             publicId?: string;
+            nickname?: string;
             /** Format: date-time */
             bidTime?: string;
             /** Format: int64 */
