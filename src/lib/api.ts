@@ -48,6 +48,7 @@ export interface Auction extends Omit<AuctionDetailResponseDto, "status" | "star
 export interface BidLog {
     id: number;
     publicId: string;
+    nickname?: string;
     bidAmount: number;
     bidTime: string;
 }

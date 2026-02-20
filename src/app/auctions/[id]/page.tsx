@@ -148,7 +148,8 @@ export default function AuctionDetailPage() {
                         if (data.bidAmount && (data.bidderName || data.publicId)) {
                             const newLog: BidLog = {
                                 id: Date.now(), // 임시 ID
-                                publicId: data.bidderName || data.publicId, // 닉네임 우선 사용
+                                publicId: data.publicId,
+                                nickname: data.bidderName, // 닉네임 우선 사용
                                 bidAmount: data.bidAmount,
                                 bidTime: new Date().toISOString()
                             };
@@ -589,7 +590,7 @@ export default function AuctionDetailPage() {
                                             {i + 1}
                                         </span>
                                         <div>
-                                            <p className={`font-medium text-sm ${i === 0 ? 'text-[var(--lego-yellow)]' : 'text-white'}`}>{log.publicId}</p>
+                                            <p className={`font-medium text-sm ${i === 0 ? 'text-[var(--lego-yellow)]' : 'text-white'}`}>{log.nickname || log.publicId}</p>
                                             <p className="text-xs text-gray-500">{formatDate(log.bidTime)}</p>
                                         </div>
                                     </div>
