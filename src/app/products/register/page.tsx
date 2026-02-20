@@ -18,6 +18,7 @@ interface ProductForm {
     category: "STARWARS" | "ORIGINAL" | "HARRYPOTTER" | "TECHNIC" | "ICONS" | "IDEAS" | "ARCHITECTURE" | "NINJAGO" | "CITY" | "ETC" | "";
     startPrice: string;
     auctionDuration: string;
+    condition: "MISB" | "NISB" | "MISP" | "USED";
 }
 
 export default function ProductRegisterPage() {
@@ -50,6 +51,7 @@ export default function ProductRegisterPage() {
         category: '',
         startPrice: '',
         auctionDuration: '3',
+        condition: 'MISB', // 기본값
     });
 
     // --- [AI 가격 추천 관련 상태] ---
@@ -87,6 +89,13 @@ export default function ProductRegisterPage() {
         { value: 'NINJAGO', label: '닌자고', icon: '🥷' },
         { value: 'CITY', label: '시티', icon: '🏙️' },
         { value: 'ETC', label: '기타', icon: '📦' },
+    ];
+
+    const conditions: { value: ProductForm['condition']; label: string; desc: string }[] = [
+        { value: 'MISB', label: 'MISB', desc: '새 상품 (박스 밀봉)' },
+        { value: 'NISB', label: 'NISB', desc: '새 상품 (봉지 밀봉)' },
+        { value: 'MISP', label: 'MISP', desc: '새 상품 (부품 밀봉)' },
+        { value: 'USED', label: 'USED', desc: '중고 상품' },
     ];
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -174,7 +183,7 @@ export default function ProductRegisterPage() {
         try {
             const internalData = await api.getInternalPriceGuide({
                 category: form.category as "STARWARS" | "ORIGINAL" | "HARRYPOTTER" | "TECHNIC" | "ICONS" | "IDEAS" | "ARCHITECTURE" | "NINJAGO" | "CITY" | "ETC",
-                condition: "MISB", // 기본값 설정 (추후 입력받을 수도 있음)
+                condition: form.condition,
                 name: form.name,
                 description: form.description
             });
@@ -196,7 +205,7 @@ export default function ProductRegisterPage() {
                 },
                 body: JSON.stringify({
                     category: form.category,
-                    condition: "MISB",
+                    condition: form.condition,
                     name: form.name
                 })
             });
@@ -285,6 +294,21 @@ export default function ProductRegisterPage() {
                                 >
                                     <span className="text-2xl block mb-1">{cat.icon}</span>
                                     <span className="text-xs">{cat.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm text-gray-400 mb-2">상품 상태 (AI 추천용) *</label>
+                        <div className="grid grid-cols-2 gap-2">
+                            {conditions.map((cond) => (
+                                <button
+                                    key={cond.value}
+                                    onClick={() => setForm({ ...form, condition: cond.value })}
+                                    className={`p-3 rounded-lg text-left transition border ${form.condition === cond.value ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-gray-900 border-gray-700 text-gray-400 hover:border-gray-500'}`}
+                                >
+                                    <div className="font-bold text-sm">{cond.label}</div>
+                                    <div className="text-xs opacity-80">{cond.desc}</div>
                                 </button>
                             ))}
                         </div>
