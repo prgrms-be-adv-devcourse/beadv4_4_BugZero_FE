@@ -137,7 +137,7 @@ export default function ProductRegisterPage() {
                 name: form.name,
                 category: form.category as "STARWARS" | "ORIGINAL" | "HARRYPOTTER" | "TECHNIC" | "ICONS" | "IDEAS" | "ARCHITECTURE" | "NINJAGO" | "CITY" | "ETC",
                 description: form.description,
-                productAuctionRequestDto: {
+                productAuctionCreateDto: {
                     startPrice: Number(form.startPrice),
                     durationDays: Number(form.auctionDuration)
                 },
