@@ -1,8 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { api, MySale } from '@/lib/api';
+import { toast } from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 
 type AuctionResultTab = 'won' | 'lost' | 'failed';
@@ -52,17 +55,6 @@ const mockResults: AuctionResult[] = [
     },
 ];
 
-const mockFailedAuctions = [
-    {
-        id: 4,
-        productName: '레고 닌자고 시티 가든',
-        imageUrl: 'https://images.unsplash.com/photo-1560961911-ba7ef651a56c?w=400',
-        startPrice: 300000,
-        endTime: '2026-01-17T22:00:00',
-        reason: 'NO_BIDS',
-    },
-];
-
 function formatPrice(price: number): string {
     return new Intl.NumberFormat('ko-KR').format(price);
 }
@@ -86,13 +78,87 @@ function getTimeRemaining(deadline: string): { text: string; urgent: boolean } {
 }
 
 export default function AuctionResultsPage() {
+    const router = useRouter();
     const [activeTab, setActiveTab] = useState<AuctionResultTab>('won');
+
+    // Failed Auctions State
+    const [failedAuctions, setFailedAuctions] = useState<MySale[]>([]);
+    const [isLoadingFailed, setIsLoadingFailed] = useState(false);
+
+    // Relist Modal State
+    const [relistAuctionId, setRelistAuctionId] = useState<number | null>(null);
+    const [relistForm, setRelistForm] = useState({
+        startPrice: '',
+        tickSize: '',
+        durationDays: '3'
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Fetch Failed Auctions
+    const fetchFailedAuctions = async () => {
+        setIsLoadingFailed(true);
+        try {
+            const res = await api.getMySales('COMPLETED', { page: 0, size: 100 });
+            if (res.data) {
+                // Filter for failed sales. Either tradeStatus is FAILED or it ENDED with 0 bids.
+                const failed = res.data.filter(sale =>
+                    sale.tradeStatus === 'FAILED' ||
+                    (sale.auctionStatus === 'ENDED' && sale.bidCount === 0)
+                );
+                setFailedAuctions(failed);
+            }
+        } catch (error) {
+            console.error('Failed to load failed auctions', error);
+        } finally {
+            setIsLoadingFailed(false);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === 'failed') {
+            fetchFailedAuctions();
+        }
+    }, [activeTab]);
+
+    const handleWithdraw = async (auctionId: number) => {
+        if (!confirm('정말 삭제(판매 포기) 하시겠습니까? 복구할 수 없습니다.')) return;
+
+        try {
+            await api.withdrawAuction(auctionId);
+            toast.success('판매가 취소되었습니다.');
+            setFailedAuctions(prev => prev.filter(a => a.auctionId !== auctionId));
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : '판매 취소에 실패했습니다.');
+        }
+    };
+
+    const submitRelist = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!relistAuctionId) return;
+
+        setIsSubmitting(true);
+        try {
+            await api.relistAuction(relistAuctionId, {
+                startPrice: Number(relistForm.startPrice),
+                tickSize: Number(relistForm.tickSize),
+                durationDays: Number(relistForm.durationDays)
+            });
+            toast.success('경매가 재등록되었습니다.');
+            setRelistAuctionId(null);
+            fetchFailedAuctions();
+            router.refresh();
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : '재등록에 실패했습니다.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     const wonAuctions = mockResults.filter(r => r.status === 'WON');
     const lostAuctions = mockResults.filter(r => r.status === 'LOST');
 
     return (
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto pb-20">
             <Link href="/mypage" className="inline-flex items-center gap-2 text-gray-400 hover:text-yellow-400 transition mb-6">
                 ← 마이페이지
             </Link>
@@ -105,7 +171,7 @@ export default function AuctionResultsPage() {
                 {[
                     { key: 'won' as const, label: '낙찰', icon: '🏆', count: wonAuctions.length },
                     { key: 'lost' as const, label: '패찰', icon: '😢', count: lostAuctions.length },
-                    { key: 'failed' as const, label: '유찰 (판매자)', icon: '💔', count: mockFailedAuctions.length },
+                    { key: 'failed' as const, label: '유찰 (판매자)', icon: '💔', count: activeTab === 'failed' ? failedAuctions.length : '?' },
                 ].map((tab) => (
                     <button
                         key={tab.key}
@@ -252,35 +318,52 @@ export default function AuctionResultsPage() {
                         </p>
                     </div>
 
-                    {mockFailedAuctions.map((auction) => (
-                        <div key={auction.id} className="bg-gray-800 rounded-xl p-5 border border-red-500/30">
+                    {isLoadingFailed ? (
+                        <div className="text-center py-16">
+                            <div className="animate-spin w-8 h-8 border-4 border-yellow-400 border-t-transparent rounded-full mx-auto mb-4"></div>
+                            <p className="text-gray-400">불러오는 중...</p>
+                        </div>
+                    ) : failedAuctions.map((auction) => (
+                        <div key={auction.auctionId} className="bg-gray-800 rounded-xl p-5 border border-red-500/30">
                             <div className="flex gap-4">
                                 <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-700 flex-shrink-0">
-                                    <Image src={auction.imageUrl} alt="" width={96} height={96} className="w-full h-full object-cover opacity-50" />
+                                    <Image src={auction.thumbnailUrl || '/images/placeholder.png'} alt={auction.title || '상품 이미지'} width={96} height={96} className="w-full h-full object-cover opacity-50" />
                                 </div>
 
                                 <div className="flex-1">
                                     <div className="flex justify-between items-start mb-2">
-                                        <h3 className="font-bold text-white">{auction.productName}</h3>
-                                        <span className="bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-xs font-bold">
+                                        <h3 className="font-bold text-white">{auction.title}</h3>
+                                        <span className="bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ml-2">
                                             유찰
                                         </span>
                                     </div>
 
-                                    <p className="text-gray-400 mb-3">
-                                        시작가: ₩{formatPrice(auction.startPrice)}
+                                    <p className="text-gray-400 mb-3 text-sm">
+                                        종료 가격: <span className="text-white">₩{formatPrice(auction.currentPrice || 0)}</span>
                                     </p>
 
                                     <p className="text-sm text-red-400 mb-3">
-                                        {auction.reason === 'NO_BIDS' && '❌ 입찰자 없음'}
-                                        {auction.reason === 'PAYMENT_EXPIRED' && '❌ 낙찰자 결제 기한 만료'}
+                                        {auction.bidCount === 0 ? '❌ 입찰자 없음' : '❌ 낙찰자 결제 기한 만료 등 취소됨'}
                                     </p>
 
                                     <div className="flex gap-3">
-                                        <button className="lego-btn text-sm py-2 px-4 text-black">
+                                        <button
+                                            onClick={() => {
+                                                setRelistForm({
+                                                    startPrice: String(auction.currentPrice || 0),
+                                                    tickSize: '1000',
+                                                    durationDays: '3'
+                                                });
+                                                setRelistAuctionId(auction.auctionId || null);
+                                            }}
+                                            className="lego-btn text-sm py-2 px-4 text-black"
+                                        >
                                             🔄 재등록하기
                                         </button>
-                                        <button className="bg-gray-700 text-gray-300 py-2 px-4 rounded-lg text-sm hover:bg-gray-600 transition">
+                                        <button
+                                            onClick={() => handleWithdraw(auction.auctionId || 0)}
+                                            className="bg-gray-700 text-gray-300 py-2 px-4 rounded-lg text-sm hover:bg-gray-600 transition"
+                                        >
                                             삭제하기
                                         </button>
                                     </div>
@@ -289,12 +372,71 @@ export default function AuctionResultsPage() {
                         </div>
                     ))}
 
-                    {mockFailedAuctions.length === 0 && (
+                    {!isLoadingFailed && failedAuctions.length === 0 && (
                         <div className="text-center py-16">
                             <p className="text-6xl mb-4">✅</p>
                             <p className="text-gray-400">유찰된 경매가 없습니다</p>
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* Relist Modal */}
+            {relistAuctionId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+                        <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-gray-900/50">
+                            <h2 className="text-xl font-bold text-white">경매 재등록</h2>
+                            <button onClick={() => setRelistAuctionId(null)} className="text-gray-400 hover:text-white p-1">✕</button>
+                        </div>
+                        <form onSubmit={submitRelist} className="p-6 space-y-5">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">새 시작가 (₩)</label>
+                                <input
+                                    type="number"
+                                    required
+                                    min={0}
+                                    placeholder="예: 10000"
+                                    className="w-full bg-gray-950/50 border border-gray-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-yellow-500/50 text-white"
+                                    value={relistForm.startPrice}
+                                    onChange={(e) => setRelistForm(prev => ({ ...prev, startPrice: e.target.value }))}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">입찰 단위 (₩)</label>
+                                <input
+                                    type="number"
+                                    required
+                                    min={100}
+                                    placeholder="예: 1000"
+                                    className="w-full bg-gray-950/50 border border-gray-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-yellow-500/50 text-white"
+                                    value={relistForm.tickSize}
+                                    onChange={(e) => setRelistForm(prev => ({ ...prev, tickSize: e.target.value }))}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">진행 기간 (일)</label>
+                                <select
+                                    required
+                                    className="w-full bg-gray-950/50 border border-gray-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-yellow-500/50 text-white"
+                                    value={relistForm.durationDays}
+                                    onChange={(e) => setRelistForm(prev => ({ ...prev, durationDays: e.target.value }))}
+                                >
+                                    <option value="1">1일</option>
+                                    <option value="3">3일</option>
+                                    <option value="5">5일</option>
+                                    <option value="7">7일</option>
+                                </select>
+                            </div>
+
+                            <div className="pt-4 flex gap-3">
+                                <button type="button" onClick={() => setRelistAuctionId(null)} className="flex-1 py-3 bg-gray-800 text-gray-300 rounded-xl font-bold hover:bg-gray-700">취소</button>
+                                <button type="submit" disabled={isSubmitting} className="flex-[2] py-3 bg-yellow-500 text-black rounded-xl font-bold hover:bg-yellow-400 disabled:opacity-50">
+                                    {isSubmitting ? '처리중...' : '재등록 시작하기'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             )}
         </div>

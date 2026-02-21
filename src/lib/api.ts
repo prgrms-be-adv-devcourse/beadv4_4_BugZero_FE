@@ -173,6 +173,16 @@ export const api = {
         );
     },
 
+    relistAuction: async (auctionId: number, body: components["schemas"]["AuctionRelistRequestDto"]) => {
+        return handleResponseData<components["schemas"]["AuctionRelistResponseDto"]>(
+            client.POST("/api/v1/auctions/{auctionId}/relist", {
+                params: { path: { auctionId } },
+                body
+            }),
+            "경매 재등록에 실패했습니다."
+        );
+    },
+
     getAuctionSubscribers: async (auctionId: number) => {
         return handleResponseData<number>(
             client.GET("/api/v1/auctions/{auctionId}/subscribers/count", {
