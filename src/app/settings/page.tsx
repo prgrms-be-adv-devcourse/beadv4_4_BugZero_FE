@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { client } from '@/api/client';
+import { api } from '@/lib/api';
 import { getErrorMessage } from '@/api/utils';
 import type { components } from '@/api/schema';
 import { toast } from 'react-hot-toast';
@@ -21,28 +21,73 @@ export default function ProfileSettingsPage() {
         addressDetail: '',
     });
     const [loading, setLoading] = useState(false);
-    const [activeSection, setActiveSection] = useState<'profile' | 'password' | 'notification' | 'withdraw'>('profile');
+    const [activeSection, setActiveSection] = useState<'profile' | 'withdraw'>('profile');
     const [showWithdrawModal, setShowWithdrawModal] = useState(false);
     const [withdrawConfirm, setWithdrawConfirm] = useState('');
+
+    // 탈퇴 관련 상태
+    const [withdrawalInfo, setWithdrawalInfo] = useState({
+        balance: 0,
+        ongoingBids: 0,
+        ongoingSales: 0,
+        isLoading: false,
+    });
 
     // 회원 정보 로드
     useEffect(() => {
         const loadMemberInfo = async () => {
-            const { data, error } = await client.GET('/api/v1/members/me');
-            if (data?.data) {
-                setMemberInfo(data.data);
+            try {
+                const memberData = await api.getMe();
+                setMemberInfo(memberData);
                 setForm({
-                    nickname: data.data.nickname || '',
-                    intro: data.data.intro || '',
-                    zipCode: data.data.zipCode || '',
-                    address: data.data.address || '',
-                    addressDetail: data.data.addressDetail || '',
+                    nickname: memberData.nickname || '',
+                    intro: memberData.intro || '',
+                    zipCode: memberData.zipCode || '',
+                    address: memberData.address || '',
+                    addressDetail: memberData.addressDetail || '',
                 });
-            } else if (error) {
-                toast.error(getErrorMessage(error, '회원 정보를 불러올 수 없습니다.'));
+            } catch (error) {
+                toast.error(error instanceof Error ? error.message : '회원 정보를 불러올 수 없습니다.');
             }
         };
+
+        const loadWithdrawalInfo = async () => {
+            setWithdrawalInfo(prev => ({ ...prev, isLoading: true }));
+            try {
+                const [walletRes, bidsRes, salesRes] = await Promise.all([
+                    api.getMyWallet(),
+                    api.getMyBids(undefined, { page: 0, size: 100 }),
+                    api.getMySales("ALL", { page: 0, size: 100 })
+                ]);
+
+                let ongoingBidsCount = 0;
+                if (bidsRes.data) {
+                    ongoingBidsCount = bidsRes.data.filter((bid) =>
+                        bid.auctionStatus === 'SCHEDULED' || bid.auctionStatus === 'IN_PROGRESS'
+                    ).length;
+                }
+
+                let ongoingSalesCount = 0;
+                if (salesRes.data) {
+                    ongoingSalesCount = salesRes.data.filter((sale) =>
+                        sale.auctionStatus === 'SCHEDULED' || sale.auctionStatus === 'IN_PROGRESS'
+                    ).length;
+                }
+
+                setWithdrawalInfo({
+                    balance: walletRes.balance || 0,
+                    ongoingBids: ongoingBidsCount,
+                    ongoingSales: ongoingSalesCount,
+                    isLoading: false,
+                });
+            } catch (error) {
+                console.error('Failed to load withdrawal information:', error);
+                setWithdrawalInfo(prev => ({ ...prev, isLoading: false }));
+            }
+        };
+
         loadMemberInfo();
+        loadWithdrawalInfo();
     }, []);
 
     const handleSave = async () => {
@@ -53,33 +98,26 @@ export default function ProfileSettingsPage() {
 
         setLoading(true);
         try {
-            const { error } = await client.PATCH('/api/v1/members/me', {
-                body: {
-                    nickname: form.nickname,
-                    intro: form.intro,
-                    zipCode: form.zipCode,
-                    address: form.address,
-                    addressDetail: form.addressDetail,
-                    // 필드가 비어있을 경우 명시적으로 초기화하고 싶다면 clearFields를 사용할 수 있지만 우선 직접 전달
-                }
-            });
-
-            if (error) {
-                throw error;
-            }
-
-            toast.success('저장되었습니다!');
-            // 상태 업데이트하여 UI에 즉시 반영
-            setMemberInfo(prev => prev ? {
-                ...prev,
+            const updatedMember = await api.updateMe({
                 nickname: form.nickname,
                 intro: form.intro,
                 zipCode: form.zipCode,
                 address: form.address,
                 addressDetail: form.addressDetail,
+            });
+
+            toast.success('저장되었습니다!');
+            // 상태 업데이트하여 UI에 즉시 반영
+            setMemberInfo(prev => prev ? {
+                ...prev,
+                nickname: updatedMember.nickname,
+                intro: updatedMember.intro,
+                zipCode: updatedMember.zipCode,
+                address: updatedMember.address,
+                addressDetail: updatedMember.addressDetail,
             } : null);
         } catch (err) {
-            toast.error(getErrorMessage(err, '저장하는데 실패했습니다.'));
+            toast.error(err instanceof Error ? err.message : '저장하는데 실패했습니다.');
         } finally {
             setLoading(false);
         }
@@ -98,8 +136,6 @@ export default function ProfileSettingsPage() {
                 <div className="w-48 space-y-2">
                     {[
                         { key: 'profile', label: '프로필', icon: '👤' },
-                        { key: 'password', label: '비밀번호', icon: '🔒' },
-                        { key: 'notification', label: '알림 설정', icon: '🔔' },
                         { key: 'withdraw', label: '회원탈퇴', icon: '⚠️' },
                     ].map((item) => (
                         <button
@@ -190,7 +226,7 @@ export default function ProfileSettingsPage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-2">배송지 주소</label>
+                                    <label className="block text-sm text-gray-400 mb-2">주소</label>
                                     <div className="flex gap-2 mb-2">
                                         <input
                                             type="text"
@@ -206,9 +242,6 @@ export default function ProfileSettingsPage() {
                                             placeholder="주소"
                                             className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
                                         />
-                                        <button className="bg-gray-700 text-white px-4 rounded-lg hover:bg-gray-600 transition whitespace-nowrap">
-                                            주소 검색
-                                        </button>
                                     </div>
                                     <input
                                         type="text"
@@ -230,77 +263,7 @@ export default function ProfileSettingsPage() {
                         </div>
                     )}
 
-                    {/* 비밀번호 변경 */}
-                    {activeSection === 'password' && (
-                        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-                            <h2 className="text-xl font-bold text-yellow-400 mb-6">비밀번호 변경</h2>
 
-                            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6">
-                                <p className="text-blue-400 text-sm">
-                                    ℹ️ 소셜 로그인을 사용 중입니다. 비밀번호는 연동된 소셜 계정에서 관리됩니다.
-                                </p>
-                            </div>
-
-                            <div className="space-y-4 opacity-50">
-                                <div>
-                                    <label className="block text-sm text-gray-400 mb-2">현재 비밀번호</label>
-                                    <input
-                                        type="password"
-                                        disabled
-                                        className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-3 text-gray-500 cursor-not-allowed"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm text-gray-400 mb-2">새 비밀번호</label>
-                                    <input
-                                        type="password"
-                                        disabled
-                                        className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-3 text-gray-500 cursor-not-allowed"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm text-gray-400 mb-2">새 비밀번호 확인</label>
-                                    <input
-                                        type="password"
-                                        disabled
-                                        className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-3 text-gray-500 cursor-not-allowed"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* 알림 설정 */}
-                    {activeSection === 'notification' && (
-                        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-                            <h2 className="text-xl font-bold text-yellow-400 mb-6">알림 설정</h2>
-
-                            <div className="space-y-4">
-                                {[
-                                    { key: 'bid', label: '입찰 알림', desc: '내 경매에 새로운 입찰이 있을 때' },
-                                    { key: 'end', label: '경매 종료 알림', desc: '관심 경매가 곧 종료될 때' },
-                                    { key: 'result', label: '낙찰/패찰 알림', desc: '경매 결과가 확정되었을 때' },
-                                    { key: 'payment', label: '결제 알림', desc: '결제 기한이 다가올 때' },
-                                    { key: 'shipping', label: '배송 알림', desc: '배송 상태가 변경되었을 때' },
-                                ].map((item) => (
-                                    <div key={item.key} className="flex items-center justify-between p-4 bg-gray-900 rounded-lg">
-                                        <div>
-                                            <p className="font-medium text-white">{item.label}</p>
-                                            <p className="text-sm text-gray-500">{item.desc}</p>
-                                        </div>
-                                        <label className="relative inline-flex items-center cursor-pointer">
-                                            <input type="checkbox" defaultChecked className="sr-only peer" />
-                                            <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
-                                        </label>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <button className="w-full lego-btn py-4 text-black font-bold mt-6">
-                                저장
-                            </button>
-                        </div>
-                    )}
 
                     {/* 회원탈퇴 */}
                     {activeSection === 'withdraw' && (
@@ -313,30 +276,36 @@ export default function ProfileSettingsPage() {
                                     <li>• 진행 중인 경매가 있으면 탈퇴할 수 없습니다.</li>
                                     <li>• 지갑 잔액은 환불 요청 후 탈퇴해주세요.</li>
                                     <li>• 탈퇴 후 모든 데이터는 복구할 수 없습니다.</li>
-                                    <li>• 동일 계정으로 재가입은 30일 후 가능합니다.</li>
                                 </ul>
                             </div>
 
                             <div className="bg-gray-900 rounded-lg p-4 mb-6">
-                                <div className="flex justify-between text-sm mb-2">
-                                    <span className="text-gray-400">현재 지갑 잔액</span>
-                                    <span className="text-yellow-400 font-medium">₩500,000</span>
-                                </div>
-                                <div className="flex justify-between text-sm mb-2">
-                                    <span className="text-gray-400">진행중 입찰</span>
-                                    <span className="text-white">2건</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-400">진행중 판매</span>
-                                    <span className="text-white">0건</span>
-                                </div>
+                                {withdrawalInfo.isLoading ? (
+                                    <div className="text-center text-gray-400 py-4">조회 중...</div>
+                                ) : (
+                                    <>
+                                        <div className="flex justify-between text-sm mb-2">
+                                            <span className="text-gray-400">현재 지갑 잔액</span>
+                                            <span className="text-yellow-400 font-medium">₩{withdrawalInfo.balance.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm mb-2">
+                                            <span className="text-gray-400">진행중 입찰</span>
+                                            <span className={`${withdrawalInfo.ongoingBids > 0 ? 'text-red-400 font-bold' : 'text-white'}`}>{withdrawalInfo.ongoingBids}건</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-400">진행중 판매</span>
+                                            <span className={`${withdrawalInfo.ongoingSales > 0 ? 'text-red-400 font-bold' : 'text-white'}`}>{withdrawalInfo.ongoingSales}건</span>
+                                        </div>
+                                    </>
+                                )}
                             </div>
 
                             <button
                                 onClick={() => setShowWithdrawModal(true)}
-                                className="w-full bg-red-500 hover:bg-red-600 text-white py-4 rounded-lg font-bold transition"
+                                disabled={withdrawalInfo.balance > 0 || withdrawalInfo.ongoingBids > 0 || withdrawalInfo.ongoingSales > 0 || withdrawalInfo.isLoading}
+                                className="w-full bg-red-500 hover:bg-red-600 text-white py-4 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-red-500"
                             >
-                                회원탈퇴
+                                {withdrawalInfo.balance > 0 || withdrawalInfo.ongoingBids > 0 || withdrawalInfo.ongoingSales > 0 ? '탈퇴 불가 (잔액/진행건수 확인 필요)' : '회원탈퇴'}
                             </button>
                         </div>
                     )}
