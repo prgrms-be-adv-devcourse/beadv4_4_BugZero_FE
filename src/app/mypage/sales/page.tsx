@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { api, type MySale } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 
 function formatPrice(price: number): string {
     return new Intl.NumberFormat('ko-KR').format(price);
@@ -27,6 +28,15 @@ export default function MySalesPage() {
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(false);
     const pageSize = 20;
+
+    // Relist Modal State
+    const [relistAuctionId, setRelistAuctionId] = useState<number | null>(null);
+    const [relistForm, setRelistForm] = useState({
+        startPrice: '',
+        tickSize: '',
+        durationDays: '3'
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Hydration check to prevent premature redirect
     const [mounted, setMounted] = useState(false);
@@ -61,6 +71,39 @@ export default function MySalesPage() {
             loadSales(page);
         }
     }, [page, loadSales, role]);
+
+    const handleWithdraw = async (auctionId: number) => {
+        if (!confirm('정말 이 경매를 삭제하시겠습니까?')) return;
+
+        try {
+            await api.withdrawAuction(auctionId);
+            toast.success('판매가 취소되었습니다.');
+            setMySales(prev => prev.filter(a => a.auctionId !== auctionId));
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : '판매 취소에 실패했습니다.');
+        }
+    };
+
+    const submitRelist = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!relistAuctionId) return;
+
+        setIsSubmitting(true);
+        try {
+            await api.relistAuction(relistAuctionId, {
+                startPrice: Number(relistForm.startPrice),
+                tickSize: Number(relistForm.tickSize),
+                durationDays: Number(relistForm.durationDays)
+            });
+            toast.success('경매가 재등록되었습니다.');
+            setRelistAuctionId(null);
+            loadSales(page); // Refresh current page
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : '재등록에 실패했습니다.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     const getSaleStatus = (sale: MySale) => {
         switch (sale.auctionStatus) {
@@ -129,6 +172,31 @@ export default function MySalesPage() {
                                             )}
                                         </div>
                                     </div>
+
+                                    {/* 유찰/실패 상태일 경우 하단에 액션 버튼 표시 */}
+                                    {(sale.tradeStatus === 'FAILED' || (sale.auctionStatus === 'ENDED' && sale.bidCount === 0)) && (
+                                        <div className="flex gap-2 mt-2" onClick={(e) => e.preventDefault()}>
+                                            <button
+                                                onClick={() => {
+                                                    setRelistForm({
+                                                        startPrice: String(sale.currentPrice || 0),
+                                                        tickSize: '1000',
+                                                        durationDays: '3'
+                                                    });
+                                                    setRelistAuctionId(sale.auctionId || null);
+                                                }}
+                                                className="flex-1 lego-btn text-sm py-2 px-4 text-black text-center"
+                                            >
+                                                재등록
+                                            </button>
+                                            <button
+                                                onClick={() => handleWithdraw(sale.auctionId || 0)}
+                                                className="flex-1 bg-gray-700 text-gray-300 py-2 px-4 rounded-lg text-sm hover:bg-gray-600 transition text-center"
+                                            >
+                                                삭제
+                                            </button>
+                                        </div>
+                                    )}
                                 </Link>
                             );
                         })
@@ -153,6 +221,65 @@ export default function MySalesPage() {
                     다음
                 </button>
             </div>
+
+            {/* Relist Modal */}
+            {relistAuctionId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+                        <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-gray-900/50">
+                            <h2 className="text-xl font-bold text-white">경매 재등록</h2>
+                            <button onClick={() => setRelistAuctionId(null)} className="text-gray-400 hover:text-white p-1">✕</button>
+                        </div>
+                        <form onSubmit={submitRelist} className="p-6 space-y-5">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">새 시작가 (₩)</label>
+                                <input
+                                    type="number"
+                                    required
+                                    min={0}
+                                    placeholder="예: 10000"
+                                    className="w-full bg-gray-950/50 border border-gray-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-yellow-500/50 text-white"
+                                    value={relistForm.startPrice}
+                                    onChange={(e) => setRelistForm(prev => ({ ...prev, startPrice: e.target.value }))}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">입찰 단위 (₩)</label>
+                                <input
+                                    type="number"
+                                    required
+                                    min={100}
+                                    placeholder="예: 1000"
+                                    className="w-full bg-gray-950/50 border border-gray-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-yellow-500/50 text-white"
+                                    value={relistForm.tickSize}
+                                    onChange={(e) => setRelistForm(prev => ({ ...prev, tickSize: e.target.value }))}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">진행 기간 (일)</label>
+                                <select
+                                    required
+                                    className="w-full bg-gray-950/50 border border-gray-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-yellow-500/50 text-white"
+                                    value={relistForm.durationDays}
+                                    onChange={(e) => setRelistForm(prev => ({ ...prev, durationDays: e.target.value }))}
+                                >
+                                    <option value="1">1일</option>
+                                    <option value="3">3일</option>
+                                    <option value="5">5일</option>
+                                    <option value="7">7일</option>
+                                </select>
+                            </div>
+
+                            <div className="pt-4 flex gap-3">
+                                <button type="button" onClick={() => setRelistAuctionId(null)} className="flex-1 py-3 bg-gray-800 text-gray-300 rounded-xl font-bold hover:bg-gray-700">취소</button>
+                                <button type="submit" disabled={isSubmitting} className="flex-[2] py-3 bg-yellow-500 text-black rounded-xl font-bold hover:bg-yellow-400 disabled:opacity-50">
+                                    {isSubmitting ? '처리중...' : '재등록 시작하기'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
