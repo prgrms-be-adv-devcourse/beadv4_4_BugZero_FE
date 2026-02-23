@@ -1,13 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 
 // BE OAuth2 엔드포인트
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://rarego.duckdns.org';
 
-export default function LoginPage() {
+function LoginContent() {
     const [loading, setLoading] = useState<string | null>(null);
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        const errorMessage = searchParams.get('errorMessage');
+        if (errorMessage) {
+            toast.error(decodeURIComponent(errorMessage));
+        }
+    }, [searchParams]);
 
     const handleSocialLogin = (provider: 'google' | 'kakao' | 'naver') => {
         setLoading(provider);
@@ -78,5 +88,13 @@ export default function LoginPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={<div className="min-h-[70vh] flex items-center justify-center">Loading...</div>}>
+            <LoginContent />
+        </Suspense>
     );
 }
