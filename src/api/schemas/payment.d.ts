@@ -4,6 +4,22 @@
  */
 
 export interface paths {
+    "/api/v1/payments/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["withdraw"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/payments/settlement": {
         parameters: {
             query?: never;
@@ -148,6 +164,10 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        WithdrawRequestDto: {
+            /** Format: int32 */
+            amount?: number;
+        };
         SuccessResponseDtoVoid: {
             /** Format: int32 */
             status?: number;
@@ -263,7 +283,7 @@ export interface components {
             /** Format: int64 */
             id?: number;
             /** @enum {string} */
-            type?: "TOPUP_DONE" | "DEPOSIT_HOLD" | "DEPOSIT_RELEASE" | "DEPOSIT_USED" | "DEPOSIT_FORFEITED" | "AUCTION_PAYMENT" | "REFUND_DONE" | "SETTLEMENT_PAID" | "SETTLEMENT_FEE";
+            type?: "TOPUP_DONE" | "DEPOSIT_HOLD" | "DEPOSIT_RELEASE" | "DEPOSIT_USED" | "DEPOSIT_FORFEITED" | "AUCTION_PAYMENT" | "REFUND_DONE" | "SETTLEMENT_PAID" | "SETTLEMENT_FEE" | "WITHDRAW_DONE";
             typeName?: string;
             /** Format: int32 */
             balanceDelta?: number;
@@ -274,7 +294,7 @@ export interface components {
             /** Format: int32 */
             holdingAmount?: number;
             /** @enum {string} */
-            referenceType?: "PAYMENT" | "DEPOSIT" | "AUCTION_ORDER" | "SETTLEMENT" | "REFUND";
+            referenceType?: "PAYMENT" | "DEPOSIT" | "AUCTION_ORDER" | "SETTLEMENT" | "REFUND" | "WITHDRAW";
             /** Format: int64 */
             referenceId?: number;
             /** Format: date-time */
@@ -317,6 +337,30 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    withdraw: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WithdrawRequestDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuccessResponseDtoVoid"];
+                };
+            };
+        };
+    };
     runSettlementJob: {
         parameters: {
             query?: never;
@@ -436,7 +480,7 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
-                transactionType?: "TOPUP_DONE" | "DEPOSIT_HOLD" | "DEPOSIT_RELEASE" | "DEPOSIT_USED" | "DEPOSIT_FORFEITED" | "AUCTION_PAYMENT" | "REFUND_DONE" | "SETTLEMENT_PAID" | "SETTLEMENT_FEE";
+                transactionType?: "TOPUP_DONE" | "DEPOSIT_HOLD" | "DEPOSIT_RELEASE" | "DEPOSIT_USED" | "DEPOSIT_FORFEITED" | "AUCTION_PAYMENT" | "REFUND_DONE" | "SETTLEMENT_PAID" | "SETTLEMENT_FEE" | "WITHDRAW_DONE";
                 from?: string;
                 to?: string;
             };
