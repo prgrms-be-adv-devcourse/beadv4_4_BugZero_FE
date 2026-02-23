@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { api } from '@/lib/api'; // API 모듈 임포트
+import { useMemberStore } from '@/store/useMemberStore';
 import { getErrorMessage } from '@/api/utils';
 import toast from 'react-hot-toast'; // ✅ 추가
 
@@ -70,6 +71,8 @@ export default function VerifyModal({ isOpen, onClose, onVerified }: VerifyModal
             });
 
             toast.success('본인 인증 정보가 성공적으로 등록되었습니다.');
+            // 전역 스토어 강제 갱신 → 다른 페이지에서도 인증 상태 즉시 반영
+            await useMemberStore.getState().fetchMemberInfo(true);
             onVerified(); // 부모 컴포넌트 정보 갱신 (loadMember 호출)
             onClose();
         } catch (error: unknown) {

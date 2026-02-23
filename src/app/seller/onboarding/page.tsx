@@ -109,7 +109,7 @@ export default function SellerOnboardingPage() {
                 realName: identityForm.realName,
                 contactPhone: identityForm.contactPhone.replace(/-/g, '')
             });
-            await loadMember();
+            await fetchMemberInfo(true);
             setStep('address');
         } catch (error) {
             console.error(error);
