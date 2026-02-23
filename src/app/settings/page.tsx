@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { useAuthStore } from '@/store/useAuthStore';
 import { getErrorMessage } from '@/api/utils';
 import type { components } from '@/api/schema';
 import { toast } from 'react-hot-toast';
@@ -51,13 +52,22 @@ export default function ProfileSettingsPage() {
             }
         };
 
+        loadMemberInfo();
+    }, []);
+
+    // 탈퇴 정보 로드 (memberInfo 로드 후 role 확인)
+    useEffect(() => {
+        if (!memberInfo) return;
+
         const loadWithdrawalInfo = async () => {
             setWithdrawalInfo(prev => ({ ...prev, isLoading: true }));
             try {
+                const isSeller = memberInfo.role === 'SELLER';
+
                 const [walletRes, bidsRes, salesRes] = await Promise.all([
                     api.getMyWallet(),
                     api.getMyBids(undefined, { page: 0, size: 100 }),
-                    api.getMySales("ALL", { page: 0, size: 100 })
+                    isSeller ? api.getMySales("ALL", { page: 0, size: 100 }) : Promise.resolve({ data: [] }),
                 ]);
 
                 let ongoingBidsCount = 0;
@@ -86,9 +96,8 @@ export default function ProfileSettingsPage() {
             }
         };
 
-        loadMemberInfo();
         loadWithdrawalInfo();
-    }, []);
+    }, [memberInfo]);
 
     const handleSave = async () => {
         if (!form.nickname.trim()) {
@@ -345,9 +354,14 @@ export default function ProfileSettingsPage() {
                                 <button
                                     onClick={async () => {
                                         if (withdrawConfirm === '탈퇴합니다') {
-                                            // TODO: BE API 연동
-                                            toast.success('회원탈퇴가 완료되었습니다.');
-                                            router.push('/');
+                                            try {
+                                                await api.withdrawMember();
+                                                useAuthStore.getState().clearAuth();
+                                                toast.success('회원탈퇴가 완료되었습니다.');
+                                                router.push('/login');
+                                            } catch (error) {
+                                                toast.error(error instanceof Error ? error.message : '회원탈퇴에 실패했습니다.');
+                                            }
                                         } else {
                                             toast.error('"탈퇴합니다"를 정확히 입력해주세요.');
                                         }

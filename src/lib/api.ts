@@ -416,6 +416,13 @@ export const api = {
         );
     },
 
+    withdrawMember: async () => {
+        return handleResponseData<void>(
+            client.POST("/api/v1/auth/withdraw"),
+            "회원탈퇴에 실패했습니다."
+        );
+    },
+
     // Helpers (유지)
     calculateDeposit: (startPrice: number): number => {
         return Math.floor(startPrice * 0.1);
