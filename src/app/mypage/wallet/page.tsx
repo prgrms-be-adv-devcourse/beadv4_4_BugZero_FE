@@ -23,6 +23,12 @@ export default function MyWalletPage() {
     const [hasMore, setHasMore] = useState(false);
     const pageSize = 20;
 
+    // Withdraw modal state
+    const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+    const [withdrawAmount, setWithdrawAmount] = useState('');
+    const [withdrawLoading, setWithdrawLoading] = useState(false);
+    const [withdrawError, setWithdrawError] = useState('');
+
     const loadTransactions = useCallback(async (pageNum: number) => {
         setLoading(true);
         try {
@@ -58,6 +64,42 @@ export default function MyWalletPage() {
             return holdingDelta;
         }
         return balanceDelta;
+    };
+
+    // 출금 처리
+    const handleWithdraw = async () => {
+        const amount = Number(withdrawAmount);
+        if (!amount || amount <= 0) {
+            setWithdrawError('출금 금액을 올바르게 입력해주세요.');
+            return;
+        }
+
+        const latestTx = transactions[0];
+        const totalBalance = latestTx?.balance ?? 0;
+        const holdingAmount = latestTx?.holdingAmount ?? 0;
+        const availableBalance = totalBalance - holdingAmount;
+
+        if (amount > availableBalance) {
+            setWithdrawError(`사용 가능 잔액(₩${formatPrice(availableBalance)})을 초과할 수 없습니다.`);
+            return;
+        }
+
+        setWithdrawLoading(true);
+        setWithdrawError('');
+        try {
+            await api.withdrawDeposit(amount);
+            alert('출금이 완료되었습니다.');
+            setShowWithdrawModal(false);
+            setWithdrawAmount('');
+            setWithdrawError('');
+            // 거래내역 새로고침
+            setPage(0);
+            loadTransactions(0);
+        } catch (error) {
+            setWithdrawError(error instanceof Error ? error.message : '출금에 실패했습니다.');
+        } finally {
+            setWithdrawLoading(false);
+        }
     };
 
     return (
@@ -104,11 +146,23 @@ export default function MyWalletPage() {
                         );
                     })()}
 
-                    <Link href="/payment" className="block mb-4">
-                        <div className="card p-4 text-center hover:border-[var(--lego-yellow)]/50 transition">
-                            <p className="text-yellow-400 font-medium">💰 예치금 충전하기</p>
-                        </div>
-                    </Link>
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                        <Link href="/payment" className="block">
+                            <div className="card p-4 text-center hover:border-[var(--lego-yellow)]/50 transition">
+                                <p className="text-yellow-400 font-medium">💰 예치금 충전하기</p>
+                            </div>
+                        </Link>
+                        <button
+                            onClick={() => {
+                                setShowWithdrawModal(true);
+                                setWithdrawAmount('');
+                                setWithdrawError('');
+                            }}
+                            className="card p-4 text-center hover:border-red-500/50 transition cursor-pointer"
+                        >
+                            <p className="text-red-400 font-medium">💸 예치금 출금하기</p>
+                        </button>
+                    </div>
 
                     {transactions.length === 0 ? (
                         <div className="text-center py-12 text-gray-500">
@@ -152,6 +206,71 @@ export default function MyWalletPage() {
                     다음
                 </button>
             </div>
+
+            {/* 출금 모달 */}
+            {showWithdrawModal && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+                    <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-sm">
+                        <h2 className="text-xl font-bold mb-4">예치금 출금</h2>
+
+                        {transactions.length > 0 && (() => {
+                            const latestTx = transactions[0];
+                            const totalBalance = latestTx?.balance ?? 0;
+                            const holdingAmount = latestTx?.holdingAmount ?? 0;
+                            const availableBalance = totalBalance - holdingAmount;
+                            return (
+                                <div className="mb-4 p-3 bg-gray-800 rounded-lg text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-400">사용 가능 잔액</span>
+                                        <span className="text-yellow-400 font-semibold">₩{formatPrice(availableBalance)}</span>
+                                    </div>
+                                </div>
+                            );
+                        })()}
+
+                        <div className="mb-4">
+                            <label className="block text-sm text-gray-400 mb-2">출금 금액 (원)</label>
+                            <input
+                                type="number"
+                                value={withdrawAmount}
+                                onChange={(e) => {
+                                    setWithdrawAmount(e.target.value);
+                                    setWithdrawError('');
+                                }}
+                                placeholder="출금할 금액을 입력하세요"
+                                className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-yellow-400 focus:outline-none"
+                                min="1"
+                                disabled={withdrawLoading}
+                            />
+                        </div>
+
+                        {withdrawError && (
+                            <p className="text-red-400 text-sm mb-4">{withdrawError}</p>
+                        )}
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => {
+                                    setShowWithdrawModal(false);
+                                    setWithdrawAmount('');
+                                    setWithdrawError('');
+                                }}
+                                disabled={withdrawLoading}
+                                className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition disabled:opacity-50"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleWithdraw}
+                                disabled={withdrawLoading || !withdrawAmount}
+                                className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-500 rounded-lg font-medium transition disabled:opacity-50"
+                            >
+                                {withdrawLoading ? '처리 중...' : '출금하기'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -361,6 +361,15 @@ export const api = {
         );
     },
 
+    withdrawDeposit: async (amount: number) => {
+        return handleResponseData<void>(
+            client.POST("/api/v1/payments/withdraw", {
+                body: { amount }
+            }),
+            "예치금 출금에 실패했습니다."
+        );
+    },
+
     getMyWallet: async () => {
         return handleResponseData<components["schemas"]["WalletResponseDto"]>(
             client.GET("/api/v1/payments/me/wallet"),
@@ -404,6 +413,13 @@ export const api = {
         return handleResponseData<void>(
             client.POST("/api/v1/auth/logout"),
             "로그아웃 실패"
+        );
+    },
+
+    withdrawMember: async () => {
+        return handleResponseData<void>(
+            client.POST("/api/v1/auth/withdraw"),
+            "회원탈퇴에 실패했습니다."
         );
     },
 
