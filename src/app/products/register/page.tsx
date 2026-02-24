@@ -473,6 +473,11 @@ export default function ProductRegisterPage() {
                             ))}
                         </div>
                     </div>
+                    <div className="flex items-start gap-3 bg-indigo-900/30 border border-indigo-700/50 rounded-lg p-4">
+                        <p className="text-sm text-indigo-300 leading-relaxed">
+                            검수 절차는 약 3일이 소요되며 검수 완료 후 예정 경매로 등록됩니다.
+                        </p>
+                    </div>
                     <div className="flex gap-4">
                         <button onClick={() => setStep(2)} className="flex-1 py-4 bg-gray-700 rounded-lg text-white font-medium">← 이전</button>
                         <button
