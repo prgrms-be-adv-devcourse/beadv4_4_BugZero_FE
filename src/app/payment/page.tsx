@@ -138,7 +138,7 @@ export default function PaymentPage() {
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         placeholder="직접 입력"
-                        className="w-full bg-[#1a1a1a] border border-[#262626] rounded-lg py-3 px-4 text-white focus:outline-none focus:border-yellow-400 transition"
+                        className="w-full bg-[#1a1a1a] border border-[#262626] rounded-lg py-3 px-4 text-white focus:outline-none focus:border-yellow-400 transition [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">원</span>
                 </div>
