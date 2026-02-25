@@ -387,10 +387,10 @@ export const api = {
         return data.data || [];
     },
 
-    getSettlements: async (page: number = 0, size: number = 20, status?: "READY" | "DONE" | "CANCELED" | "FAILED") => {
+    getSettlements: async (page: number = 0, size: number = 20, status?: "READY" | "DONE" | "CANCELED" | "FAILED", from?: string, to?: string) => {
         const data = await handleResponseData<components["schemas"]["PagedResponseDtoSettlementResponseDto"]>(
             client.GET("/api/v1/payments/me/settlements", {
-                params: { query: { page, size, status } }
+                params: { query: { page, size, status, from, to } }
             }),
             "정산 내역 조회 실패"
         );
