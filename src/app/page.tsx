@@ -81,11 +81,24 @@ function getTimeRemaining(endDate?: string): string {
   if (total <= 0) return '종료';
   const days = Math.floor(total / (1000 * 60 * 60 * 24));
   const hours = Math.floor((total % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  if (days > 0) return `${days}일 ${hours}시간`;
-  return `${hours}시간`;
+  const minutes = Math.floor((total % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((total % (1000 * 60)) / 1000);
+  if (days > 0) return `${days}일 ${hours}시간 ${minutes}분`;
+  if (hours > 0) return `${hours}시간 ${minutes}분`;
+  return `${minutes}분 ${seconds}초`;
 }
 
 function AuctionCard({ auction }: { auction: Auction }) {
+  const [timeLeft, setTimeLeft] = useState(getTimeRemaining(auction.endTime));
+
+  useEffect(() => {
+    if (auction.auctionStatus !== 'IN_PROGRESS' && auction.auctionStatus !== 'SCHEDULED') return;
+    const timer = setInterval(() => {
+      setTimeLeft(getTimeRemaining(auction.endTime));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [auction.endTime, auction.auctionStatus]);
+
   return (
     <div className="card cursor-pointer group hover:border-[#333] h-full flex flex-col relative">
       <Link href={`/auctions/${auction.auctionId}`}>
@@ -131,7 +144,7 @@ function AuctionCard({ auction }: { auction: Auction }) {
               <p className="text-xs text-gray-500">현재가</p>
               <p className="text-lg font-bold text-yellow-400">₩{formatPrice(auction.currentPrice)}</p>
             </div>
-            <p className="text-sm text-gray-400">{getTimeRemaining(auction.endTime)}</p>
+            <p className="text-sm text-gray-400">{timeLeft}</p>
           </div>
         </div>
       </Link>
