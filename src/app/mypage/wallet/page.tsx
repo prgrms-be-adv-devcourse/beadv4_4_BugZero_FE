@@ -4,6 +4,21 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { api, type WalletTransaction } from '@/lib/api';
 
+type TransactionType = "TOPUP_DONE" | "DEPOSIT_HOLD" | "DEPOSIT_RELEASE" | "DEPOSIT_USED" | "DEPOSIT_FORFEITED" | "AUCTION_PAYMENT" | "REFUND_DONE" | "SETTLEMENT_PAID" | "SETTLEMENT_FEE" | "WITHDRAW_DONE";
+
+const TRANSACTION_TYPE_LABELS: Record<TransactionType, string> = {
+    TOPUP_DONE: '충전 완료',
+    DEPOSIT_HOLD: '보증금 보류',
+    DEPOSIT_RELEASE: '보증금 반환',
+    DEPOSIT_USED: '보증금 사용',
+    DEPOSIT_FORFEITED: '보증금 몰수',
+    AUCTION_PAYMENT: '경매 결제',
+    REFUND_DONE: '환불 완료',
+    SETTLEMENT_PAID: '정산 지급',
+    SETTLEMENT_FEE: '정산 수수료',
+    WITHDRAW_DONE: '출금 완료',
+};
+
 function formatPrice(price: number): string {
     return new Intl.NumberFormat('ko-KR').format(price);
 }
@@ -23,16 +38,27 @@ export default function MyWalletPage() {
     const [hasMore, setHasMore] = useState(false);
     const pageSize = 20;
 
+    // Filter state
+    const [filterType, setFilterType] = useState<TransactionType | ''>('');
+    const [filterFrom, setFilterFrom] = useState('');
+    const [filterTo, setFilterTo] = useState('');
+
     // Withdraw modal state
     const [showWithdrawModal, setShowWithdrawModal] = useState(false);
     const [withdrawAmount, setWithdrawAmount] = useState('');
     const [withdrawLoading, setWithdrawLoading] = useState(false);
     const [withdrawError, setWithdrawError] = useState('');
 
-    const loadTransactions = useCallback(async (pageNum: number) => {
+    const loadTransactions = useCallback(async (pageNum: number, type?: TransactionType | '', from?: string, to?: string) => {
         setLoading(true);
         try {
-            const data = await api.getWalletTransactions(pageNum, pageSize);
+            const data = await api.getWalletTransactions(
+                pageNum,
+                pageSize,
+                type || undefined,
+                from || undefined,
+                to || undefined,
+            );
             if (data) {
                 setTransactions(data);
                 setHasMore(data.length === pageSize);
@@ -45,8 +71,33 @@ export default function MyWalletPage() {
     }, []);
 
     useEffect(() => {
-        loadTransactions(page);
-    }, [page, loadTransactions]);
+        loadTransactions(page, filterType, filterFrom, filterTo);
+    }, [page, filterType, filterFrom, filterTo, loadTransactions]);
+
+    // 필터 변경 시 페이지 리셋
+    const handleFilterTypeChange = (value: string) => {
+        setFilterType(value as TransactionType | '');
+        setPage(0);
+    };
+
+    const handleFilterFromChange = (value: string) => {
+        setFilterFrom(value);
+        setPage(0);
+    };
+
+    const handleFilterToChange = (value: string) => {
+        setFilterTo(value);
+        setPage(0);
+    };
+
+    const handleResetFilters = () => {
+        setFilterType('');
+        setFilterFrom('');
+        setFilterTo('');
+        setPage(0);
+    };
+
+    const hasActiveFilters = filterType !== '' || filterFrom !== '' || filterTo !== '';
 
     const getTransactionSign = (tx: WalletTransaction) => {
         const balanceDelta = tx.balanceDelta ?? 0;
@@ -94,7 +145,7 @@ export default function MyWalletPage() {
             setWithdrawError('');
             // 거래내역 새로고침
             setPage(0);
-            loadTransactions(0);
+            loadTransactions(0, filterType, filterFrom, filterTo);
         } catch (error) {
             setWithdrawError(error instanceof Error ? error.message : '출금에 실패했습니다.');
         } finally {
@@ -111,7 +162,7 @@ export default function MyWalletPage() {
                 <h1 className="text-2xl font-bold">내 지갑 / 거래내역</h1>
             </div>
 
-            {loading ? (
+            {loading && transactions.length === 0 ? (
                 <div className="text-center py-12">
                     <div className="animate-spin w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full mx-auto mb-2"></div>
                     <p className="text-gray-500">로딩 중...</p>
@@ -164,9 +215,65 @@ export default function MyWalletPage() {
                         </button>
                     </div>
 
-                    {transactions.length === 0 ? (
+                    {/* 필터 영역 */}
+                    <div className="card p-4 bg-gray-900/80 border border-gray-800 rounded-xl mb-4">
+                        <div className="flex items-center justify-between mb-3">
+                            <p className="text-sm font-medium text-gray-300">🔍 거래 필터</p>
+                            {hasActiveFilters && (
+                                <button
+                                    onClick={handleResetFilters}
+                                    className="text-xs text-yellow-400 hover:text-yellow-300 transition"
+                                >
+                                    필터 초기화
+                                </button>
+                            )}
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            {/* 거래 유형 필터 */}
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1">거래 유형</label>
+                                <select
+                                    value={filterType}
+                                    onChange={(e) => handleFilterTypeChange(e.target.value)}
+                                    className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:border-yellow-400 focus:outline-none appearance-none cursor-pointer"
+                                >
+                                    <option value="">전체</option>
+                                    {Object.entries(TRANSACTION_TYPE_LABELS).map(([key, label]) => (
+                                        <option key={key} value={key}>{label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            {/* 시작일 */}
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1">시작일</label>
+                                <input
+                                    type="date"
+                                    value={filterFrom}
+                                    onChange={(e) => handleFilterFromChange(e.target.value)}
+                                    className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:border-yellow-400 focus:outline-none cursor-pointer"
+                                />
+                            </div>
+                            {/* 종료일 */}
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1">종료일</label>
+                                <input
+                                    type="date"
+                                    value={filterTo}
+                                    onChange={(e) => handleFilterToChange(e.target.value)}
+                                    className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:border-yellow-400 focus:outline-none cursor-pointer"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {loading ? (
+                        <div className="text-center py-8">
+                            <div className="animate-spin w-6 h-6 border-2 border-yellow-400 border-t-transparent rounded-full mx-auto mb-2"></div>
+                            <p className="text-gray-500 text-sm">조회 중...</p>
+                        </div>
+                    ) : transactions.length === 0 ? (
                         <div className="text-center py-12 text-gray-500">
-                            거래 내역이 없습니다
+                            {hasActiveFilters ? '조건에 맞는 거래 내역이 없습니다' : '거래 내역이 없습니다'}
                         </div>
                     ) : (
                         transactions.map((tx) => {

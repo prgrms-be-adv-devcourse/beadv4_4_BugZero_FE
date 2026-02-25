@@ -109,6 +109,19 @@ export default function MyPage() {
                     </Link>
                 )}
 
+                {userRole === 'SELLER' && (
+                    <Link href="/mypage/settlements">
+                        <div className="card p-6 h-full hover:border-[var(--lego-yellow)]/50 transition hover:bg-gray-900 group bg-gray-900/50 border border-gray-800 rounded-xl">
+                            <div className="flex justify-between items-center mb-4">
+                                <span className="text-3xl bg-gray-800 w-12 h-12 flex items-center justify-center rounded-lg group-hover:scale-110 transition">📊</span>
+                                <span className="text-gray-500 text-2xl group-hover:translate-x-1 transition">→</span>
+                            </div>
+                            <h3 className="text-lg font-bold mb-1">정산 내역</h3>
+                            <p className="text-sm text-gray-500">판매 정산 내역과 수수료를 확인하세요.</p>
+                        </div>
+                    </Link>
+                )}
+
                 <Link href="/mypage/wallet">
                     <div className="card p-6 h-full hover:border-[var(--lego-yellow)]/50 transition hover:bg-gray-900 group bg-gray-900/50 border border-gray-800 rounded-xl">
                         <div className="flex justify-between items-center mb-4">
