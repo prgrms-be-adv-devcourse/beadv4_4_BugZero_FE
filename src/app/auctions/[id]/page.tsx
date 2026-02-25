@@ -150,12 +150,14 @@ export default function AuctionDetailPage() {
                                 ...prev,
                                 currentPrice: newPrice,
                                 bidCount: (prev.bidCount || 0) + 1,
+                                // 경매 연장 시 endTime 업데이트
+                                ...(data.endTime ? { endTime: data.endTime } : {}),
                                 bid: prev.bid ? {
                                     ...prev.bid,
                                     minBidPrice: newPrice + (prev.tickSize || 0),
-                                    highestBidderId: isMyBid ? -1 : (prev.bid.highestBidderId || 0), // ID는 알 수 없으므로 임시 처리
+                                    highestBidderId: isMyBid ? -1 : (prev.bid.highestBidderId || 0),
                                     isMyHighestBid: !!isMyBid,
-                                    canBid: !isSeller && !isMyBid // 내가 최고입찰자가 아니면 입찰 가능 (판매자 제외)
+                                    canBid: !isSeller && !isMyBid
                                 } : undefined
                             };
                         });
