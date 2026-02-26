@@ -1,14 +1,37 @@
 @import "tailwindcss";
 
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+}
+
 :root {
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  --card: #f9fafb;
+  --border: #e5e7eb;
+  --muted: #6b7280;
+  
   --lego-yellow: #F5CD2F;
   --lego-red: #C91A09;
   --lego-blue: #0055BF;
   --lego-green: #237841;
 }
 
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ffffff;
+  --card: #141414;
+  --border: #222222;
+  --muted: #a1a1aa;
+}
+
 body {
-  background-color: #0a0a0a;
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
 /* Buttons */
@@ -26,12 +49,12 @@ body {
 }
 
 .btn-secondary {
-  background: #1a1a1a;
-  color: #fff;
+  background: var(--card);
+  color: var(--foreground);
   font-weight: 500;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
-  border: 1px solid #333;
+  border: 1px solid var(--border);
   transition: all 0.2s;
 }
 
@@ -41,9 +64,9 @@ body {
 
 /* Card */
 .card {
-  background: #141414;
+  background: var(--card);
   border-radius: 12px;
-  border: 1px solid #222;
+  border: 1px solid var(--border);
   overflow: hidden;
   transition: all 0.2s;
 }
@@ -55,11 +78,11 @@ body {
 /* Input */
 .input {
   width: 100%;
-  background: #1a1a1a;
-  border: 1px solid #333;
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 0.75rem 1rem;
-  color: white;
+  color: var(--foreground);
 }
 
 .input:focus {

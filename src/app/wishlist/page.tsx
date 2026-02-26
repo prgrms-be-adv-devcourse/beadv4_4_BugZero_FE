@@ -92,21 +92,21 @@ export default function WishlistPage() {
         return (
             <div className="text-center py-20">
                 <div className="animate-spin w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full mx-auto"></div>
-                <p className="text-gray-500 mt-4">불러오는 중...</p>
+                <p className="text-muted mt-4">불러오는 중...</p>
             </div>
         );
     }
 
     return (
         <div className="max-w-4xl mx-auto px-4">
-            <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-yellow-400 transition mb-6">
+            <Link href="/" className="inline-flex items-center gap-2 text-muted hover:text-yellow-400 transition mb-6">
                 ← 홈으로
             </Link>
 
             <div className="flex items-center justify-between mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">관심 경매</h1>
-                    <p className="text-gray-400 mt-1">{wishlist.length}개의 경매를 관심 등록 중</p>
+                    <h1 className="text-3xl font-bold text-foreground">관심 경매</h1>
+                    <p className="text-muted mt-1">{wishlist.length}개의 경매를 관심 등록 중</p>
                 </div>
                 <span className="text-4xl">💛</span>
             </div>
@@ -126,7 +126,7 @@ export default function WishlistPage() {
 
                             return (
                                 <Link key={item.bookmarkId} href={`/auctions/${info.auctionId}`}>
-                                    <div className="lego-card p-4 flex gap-5 group cursor-pointer border border-white/5 hover:border-yellow-500/50 transition-all bg-[#0d0d0d] relative overflow-hidden">
+                                    <div className="lego-card p-4 flex gap-5 group cursor-pointer border border-white/5 hover:border-yellow-500/50 transition-all bg-card relative overflow-hidden">
                                         {/* Status Badge */}
                                         <div className="absolute top-4 right-4 z-10">
                                             {isScheduled ? (
@@ -141,7 +141,7 @@ export default function WishlistPage() {
                                             )}
                                         </div>
 
-                                        <div className="w-28 h-28 rounded-xl overflow-hidden bg-gray-900 flex-shrink-0 relative">
+                                        <div className="w-28 h-28 rounded-xl overflow-hidden bg-card flex-shrink-0 relative">
                                             {info.thumbnailUrl ? (
                                                 <Image
                                                     src={info.thumbnailUrl}
@@ -156,29 +156,29 @@ export default function WishlistPage() {
 
                                         <div className="flex-1 min-w-0 flex flex-col justify-center pr-16">
                                             <div className="flex items-center gap-2 mb-1">
-                                                <span className="text-xs text-gray-500 bg-white/5 px-2 py-0.5 rounded uppercase tracking-wider">
+                                                <span className="text-xs text-muted bg-white/5 px-2 py-0.5 rounded uppercase tracking-wider">
                                                     {info.category}
                                                 </span>
                                             </div>
-                                            <h3 className="font-bold text-white truncate group-hover:text-yellow-400 transition text-xl mb-1">
+                                            <h3 className="font-bold text-foreground truncate group-hover:text-yellow-400 transition text-xl mb-1">
                                                 {info.productName}
                                             </h3>
                                             <div className="flex items-baseline gap-2 mb-2">
                                                 <span className="text-2xl font-black text-yellow-400">
                                                     ₩{formatPrice(info.currentPrice)}
                                                 </span>
-                                                <span className="text-xs text-gray-500">
+                                                <span className="text-xs text-muted">
                                                     시작가 ₩{formatPrice(info.startPrice)}
                                                 </span>
                                             </div>
 
                                             <div className="flex items-center gap-4 text-sm">
-                                                <div className="flex items-center gap-1 text-gray-400">
+                                                <div className="flex items-center gap-1 text-muted">
                                                     <span>🔥 입찰</span>
-                                                    <span className="text-white font-medium">{info.bidsCount || 0}회</span>
+                                                    <span className="text-foreground font-medium">{info.bidsCount || 0}회</span>
                                                 </div>
                                                 <div className="flex items-center gap-1">
-                                                    <span className="text-gray-400">{isScheduled ? '⏰ 상태' : '⏰ 남은시간'}</span>
+                                                    <span className="text-muted">{isScheduled ? '⏰ 상태' : '⏰ 남은시간'}</span>
                                                     <span className={`${isScheduled ? 'text-blue-400' : 'text-red-400'} font-bold`}>
                                                         {isScheduled ? '시작 예정' : getTimeRemaining(info.endTime)}
                                                     </span>
@@ -200,7 +200,7 @@ export default function WishlistPage() {
             {/* 종료된 경매 */}
             {endedItems.length > 0 && (
                 <div>
-                    <h2 className="text-lg font-bold text-gray-500 mb-6 flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-muted mb-6 flex items-center gap-2">
                         종료된 경매 ({endedItems.length})
                     </h2>
 
@@ -210,13 +210,13 @@ export default function WishlistPage() {
                             const isWithdrawn = info.auctionStatus === 'WITHDRAWN';
 
                             return (
-                                <div key={item.bookmarkId} className="bg-[#080808] rounded-2xl p-4 flex gap-5 border border-white/5 opacity-50 hover:opacity-80 transition-opacity relative group">
-                                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-900 flex-shrink-0 relative grayscale">
+                                <div key={item.bookmarkId} className="bg-card rounded-2xl p-4 flex gap-5 border border-white/5 opacity-50 hover:opacity-80 transition-opacity relative group">
+                                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-card flex-shrink-0 relative grayscale">
                                         {info.thumbnailUrl ? (
                                             <>
                                                 <Image src={info.thumbnailUrl} alt="" fill className="object-cover" />
                                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                                    <span className="text-[10px] font-bold text-white border border-white/30 px-1.5 py-0.5 rounded">
+                                                    <span className="text-[10px] font-bold text-foreground border border-white/30 px-1.5 py-0.5 rounded">
                                                         {isWithdrawn ? '철회됨' : '종료됨'}
                                                     </span>
                                                 </div>
@@ -227,7 +227,7 @@ export default function WishlistPage() {
                                     </div>
 
                                     <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                        <h3 className="font-bold text-gray-400 truncate text-lg">
+                                        <h3 className="font-bold text-muted truncate text-lg">
                                             {info.productName}
                                         </h3>
                                         <div className="flex items-center gap-2 mt-1">
@@ -255,9 +255,9 @@ export default function WishlistPage() {
             )}
 
             {wishlist.length === 0 && (
-                <div className="text-center py-32 bg-[#0d0d0d] rounded-[2rem] border border-white/5">
+                <div className="text-center py-32 bg-card rounded-[2rem] border border-white/5">
                     <p className="text-7xl mb-8">💛</p>
-                    <p className="text-gray-400 mb-8 text-xl font-medium">아직 관심 등록한 경매가 없습니다.</p>
+                    <p className="text-muted mb-8 text-xl font-medium">아직 관심 등록한 경매가 없습니다.</p>
                     <Link href="/" className="inline-block px-10 py-4 bg-yellow-400 text-black font-black rounded-2xl hover:bg-yellow-300 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-yellow-400/20">
                         경매 둘러보기
                     </Link>

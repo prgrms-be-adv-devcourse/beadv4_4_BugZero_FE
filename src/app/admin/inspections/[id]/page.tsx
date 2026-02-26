@@ -69,14 +69,14 @@ export default function ProductInspectionPage() {
 
     return (
         <div className="max-w-4xl mx-auto">
-            <Link href="/admin" className="inline-flex items-center gap-2 text-gray-400 hover:text-yellow-400 transition mb-6">
+            <Link href="/admin" className="inline-flex items-center gap-2 text-muted hover:text-yellow-400 transition mb-6">
                 ← 검수 목록으로
             </Link>
 
             <div className="flex items-center justify-between mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">상품 검수</h1>
-                    <p className="text-gray-400 mt-1">상품 #{productId}</p>
+                    <h1 className="text-3xl font-bold text-foreground">상품 검수</h1>
+                    <p className="text-muted mt-1">상품 #{productId}</p>
                 </div>
                 <span className="bg-yellow-500/20 text-yellow-400 px-4 py-2 rounded-full font-medium">
                     검수 대기 중
@@ -98,48 +98,48 @@ export default function ProductInspectionPage() {
                         </div>
                     </div>
 
-                    <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                    <div className="bg-card rounded-xl p-6 border border-border">
 
-                        <h2 className="font-bold text-lg text-white mb-4">{product.name}</h2>
+                        <h2 className="font-bold text-lg text-foreground mb-4">{product.name}</h2>
 
                         <div className="space-y-3 text-sm">
                             <div className="flex justify-between">
-                                <span className="text-gray-500">판매자</span>
-                                <span className="text-white">{product.seller}</span>
+                                <span className="text-muted">판매자</span>
+                                <span className="text-foreground">{product.seller}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gray-500">카테고리</span>
-                                <span className="text-white">{product.category}</span>
+                                <span className="text-muted">카테고리</span>
+                                <span className="text-foreground">{product.category}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gray-500">신고 상태</span>
-                                <span className="text-white">{product.condition}</span>
+                                <span className="text-muted">신고 상태</span>
+                                <span className="text-foreground">{product.condition}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gray-500">등록 일시</span>
-                                <span className="text-white">{new Date(product.submittedAt).toLocaleDateString('ko-KR')}</span>
+                                <span className="text-muted">등록 일시</span>
+                                <span className="text-foreground">{new Date(product.submittedAt).toLocaleDateString('ko-KR')}</span>
                             </div>
                         </div>
 
-                        <div className="mt-4 pt-4 border-t border-gray-700">
-                            <p className="text-gray-500 text-sm mb-2">상품 설명</p>
-                            <p className="text-white text-sm">{product.description}</p>
+                        <div className="mt-4 pt-4 border-t border-border">
+                            <p className="text-muted text-sm mb-2">상품 설명</p>
+                            <p className="text-foreground text-sm">{product.description}</p>
                         </div>
                     </div>
                 </div>
 
                 {/* 오른쪽: 검수 체크리스트 */}
                 <div className="space-y-6">
-                    <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                    <div className="bg-card rounded-xl p-6 border border-border">
                         <h2 className="text-xl font-bold text-yellow-400 mb-6">검수 체크리스트</h2>
 
                         <div className="space-y-4">
                             {inspectionItems.map((item) => (
-                                <div key={item.id} className="bg-gray-900 rounded-lg p-4">
+                                <div key={item.id} className="bg-card rounded-lg p-4">
                                     <div className="flex justify-between items-start mb-3">
                                         <div>
-                                            <p className="font-medium text-white">{item.label}</p>
-                                            <p className="text-xs text-gray-500">{item.description}</p>
+                                            <p className="font-medium text-foreground">{item.label}</p>
+                                            <p className="text-xs text-muted">{item.description}</p>
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
@@ -148,10 +148,10 @@ export default function ProductInspectionPage() {
                                                 key={result}
                                                 onClick={() => handleResult(item.id, result)}
                                                 className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${results[item.id] === result
-                                                    ? result === 'PASS' ? 'bg-green-500 text-white'
-                                                        : result === 'FAIL' ? 'bg-red-500 text-white'
+                                                    ? result === 'PASS' ? 'bg-green-500 text-foreground'
+                                                        : result === 'FAIL' ? 'bg-red-500 text-foreground'
                                                             : 'bg-yellow-500 text-black'
-                                                    : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+                                                    : 'bg-gray-700 text-muted hover:bg-gray-600'
                                                     }`}
                                             >
                                                 {result === 'PASS' ? '✓ 통과' : result === 'FAIL' ? '✕ 불합격' : '? 보류'}
@@ -164,14 +164,14 @@ export default function ProductInspectionPage() {
                     </div>
 
                     {/* 검수 메모 */}
-                    <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-                        <label className="block text-sm text-gray-400 mb-2">검수 메모</label>
+                    <div className="bg-card rounded-xl p-6 border border-border">
+                        <label className="block text-sm text-muted mb-2">검수 메모</label>
                         <textarea
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             placeholder="검수 시 특이사항이나 메모를 작성하세요"
                             rows={4}
-                            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500 resize-none"
+                            className="w-full bg-card border border-border rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-yellow-500 resize-none"
                         />
                     </div>
 
@@ -180,7 +180,7 @@ export default function ProductInspectionPage() {
                         <button
                             onClick={() => handleSubmit('REJECTED')}
                             disabled={loading || !allChecked}
-                            className="flex-1 py-4 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition disabled:opacity-50"
+                            className="flex-1 py-4 bg-red-600 text-foreground rounded-xl font-bold hover:bg-red-700 transition disabled:opacity-50"
                         >
                             ❌ 검수 거부
                         </button>

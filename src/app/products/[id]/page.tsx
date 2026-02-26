@@ -91,7 +91,7 @@ export default function ProductDetailPage() {
 
     return (
         <div className="max-w-6xl mx-auto">
-            <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-yellow-400 transition mb-6">
+            <Link href="/" className="inline-flex items-center gap-2 text-muted hover:text-yellow-400 transition mb-6">
                 ← 목록으로
             </Link>
 
@@ -144,16 +144,16 @@ export default function ProductDetailPage() {
                             )}
                         </div>
 
-                        <h1 className="text-2xl font-bold text-white mb-4">{product.name}</h1>
+                        <h1 className="text-2xl font-bold text-foreground mb-4">{product.name}</h1>
 
-                        <div className="flex gap-4 text-sm text-gray-400 mb-6">
+                        <div className="flex gap-4 text-sm text-muted mb-6">
                             <span>🧩 {product.pieces.toLocaleString()} 피스</span>
                             <span>📅 {product.year}년 출시</span>
                         </div>
                     </div>
 
                     {/* 검수 정보 */}
-                    <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+                    <div className="bg-card rounded-xl border border-border overflow-hidden">
                         <button
                             onClick={() => setShowInspection(!showInspection)}
                             className="w-full p-4 flex justify-between items-center hover:bg-gray-700/50 transition"
@@ -161,8 +161,8 @@ export default function ProductDetailPage() {
                             <div className="flex items-center gap-3">
                                 <span className="text-2xl">🔍</span>
                                 <div className="text-left">
-                                    <p className="font-medium text-white">검수 정보</p>
-                                    <p className="text-sm text-gray-500">
+                                    <p className="font-medium text-foreground">검수 정보</p>
+                                    <p className="text-sm text-muted">
                                         {new Date(product.inspection.inspectedAt!).toLocaleDateString('ko-KR')} 검수 완료
                                     </p>
                                 </div>
@@ -171,7 +171,7 @@ export default function ProductDetailPage() {
                         </button>
 
                         {showInspection && product.inspection.result && (
-                            <div className="p-4 pt-0 border-t border-gray-700">
+                            <div className="p-4 pt-0 border-t border-border">
                                 <div className="grid grid-cols-2 gap-2 mb-4">
                                     {Object.entries(product.inspection.result).map(([key, value]) => (
                                         <div
@@ -186,9 +186,9 @@ export default function ProductDetailPage() {
                                     ))}
                                 </div>
                                 {product.inspection.note && (
-                                    <div className="bg-gray-900 rounded-lg p-3">
-                                        <p className="text-sm text-gray-400">검수 메모</p>
-                                        <p className="text-white text-sm mt-1">{product.inspection.note}</p>
+                                    <div className="bg-card rounded-lg p-3">
+                                        <p className="text-sm text-muted">검수 메모</p>
+                                        <p className="text-foreground text-sm mt-1">{product.inspection.note}</p>
                                     </div>
                                 )}
                             </div>
@@ -196,13 +196,13 @@ export default function ProductDetailPage() {
                     </div>
 
                     {/* 상품 설명 */}
-                    <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                    <div className="bg-card rounded-xl p-6 border border-border">
                         <h2 className="font-bold text-yellow-400 mb-4">상품 설명</h2>
                         <p className="text-gray-300 whitespace-pre-line">{product.description}</p>
                     </div>
 
                     {/* 판매자 정보 */}
-                    <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                    <div className="bg-card rounded-xl p-6 border border-border">
                         <h2 className="font-bold text-yellow-400 mb-4">판매자</h2>
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -210,21 +210,21 @@ export default function ProductDetailPage() {
                                     🧱
                                 </div>
                                 <div>
-                                    <p className="font-medium text-white">{product.seller.nickname}</p>
+                                    <p className="font-medium text-foreground">{product.seller.nickname}</p>
                                     <div className="flex items-center gap-2 text-sm">
                                         <span className="text-yellow-400">★ {product.seller.rating}</span>
-                                        <span className="text-gray-500">거래 {product.seller.salesCount}회</span>
+                                        <span className="text-muted">거래 {product.seller.salesCount}회</span>
                                     </div>
                                 </div>
                             </div>
-                            <button className="bg-gray-700 text-white py-2 px-4 rounded-lg text-sm hover:bg-gray-600 transition">
+                            <button className="bg-gray-700 text-foreground py-2 px-4 rounded-lg text-sm hover:bg-gray-600 transition">
                                 프로필 보기
                             </button>
                         </div>
                     </div>
 
                     {/* 관심 등록 버튼 */}
-                    <button className="w-full py-4 bg-gray-700 rounded-xl font-medium text-white hover:bg-gray-600 transition flex items-center justify-center gap-2">
+                    <button className="w-full py-4 bg-gray-700 rounded-xl font-medium text-foreground hover:bg-gray-600 transition flex items-center justify-center gap-2">
                         💛 관심 등록
                     </button>
                 </div>

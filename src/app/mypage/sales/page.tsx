@@ -127,23 +127,23 @@ export default function MySalesPage() {
             case 'IN_PROGRESS': return { text: '진행중', color: 'text-yellow-400' };
             case 'SCHEDULED': return { text: '예정', color: 'text-blue-400' };
             case 'RELISTED': return { text: '재경매', color: 'text-purple-400' };
-            case 'WITHDRAWN': return { text: '판매 포기', color: 'text-gray-500' };
+            case 'WITHDRAWN': return { text: '판매 포기', color: 'text-muted' };
             case 'ENDED':
                 return sale.tradeStatus === 'SUCCESS'
                     ? { text: '낙찰', color: 'text-green-500' }
                     : { text: '유찰', color: 'text-red-500' };
-            default: return { text: '대기중', color: 'text-gray-400' };
+            default: return { text: '대기중', color: 'text-muted' };
         }
     };
 
     if (role !== 'SELLER') {
-        return <div className="p-8 text-center text-gray-500">접근 권한이 없습니다.</div>;
+        return <div className="p-8 text-center text-muted">접근 권한이 없습니다.</div>;
     }
 
     return (
         <div className="max-w-3xl mx-auto py-8 px-4">
             <div className="flex items-center gap-4 mb-6">
-                <Link href="/mypage" className="p-2 hover:bg-gray-800 rounded-full transition text-2xl">
+                <Link href="/mypage" className="p-2 hover:bg-card rounded-full transition text-2xl">
                     ←
                 </Link>
                 <h1 className="text-2xl font-bold">내 판매 내역</h1>
@@ -152,12 +152,12 @@ export default function MySalesPage() {
             {loading ? (
                 <div className="text-center py-12">
                     <div className="animate-spin w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full mx-auto mb-2"></div>
-                    <p className="text-gray-500">로딩 중...</p>
+                    <p className="text-muted">로딩 중...</p>
                 </div>
             ) : (
                 <div className="space-y-3">
                     {mySales.length === 0 ? (
-                        <div className="text-center py-12 text-gray-500">
+                        <div className="text-center py-12 text-muted">
                             판매 내역이 없습니다
                         </div>
                     ) : (
@@ -165,23 +165,23 @@ export default function MySalesPage() {
                             const status = getSaleStatus(sale);
                             return (
                                 <Link key={sale.auctionId} href={`/auctions/${sale.auctionId}`} className="block">
-                                    <div className="card p-4 bg-gray-900 border border-gray-800 rounded-xl hover:border-[var(--lego-yellow)]/50 transition">
+                                    <div className="card p-4 bg-card border border-border rounded-xl hover:border-[var(--lego-yellow)]/50 transition">
                                         <div className="flex justify-between items-start mb-2">
                                             <div className="flex-1">
                                                 <p className="font-medium">{sale.title || `경매 #${sale.auctionId}`}</p>
-                                                <p className="text-sm text-gray-500">입찰 {sale.bidCount ?? 0}건</p>
+                                                <p className="text-sm text-muted">입찰 {sale.bidCount ?? 0}건</p>
                                             </div>
                                             <div className="text-right">
                                                 <p className={`text-sm font-medium ${status.color}`}>
                                                     {status.text}
                                                 </p>
-                                                <p className="text-sm text-gray-400">
+                                                <p className="text-sm text-muted">
                                                     {(sale.bidCount ?? 0) > 0 ? `현재 ₩${formatPrice(sale.currentPrice ?? 0)}` : '입찰 없음'}
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="flex justify-between items-center pt-2 border-t border-gray-700/50">
-                                            <span className="text-xs text-gray-500">
+                                        <div className="flex justify-between items-center pt-2 border-t border-border/50">
+                                            <span className="text-xs text-muted">
                                                 마감: {formatDate(sale.endTime)}
                                             </span>
                                         </div>
@@ -253,15 +253,15 @@ export default function MySalesPage() {
                 <button
                     onClick={() => setPage(p => Math.max(0, p - 1))}
                     disabled={page === 0}
-                    className="px-4 py-2 bg-gray-800 rounded-lg disabled:opacity-50 hover:bg-gray-700 transition"
+                    className="px-4 py-2 bg-card rounded-lg disabled:opacity-50 hover:bg-gray-700 transition"
                 >
                     이전
                 </button>
-                <span className="py-2 text-gray-400">Page {page + 1}</span>
+                <span className="py-2 text-muted">Page {page + 1}</span>
                 <button
                     onClick={() => setPage(p => p + 1)}
                     disabled={!hasMore && mySales.length < pageSize}
-                    className="px-4 py-2 bg-gray-800 rounded-lg disabled:opacity-50 hover:bg-gray-700 transition"
+                    className="px-4 py-2 bg-card rounded-lg disabled:opacity-50 hover:bg-gray-700 transition"
                 >
                     다음
                 </button>
@@ -270,10 +270,10 @@ export default function MySalesPage() {
             {/* Relist Modal */}
             {relistAuctionId && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
-                        <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-gray-900/50">
-                            <h2 className="text-xl font-bold text-white">경매 재등록</h2>
-                            <button onClick={() => setRelistAuctionId(null)} className="text-gray-400 hover:text-white p-1">✕</button>
+                    <div className="bg-card border border-border rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+                        <div className="p-6 border-b border-border flex justify-between items-center bg-card/50">
+                            <h2 className="text-xl font-bold text-foreground">경매 재등록</h2>
+                            <button onClick={() => setRelistAuctionId(null)} className="text-muted hover:text-foreground p-1">✕</button>
                         </div>
                         <form onSubmit={submitRelist} className="p-6 space-y-5">
                             <div>
@@ -283,7 +283,7 @@ export default function MySalesPage() {
                                     required
                                     min={0}
                                     placeholder="예: 10000"
-                                    className="w-full bg-gray-950/50 border border-gray-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-yellow-500/50 text-white"
+                                    className="w-full bg-gray-950/50 border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-yellow-500/50 text-foreground"
                                     value={relistForm.startPrice}
                                     onChange={(e) => setRelistForm(prev => ({ ...prev, startPrice: e.target.value }))}
                                 />
@@ -295,7 +295,7 @@ export default function MySalesPage() {
                                     required
                                     min={100}
                                     placeholder="예: 1000"
-                                    className="w-full bg-gray-950/50 border border-gray-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-yellow-500/50 text-white"
+                                    className="w-full bg-gray-950/50 border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-yellow-500/50 text-foreground"
                                     value={relistForm.tickSize}
                                     onChange={(e) => setRelistForm(prev => ({ ...prev, tickSize: e.target.value }))}
                                 />
@@ -304,7 +304,7 @@ export default function MySalesPage() {
                                 <label className="block text-sm font-medium text-gray-300 mb-2">진행 기간 (일)</label>
                                 <select
                                     required
-                                    className="w-full bg-gray-950/50 border border-gray-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-yellow-500/50 text-white"
+                                    className="w-full bg-gray-950/50 border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-yellow-500/50 text-foreground"
                                     value={relistForm.durationDays}
                                     onChange={(e) => setRelistForm(prev => ({ ...prev, durationDays: e.target.value }))}
                                 >
@@ -316,7 +316,7 @@ export default function MySalesPage() {
                             </div>
 
                             <div className="pt-4 flex gap-3">
-                                <button type="button" onClick={() => setRelistAuctionId(null)} className="flex-1 py-3 bg-gray-800 text-gray-300 rounded-xl font-bold hover:bg-gray-700">취소</button>
+                                <button type="button" onClick={() => setRelistAuctionId(null)} className="flex-1 py-3 bg-card text-gray-300 rounded-xl font-bold hover:bg-gray-700">취소</button>
                                 <button type="submit" disabled={isSubmitting} className="flex-[2] py-3 bg-yellow-500 text-black rounded-xl font-bold hover:bg-yellow-400 disabled:opacity-50">
                                     {isSubmitting ? '처리중...' : '재등록 시작하기'}
                                 </button>

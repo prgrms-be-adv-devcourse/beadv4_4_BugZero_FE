@@ -105,17 +105,17 @@ export default function PaymentPage() {
     return (
         <div className="max-w-md mx-auto py-10">
             {/* ... 기존 UI 코드 동일 ... */}
-            <Link href="/" className="text-gray-400 hover:text-white transition text-sm mb-6 inline-block">
+            <Link href="/" className="text-muted hover:text-foreground transition text-sm mb-6 inline-block">
                 ← 돌아가기
             </Link>
 
-            <div className="card p-6 mb-6 text-center border border-[#1a1a1a] bg-[#0d0d0d]">
-                <p className="text-gray-400 text-sm mb-1">내 예치금 잔액</p>
+            <div className="card p-6 mb-6 text-center border border-border bg-card">
+                <p className="text-muted text-sm mb-1">내 예치금 잔액</p>
                 <p className="text-3xl font-bold text-yellow-400">₩{formatPrice(balance)}</p>
             </div>
 
-            <div className="card p-6 border border-[#1a1a1a] bg-[#0d0d0d]">
-                <h2 className="font-semibold mb-4 text-white">예치금 충전</h2>
+            <div className="card p-6 border border-border bg-card">
+                <h2 className="font-semibold mb-4 text-foreground">예치금 충전</h2>
 
                 <div className="grid grid-cols-4 gap-2 mb-4">
                     {presets.map(p => (
@@ -124,7 +124,7 @@ export default function PaymentPage() {
                             onClick={() => setAmount(String(p))}
                             className={`py-2 rounded-lg text-xs font-medium transition ${amount === String(p)
                                 ? 'bg-yellow-400 text-black'
-                                : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#262626]'
+                                : 'bg-card text-muted hover:bg-muted'
                                 }`}
                         >
                             {formatPrice(p)}
@@ -138,9 +138,9 @@ export default function PaymentPage() {
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         placeholder="직접 입력"
-                        className="w-full bg-[#1a1a1a] border border-[#262626] rounded-lg py-3 px-4 text-white focus:outline-none focus:border-yellow-400 transition [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-full bg-card border border-[#262626] rounded-lg py-3 px-4 text-foreground focus:outline-none focus:border-yellow-400 transition [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">원</span>
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted text-sm">원</span>
                 </div>
 
                 <button

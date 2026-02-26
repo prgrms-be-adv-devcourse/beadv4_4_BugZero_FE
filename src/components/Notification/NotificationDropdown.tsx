@@ -38,16 +38,16 @@ export default function NotificationDropdown({ onClose }: NotificationDropdownPr
     return (
         <div
             ref={dropdownRef}
-            className="absolute right-0 mt-2 w-96 bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg shadow-xl z-50 overflow-hidden flex flex-col max-h-[600px]"
+            className="absolute right-0 mt-2 w-96 bg-background border border-border rounded-lg shadow-xl z-50 overflow-hidden flex flex-col max-h-[600px]"
         >
-            <div className="p-4 border-b border-[#1a1a1a] flex justify-between items-center bg-[#0a0a0a]">
-                <h3 className="font-bold text-white">알림</h3>
-                <div className="flex bg-[#1a1a1a] rounded-lg p-1">
+            <div className="p-4 border-b border-border flex justify-between items-center bg-background">
+                <h3 className="font-bold text-foreground">알림</h3>
+                <div className="flex bg-card rounded-lg p-1">
                     <button
                         onClick={() => setFilter('ALL')}
                         className={`px-3 py-1 text-xs rounded-md transition-colors ${filter === 'ALL'
-                            ? 'bg-zinc-700 text-white'
-                            : 'text-gray-400 hover:text-white'
+                            ? 'bg-zinc-700 text-foreground'
+                            : 'text-muted hover:text-foreground'
                             }`}
                     >
                         전체
@@ -56,7 +56,7 @@ export default function NotificationDropdown({ onClose }: NotificationDropdownPr
                         onClick={() => setFilter('UNREAD')}
                         className={`px-3 py-1 text-xs rounded-md transition-colors ${filter === 'UNREAD'
                             ? 'bg-yellow-500 text-black font-bold'
-                            : 'text-gray-400 hover:text-white'
+                            : 'text-muted hover:text-foreground'
                             }`}
                     >
                         안읽음
@@ -66,7 +66,7 @@ export default function NotificationDropdown({ onClose }: NotificationDropdownPr
 
             <div className="overflow-y-auto flex-1 custom-scrollbar">
                 {isLoading && notifications.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500">
+                    <div className="p-8 text-center text-muted">
                         <div className="animate-spin w-6 h-6 border-2 border-yellow-400 border-t-transparent rounded-full mx-auto mb-2"></div>
                         로딩중...
                     </div>
@@ -84,7 +84,7 @@ export default function NotificationDropdown({ onClose }: NotificationDropdownPr
                              If we need more we can add pagination. */}
                     </div>
                 ) : (
-                    <div className="p-8 text-center text-gray-500 flex flex-col items-center">
+                    <div className="p-8 text-center text-muted flex flex-col items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12 mb-2 opacity-30">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                         </svg>
@@ -93,7 +93,7 @@ export default function NotificationDropdown({ onClose }: NotificationDropdownPr
                 )}
             </div>
 
-            <div className="p-2 border-t border-[#1a1a1a] bg-[#0f0f0f] text-center">
+            <div className="p-2 border-t border-border bg-card text-center">
                 {/* Optional footer actions */}
             </div>
         </div>

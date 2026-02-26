@@ -19,8 +19,8 @@ function FailContent() {
                 <span className="text-red-500 text-3xl font-bold">!</span>
             </div>
 
-            <h1 className="text-white text-2xl font-bold mb-2">결제에 실패했습니다</h1>
-            <p className="text-gray-400 mb-8 max-w-xs">
+            <h1 className="text-foreground text-2xl font-bold mb-2">결제에 실패했습니다</h1>
+            <p className="text-muted mb-8 max-w-xs">
                 {errorMessage}
                 {errorCode && <span className="block text-xs mt-2 text-gray-600">에러 코드: {errorCode}</span>}
             </p>
@@ -34,7 +34,7 @@ function FailContent() {
                 </button>
                 <Link
                     href="/"
-                    className="w-full bg-[#1a1a1a] text-white font-bold py-4 rounded-lg hover:bg-[#262626] transition border border-[#262626]"
+                    className="w-full bg-card text-foreground font-bold py-4 rounded-lg hover:bg-muted transition border border-[#262626]"
                 >
                     홈으로 돌아가기
                 </Link>
@@ -45,7 +45,7 @@ function FailContent() {
 
 export default function PaymentFailPage() {
     return (
-        <Suspense fallback={<div className="text-white p-20 text-center">로딩 중...</div>}>
+        <Suspense fallback={<div className="text-foreground p-20 text-center">로딩 중...</div>}>
             <FailContent />
         </Suspense>
     );

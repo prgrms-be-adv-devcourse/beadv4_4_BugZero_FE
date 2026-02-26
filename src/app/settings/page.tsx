@@ -134,11 +134,11 @@ export default function ProfileSettingsPage() {
 
     return (
         <div className="max-w-4xl mx-auto">
-            <Link href="/mypage" className="inline-flex items-center gap-2 text-gray-400 hover:text-yellow-400 transition mb-6">
+            <Link href="/mypage" className="inline-flex items-center gap-2 text-muted hover:text-yellow-400 transition mb-6">
                 ← 마이페이지
             </Link>
 
-            <h1 className="text-3xl font-bold text-white mb-8">설정</h1>
+            <h1 className="text-3xl font-bold text-foreground mb-8">설정</h1>
 
             <div className="flex gap-8">
                 {/* 사이드바 */}
@@ -152,7 +152,7 @@ export default function ProfileSettingsPage() {
                             onClick={() => setActiveSection(item.key as typeof activeSection)}
                             className={`w-full py-3 px-4 rounded-lg text-left transition flex items-center gap-2 ${activeSection === item.key
                                 ? 'bg-yellow-500 text-black font-medium'
-                                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                                : 'bg-card text-muted hover:bg-gray-700'
                                 }`}
                         >
                             <span>{item.icon}</span>
@@ -160,7 +160,7 @@ export default function ProfileSettingsPage() {
                         </button>
                     ))}
 
-                    <div className="pt-4 mt-4 border-t border-gray-700">
+                    <div className="pt-4 mt-4 border-t border-border">
                         <button
                             onClick={() => {
                                 localStorage.removeItem('accessToken');
@@ -177,79 +177,79 @@ export default function ProfileSettingsPage() {
                 <div className="flex-1">
                     {/* 프로필 설정 */}
                     {activeSection === 'profile' && (
-                        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                        <div className="bg-card rounded-xl p-6 border border-border">
                             <h2 className="text-xl font-bold text-yellow-400 mb-6">프로필 정보</h2>
 
                             {/* 프로필 아이콘 */}
                             <div className="flex items-center gap-4 mb-8">
-                                <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-red-500 rounded-full flex items-center justify-center text-4xl">
-                                    🧱
+                                <div className="w-20 h-20 rounded-full flex items-center justify-center bg-card border border-border overflow-hidden shadow-lg">
+                                    <img src={memberInfo?.role === 'ADMIN' ? '/admin-logo.png' : '/main-logo.png'} alt="Profile" className="w-full h-full object-cover" />
                                 </div>
                                 <div>
-                                    <p className="text-white font-medium">{memberInfo?.nickname || '로딩중...'}</p>
-                                    <p className="text-gray-500 text-sm">{memberInfo?.email}</p>
+                                    <p className="text-foreground font-medium">{memberInfo?.nickname || '로딩중...'}</p>
+                                    <p className="text-muted text-sm">{memberInfo?.email}</p>
                                 </div>
                             </div>
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-2">닉네임</label>
+                                    <label className="block text-sm text-muted mb-2">닉네임</label>
                                     <input
                                         type="text"
                                         value={form.nickname}
                                         onChange={(e) => setForm({ ...form, nickname: e.target.value })}
-                                        className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
+                                        className="w-full bg-card border border-border rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-yellow-500"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-2">자기소개</label>
+                                    <label className="block text-sm text-muted mb-2">자기소개</label>
                                     <textarea
                                         value={form.intro}
                                         onChange={(e) => setForm({ ...form, intro: e.target.value })}
                                         placeholder="자기소개를 입력해주세요"
                                         rows={3}
-                                        className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500 resize-none"
+                                        className="w-full bg-card border border-border rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-yellow-500 resize-none"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-2">이메일</label>
+                                    <label className="block text-sm text-muted mb-2">이메일</label>
                                     <input
                                         type="email"
                                         value={memberInfo?.email || ''}
                                         disabled
-                                        className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-3 text-gray-500 cursor-not-allowed"
+                                        className="w-full bg-card/50 border border-border rounded-lg px-4 py-3 text-muted cursor-not-allowed"
                                     />
-                                    <p className="text-xs text-gray-500 mt-1">소셜 로그인 연동 이메일은 변경할 수 없습니다</p>
+                                    <p className="text-xs text-muted mt-1">소셜 로그인 연동 이메일은 변경할 수 없습니다</p>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-2">연락처 (인증됨)</label>
+                                    <label className="block text-sm text-muted mb-2">연락처 (인증됨)</label>
                                     <input
                                         type="tel"
                                         value={memberInfo?.contactPhoneMasked || '본인인증 전입니다'}
                                         disabled
-                                        className="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-3 text-gray-500 cursor-not-allowed"
+                                        className="w-full bg-card/50 border border-border rounded-lg px-4 py-3 text-muted cursor-not-allowed"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-2">주소</label>
+                                    <label className="block text-sm text-muted mb-2">주소</label>
                                     <div className="flex gap-2 mb-2">
                                         <input
                                             type="text"
                                             value={form.zipCode}
                                             onChange={(e) => setForm({ ...form, zipCode: e.target.value })}
                                             placeholder="우편번호"
-                                            className="w-32 bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
+                                            className="w-32 bg-card border border-border rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-yellow-500"
                                         />
                                         <input
                                             type="text"
                                             value={form.address}
                                             onChange={(e) => setForm({ ...form, address: e.target.value })}
                                             placeholder="주소"
-                                            className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
+                                            className="flex-1 bg-card border border-border rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-yellow-500"
                                         />
                                     </div>
                                     <input
@@ -257,7 +257,7 @@ export default function ProfileSettingsPage() {
                                         value={form.addressDetail}
                                         onChange={(e) => setForm({ ...form, addressDetail: e.target.value })}
                                         placeholder="상세주소"
-                                        className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
+                                        className="w-full bg-card border border-border rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-yellow-500"
                                     />
                                 </div>
                             </div>
@@ -276,7 +276,7 @@ export default function ProfileSettingsPage() {
 
                     {/* 회원탈퇴 */}
                     {activeSection === 'withdraw' && (
-                        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                        <div className="bg-card rounded-xl p-6 border border-border">
                             <h2 className="text-xl font-bold text-red-400 mb-6">회원탈퇴</h2>
 
                             <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
@@ -288,22 +288,22 @@ export default function ProfileSettingsPage() {
                                 </ul>
                             </div>
 
-                            <div className="bg-gray-900 rounded-lg p-4 mb-6">
+                            <div className="bg-card rounded-lg p-4 mb-6">
                                 {withdrawalInfo.isLoading ? (
-                                    <div className="text-center text-gray-400 py-4">조회 중...</div>
+                                    <div className="text-center text-muted py-4">조회 중...</div>
                                 ) : (
                                     <>
                                         <div className="flex justify-between text-sm mb-2">
-                                            <span className="text-gray-400">현재 지갑 잔액</span>
+                                            <span className="text-muted">현재 지갑 잔액</span>
                                             <span className="text-yellow-400 font-medium">₩{withdrawalInfo.balance.toLocaleString()}</span>
                                         </div>
                                         <div className="flex justify-between text-sm mb-2">
-                                            <span className="text-gray-400">진행중 입찰</span>
-                                            <span className={`${withdrawalInfo.ongoingBids > 0 ? 'text-red-400 font-bold' : 'text-white'}`}>{withdrawalInfo.ongoingBids}건</span>
+                                            <span className="text-muted">진행중 입찰</span>
+                                            <span className={`${withdrawalInfo.ongoingBids > 0 ? 'text-red-400 font-bold' : 'text-foreground'}`}>{withdrawalInfo.ongoingBids}건</span>
                                         </div>
                                         <div className="flex justify-between text-sm">
-                                            <span className="text-gray-400">진행중 판매</span>
-                                            <span className={`${withdrawalInfo.ongoingSales > 0 ? 'text-red-400 font-bold' : 'text-white'}`}>{withdrawalInfo.ongoingSales}건</span>
+                                            <span className="text-muted">진행중 판매</span>
+                                            <span className={`${withdrawalInfo.ongoingSales > 0 ? 'text-red-400 font-bold' : 'text-foreground'}`}>{withdrawalInfo.ongoingSales}건</span>
                                         </div>
                                     </>
                                 )}
@@ -312,7 +312,7 @@ export default function ProfileSettingsPage() {
                             <button
                                 onClick={() => setShowWithdrawModal(true)}
                                 disabled={withdrawalInfo.balance > 0 || withdrawalInfo.ongoingBids > 0 || withdrawalInfo.ongoingSales > 0 || withdrawalInfo.isLoading}
-                                className="w-full bg-red-500 hover:bg-red-600 text-white py-4 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-red-500"
+                                className="w-full bg-red-500 hover:bg-red-600 text-foreground py-4 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-red-500"
                             >
                                 {withdrawalInfo.balance > 0 || withdrawalInfo.ongoingBids > 0 || withdrawalInfo.ongoingSales > 0 ? '탈퇴 불가 (잔액/진행건수 확인 필요)' : '회원탈퇴'}
                             </button>
@@ -325,13 +325,13 @@ export default function ProfileSettingsPage() {
             {
                 showWithdrawModal && (
                     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-                        <div className="bg-gray-800 rounded-2xl p-6 max-w-md w-full border border-gray-700">
+                        <div className="bg-card rounded-2xl p-6 max-w-md w-full border border-border">
                             <div className="text-center mb-6">
                                 <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <span className="text-4xl">⚠️</span>
                                 </div>
-                                <h3 className="text-xl font-bold text-white mb-2">정말 탈퇴하시겠습니까?</h3>
-                                <p className="text-gray-400 text-sm">
+                                <h3 className="text-xl font-bold text-foreground mb-2">정말 탈퇴하시겠습니까?</h3>
+                                <p className="text-muted text-sm">
                                     탈퇴 확인을 위해 아래에 &quot;탈퇴합니다&quot;를 입력해주세요.
                                 </p>
                             </div>
@@ -341,13 +341,13 @@ export default function ProfileSettingsPage() {
                                 value={withdrawConfirm}
                                 onChange={(e) => setWithdrawConfirm(e.target.value)}
                                 placeholder="탈퇴합니다"
-                                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white text-center mb-4 focus:outline-none focus:border-red-500"
+                                className="w-full bg-card border border-border rounded-lg px-4 py-3 text-foreground text-center mb-4 focus:outline-none focus:border-red-500"
                             />
 
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => { setShowWithdrawModal(false); setWithdrawConfirm(''); }}
-                                    className="flex-1 bg-gray-700 text-white py-3 rounded-lg hover:bg-gray-600 transition"
+                                    className="flex-1 bg-gray-700 text-foreground py-3 rounded-lg hover:bg-gray-600 transition"
                                 >
                                     취소
                                 </button>
@@ -367,7 +367,7 @@ export default function ProfileSettingsPage() {
                                         }
                                     }}
                                     disabled={withdrawConfirm !== '탈퇴합니다'}
-                                    className="flex-1 bg-red-500 text-white py-3 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-600 transition"
+                                    className="flex-1 bg-red-500 text-foreground py-3 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-600 transition"
                                 >
                                     탈퇴하기
                                 </button>

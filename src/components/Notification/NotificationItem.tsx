@@ -17,15 +17,15 @@ export default function NotificationItem({ notification, onRead }: NotificationI
         : '';
 
     const Content = (
-        <div className={`p-4 border-b border-[#1a1a1a] hover:bg-[#1a1a1a] transition-colors relative group ${!isRead ? 'bg-[#0f0f0f]' : ''}`}>
+        <div className={`p-4 border-b border-border hover:bg-card transition-colors relative group ${!isRead ? 'bg-card' : ''}`}>
             <div className="flex gap-3">
                 <div className="flex-1 min-w-0">
                     {notification.title && (
-                        <p className={`text-sm font-semibold mb-1 ${!isRead ? 'text-white' : 'text-gray-400'}`}>
+                        <p className={`text-sm font-semibold mb-1 ${!isRead ? 'text-foreground' : 'text-muted'}`}>
                             {notification.title}
                         </p>
                     )}
-                    <p className={`text-sm ${!isRead ? 'text-gray-200' : 'text-gray-500'} break-words whitespace-pre-wrap`}>
+                    <p className={`text-sm ${!isRead ? 'text-gray-200' : 'text-muted'} break-words whitespace-pre-wrap`}>
                         {notification.message}
                     </p>
                     <p className="text-xs text-gray-600 mt-2">{timeAgo}</p>
@@ -41,7 +41,7 @@ export default function NotificationItem({ notification, onRead }: NotificationI
                                 e.stopPropagation();
                                 notification.id && onRead(notification.id);
                             }}
-                            className="text-gray-500 hover:text-yellow-400 transition-colors opacity-0 group-hover:opacity-100 p-1"
+                            className="text-muted hover:text-yellow-400 transition-colors opacity-0 group-hover:opacity-100 p-1"
                             title="읽음 처리"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">

@@ -34,13 +34,13 @@ function LoginContent() {
                         <span className="text-5xl">🧱</span>
                         <span className="text-2xl font-bold">RareGo</span>
                     </Link>
-                    <p className="text-gray-400 text-sm mt-2">희귀 레고 경매 플랫폼</p>
+                    <p className="text-muted text-sm mt-2">희귀 레고 경매 플랫폼</p>
                 </div>
 
                 {/* Login Card */}
                 <div className="card p-6">
                     <h1 className="text-xl font-semibold text-center mb-2">로그인 / 회원가입</h1>
-                    <p className="text-gray-500 text-sm text-center mb-6">
+                    <p className="text-muted text-sm text-center mb-6">
                         소셜 계정으로 간편하게 시작하세요
                     </p>
 
@@ -78,7 +78,7 @@ function LoginContent() {
 
                 {/* 안내 문구 */}
                 <div className="mt-6 text-center">
-                    <p className="text-gray-500 text-xs">
+                    <p className="text-muted text-xs">
                         처음 로그인하시면 자동으로 회원가입됩니다.
                     </p>
                     <p className="text-gray-600 text-xs mt-2">

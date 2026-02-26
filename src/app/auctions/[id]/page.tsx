@@ -345,7 +345,7 @@ export default function AuctionDetailPage() {
         const config = statusConfig[connectionStatus];
 
         return (
-            <div className="flex items-center gap-2 text-xs text-gray-400">
+            <div className="flex items-center gap-2 text-xs text-muted">
                 <span className={`w-2 h-2 rounded-full ${config.color} ${config.animate ? 'animate-pulse' : ''}`}></span>
                 <span>{config.text}</span>
                 {lastUpdate && connectionStatus === 'connected' && (
@@ -366,7 +366,7 @@ export default function AuctionDetailPage() {
                 {/* Close Button */}
                 <button
                     onClick={() => setIsGalleryOpen(false)}
-                    className="absolute top-6 right-6 text-white/70 hover:text-white p-2 z-[110] transition-colors"
+                    className="absolute top-6 right-6 text-foreground/70 hover:text-foreground p-2 z-[110] transition-colors"
                     aria-label="닫기"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
@@ -380,7 +380,7 @@ export default function AuctionDetailPage() {
                                 e.stopPropagation();
                                 setCurrentImageIndex((prev) => (prev - 1 + auction.imageUrls!.length) % auction.imageUrls!.length);
                             }}
-                            className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-4 transition-all hover:scale-110 active:scale-90 z-[110]"
+                            className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 text-foreground/50 hover:text-foreground p-4 transition-all hover:scale-110 active:scale-90 z-[110]"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
                         </button>
@@ -389,7 +389,7 @@ export default function AuctionDetailPage() {
                                 e.stopPropagation();
                                 setCurrentImageIndex((prev) => (prev + 1) % auction.imageUrls!.length);
                             }}
-                            className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-4 transition-all hover:scale-110 active:scale-90 z-[110]"
+                            className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 text-foreground/50 hover:text-foreground p-4 transition-all hover:scale-110 active:scale-90 z-[110]"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
                         </button>
@@ -409,14 +409,14 @@ export default function AuctionDetailPage() {
 
                     {/* Image Counter Indicator */}
                     <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
-                        <div className="text-white/80 font-medium text-sm">
+                        <div className="text-foreground/80 font-medium text-sm">
                             {currentImageIndex + 1} / {auction.imageUrls.length}
                         </div>
                         <div className="flex gap-1.5">
                             {auction.imageUrls.map((_, i) => (
                                 <div
                                     key={i}
-                                    className={`w-1 h-1 rounded-full transition-all border-[0.5px] border-black/20 ${i === currentImageIndex ? 'bg-[var(--lego-yellow)] w-3' : 'bg-gray-400/80'}`}
+                                    className={`w-1 h-1 rounded-full transition-all border-[0.5px] border-black/20 ${i === currentImageIndex ? 'bg-primary w-3' : 'bg-gray-400/80'}`}
                                 />
                             ))}
                         </div>
@@ -430,7 +430,7 @@ export default function AuctionDetailPage() {
         return (
             <div className="text-center py-20">
                 <div className="animate-spin w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full mx-auto"></div>
-                <p className="text-gray-500 mt-4">로딩 중...</p>
+                <p className="text-muted mt-4">로딩 중...</p>
             </div>
         );
     }
@@ -438,7 +438,7 @@ export default function AuctionDetailPage() {
     if (!auction) {
         return (
             <div className="text-center py-20">
-                <p className="text-gray-500 mb-4">경매를 찾을 수 없습니다</p>
+                <p className="text-muted mb-4">경매를 찾을 수 없습니다</p>
                 <Link href="/" className="text-[var(--lego-yellow)] hover:underline">← 돌아가기</Link>
             </div>
         );
@@ -454,7 +454,7 @@ export default function AuctionDetailPage() {
 
     return (
         <div className="max-w-5xl mx-auto">
-            <Link href="/" className="text-gray-400 hover:text-white transition text-sm mb-6 inline-block">
+            <Link href="/" className="text-muted hover:text-foreground transition text-sm mb-6 inline-block">
                 ← 목록으로
             </Link>
 
@@ -462,7 +462,7 @@ export default function AuctionDetailPage() {
                 {/* Left: Image */}
                 <div>
                     <div className="card overflow-hidden mb-4 relative group">
-                        <div className="h-80 bg-[#222] relative">
+                        <div className="h-80 bg-muted/30 relative">
                             {auction.imageUrls && auction.imageUrls.length > 0 ? (
                                 <>
                                     <Image
@@ -479,14 +479,14 @@ export default function AuctionDetailPage() {
                                         <>
                                             <button
                                                 onClick={() => setCurrentImageIndex((prev) => (prev - 1 + auction.imageUrls!.length) % auction.imageUrls!.length)}
-                                                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-foreground p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                                                 aria-label="이전 이미지"
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
                                             </button>
                                             <button
                                                 onClick={() => setCurrentImageIndex((prev) => (prev + 1) % auction.imageUrls!.length)}
-                                                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-foreground p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                                                 aria-label="다음 이미지"
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
@@ -498,7 +498,7 @@ export default function AuctionDetailPage() {
                                                     <button
                                                         key={i}
                                                         onClick={() => setCurrentImageIndex(i)}
-                                                        className={`w-1.5 h-1.5 rounded-full transition-all border-[0.5px] border-black/20 ${i === currentImageIndex ? 'bg-[var(--lego-yellow)] w-3' : 'bg-gray-300'}`}
+                                                        className={`w-1.5 h-1.5 rounded-full transition-all border-[0.5px] border-black/20 ${i === currentImageIndex ? 'bg-primary w-3' : 'bg-gray-300'}`}
                                                     />
                                                 ))}
                                             </div>
@@ -515,7 +515,7 @@ export default function AuctionDetailPage() {
 
                     <div className="card p-5">
                         <h2 className="font-semibold mb-3">상품 설명</h2>
-                        <p className="text-gray-400 text-sm leading-relaxed">{auction.productDescription}</p>
+                        <p className="text-muted text-sm leading-relaxed">{auction.productDescription}</p>
                     </div>
                 </div>
 
@@ -530,7 +530,7 @@ export default function AuctionDetailPage() {
                                         LIVE
                                     </span>
                                 )}
-                                <span className="text-gray-500 text-sm">{totalBids}회 입찰</span>
+                                <span className="text-muted text-sm">{totalBids}회 입찰</span>
                             </div>
                             {auction.status === 'IN_PROGRESS' && <ConnectionIndicator />}
                         </div>
@@ -540,11 +540,11 @@ export default function AuctionDetailPage() {
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 mb-3">
-                            <div className="bg-[#111] rounded-lg p-3">
-                                <p className="text-xs text-gray-500 mb-1">시작가</p>
-                                <p className="font-semibold text-gray-400">₩{formatPrice(auction.startPrice)}</p>
+                            <div className="bg-card rounded-lg p-3">
+                                <p className="text-xs text-muted mb-1">시작가</p>
+                                <p className="font-semibold text-muted">₩{formatPrice(auction.startPrice)}</p>
                             </div>
-                            <div className="bg-[#111] rounded-lg p-3 border border-[var(--lego-yellow)]/30">
+                            <div className="bg-card rounded-lg p-3 border border-[var(--lego-yellow)]/30">
                                 <p className="text-xs text-[var(--lego-yellow)] mb-1">현재가</p>
                                 <p className="text-xl font-bold text-[var(--lego-yellow)]">₩{formatPrice(auction.currentPrice)}</p>
                             </div>
@@ -561,8 +561,8 @@ export default function AuctionDetailPage() {
                         {auction.status === 'IN_PROGRESS' && (
                             <div className="mb-4">
                                 <div className="flex items-center justify-between mb-2">
-                                    <label className="text-sm text-gray-400">입찰 금액 선택</label>
-                                    <span className="text-xs text-gray-500">
+                                    <label className="text-sm text-muted">입찰 금액 선택</label>
+                                    <span className="text-xs text-muted">
                                         호가 단위: ₩{formatPrice(auction.tickSize)}
                                     </span>
                                 </div>
@@ -574,7 +574,7 @@ export default function AuctionDetailPage() {
                                             disabled={!canBid && api.isVerified(memberInfo)}
                                             className={`py-3 rounded-lg text-sm font-medium transition ${bidAmount === String(amount)
                                                 ? 'bg-yellow-500 text-black'
-                                                : 'bg-gray-800 text-white hover:bg-gray-700'
+                                                : 'bg-card text-foreground hover:bg-gray-700'
                                                 } ${(!canBid && api.isVerified(memberInfo)) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                         >
                                             ₩{formatPrice(amount)}
@@ -599,11 +599,11 @@ export default function AuctionDetailPage() {
                         )}
 
                         <div className="flex items-center justify-between">
-                            <div className="text-sm text-gray-500 flex gap-4">
+                            <div className="text-sm text-muted flex gap-4">
                                 <span>시작: {auction.startTime ? formatDate(auction.startTime) : '미정'}</span>
                                 <span>종료: {auction.endTime ? formatDate(auction.endTime) : '미정'}</span>
                             </div>
-                            <LikeButton auctionId={auction.auctionId} className="p-2.5 bg-[#181818] rounded-xl hover:bg-[#222] border border-gray-800/50 shadow-inner" />
+                            <LikeButton auctionId={auction.auctionId} className="p-2.5 bg-card rounded-xl hover:bg-muted/30 border border-border/50 shadow-inner" />
                         </div>
                     </div>
 
@@ -617,14 +617,14 @@ export default function AuctionDetailPage() {
                         </div>
                         <div className="space-y-2 max-h-60 overflow-y-auto">
                             {bidLogs.map((log, i) => (
-                                <div key={log.id} className={`flex justify-between items-center p-3 rounded-lg transition-all ${i === 0 ? 'bg-[var(--lego-yellow)]/10 border border-[var(--lego-yellow)]/20' : 'bg-[#111]'}`}>
+                                <div key={log.id} className={`flex justify-between items-center p-3 rounded-lg transition-all ${i === 0 ? 'bg-primary/10 border border-primary/20' : 'bg-card'}`}>
                                     <div className="flex items-center gap-3">
-                                        <span className={`w-6 h-6 rounded text-xs flex items-center justify-center font-semibold ${i === 0 ? 'bg-[var(--lego-yellow)] text-black' : 'bg-[#333] text-gray-400'}`}>
+                                        <span className={`w-6 h-6 rounded text-xs flex items-center justify-center font-semibold ${i === 0 ? 'bg-primary text-black' : 'bg-border text-muted'}`}>
                                             {i + 1}
                                         </span>
                                         <div>
-                                            <p className={`font-medium text-sm ${i === 0 ? 'text-[var(--lego-yellow)]' : 'text-white'}`}>{log.nickname || log.publicId}</p>
-                                            <p className="text-xs text-gray-500">{formatDate(log.bidTime)}</p>
+                                            <p className={`font-medium text-sm ${i === 0 ? 'text-[var(--lego-yellow)]' : 'text-foreground'}`}>{log.nickname || log.publicId}</p>
+                                            <p className="text-xs text-muted">{formatDate(log.bidTime)}</p>
                                         </div>
                                     </div>
                                     <p className={`font-semibold ${i === 0 ? 'text-[var(--lego-yellow)]' : 'text-gray-300'}`}>

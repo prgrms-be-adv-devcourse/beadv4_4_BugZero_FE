@@ -156,7 +156,7 @@ export default function MyWalletPage() {
     return (
         <div className="max-w-3xl mx-auto py-8 px-4">
             <div className="flex items-center gap-4 mb-6">
-                <Link href="/mypage" className="p-2 hover:bg-gray-800 rounded-full transition text-2xl">
+                <Link href="/mypage" className="p-2 hover:bg-card rounded-full transition text-2xl">
                     ←
                 </Link>
                 <h1 className="text-2xl font-bold">내 지갑 / 거래내역</h1>
@@ -165,7 +165,7 @@ export default function MyWalletPage() {
             {loading && transactions.length === 0 ? (
                 <div className="text-center py-12">
                     <div className="animate-spin w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full mx-auto mb-2"></div>
-                    <p className="text-gray-500">로딩 중...</p>
+                    <p className="text-muted">로딩 중...</p>
                 </div>
             ) : (
                 <div className="space-y-3">
@@ -178,19 +178,19 @@ export default function MyWalletPage() {
                             <div className="card p-5 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/30 mb-6">
                                 <div className="flex justify-between items-end mb-3">
                                     <div>
-                                        <p className="text-sm text-gray-400 mb-1">사용 가능</p>
+                                        <p className="text-sm text-muted mb-1">사용 가능</p>
                                         <p className="text-2xl font-bold text-yellow-400">
                                             ₩{formatPrice(availableBalance)}
                                         </p>
                                     </div>
                                     {holdingAmount > 0 && (
                                         <div className="text-right">
-                                            <p className="text-xs text-gray-500">보증금</p>
-                                            <p className="text-sm text-gray-400">₩{formatPrice(holdingAmount)}</p>
+                                            <p className="text-xs text-muted">보증금</p>
+                                            <p className="text-sm text-muted">₩{formatPrice(holdingAmount)}</p>
                                         </div>
                                     )}
                                 </div>
-                                <div className="pt-2 border-t border-gray-700/50 text-xs text-gray-500">
+                                <div className="pt-2 border-t border-border/50 text-xs text-muted">
                                     총 잔고: ₩{formatPrice(totalBalance)}
                                 </div>
                             </div>
@@ -216,7 +216,7 @@ export default function MyWalletPage() {
                     </div>
 
                     {/* 필터 영역 */}
-                    <div className="card p-4 bg-gray-900/80 border border-gray-800 rounded-xl mb-4">
+                    <div className="card p-4 bg-card/80 border border-border rounded-xl mb-4">
                         <div className="flex items-center justify-between mb-3">
                             <p className="text-sm font-medium text-gray-300">🔍 거래 필터</p>
                             {hasActiveFilters && (
@@ -231,11 +231,11 @@ export default function MyWalletPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             {/* 거래 유형 필터 */}
                             <div>
-                                <label className="block text-xs text-gray-500 mb-1">거래 유형</label>
+                                <label className="block text-xs text-muted mb-1">거래 유형</label>
                                 <select
                                     value={filterType}
                                     onChange={(e) => handleFilterTypeChange(e.target.value)}
-                                    className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:border-yellow-400 focus:outline-none appearance-none cursor-pointer"
+                                    className="w-full p-2 bg-card border border-border rounded-lg text-sm text-foreground focus:border-yellow-400 focus:outline-none appearance-none cursor-pointer"
                                 >
                                     <option value="">전체</option>
                                     {Object.entries(TRANSACTION_TYPE_LABELS).map(([key, label]) => (
@@ -245,22 +245,22 @@ export default function MyWalletPage() {
                             </div>
                             {/* 시작일 */}
                             <div>
-                                <label className="block text-xs text-gray-500 mb-1">시작일</label>
+                                <label className="block text-xs text-muted mb-1">시작일</label>
                                 <input
                                     type="date"
                                     value={filterFrom}
                                     onChange={(e) => handleFilterFromChange(e.target.value)}
-                                    className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:border-yellow-400 focus:outline-none cursor-pointer"
+                                    className="w-full p-2 bg-card border border-border rounded-lg text-sm text-foreground focus:border-yellow-400 focus:outline-none cursor-pointer"
                                 />
                             </div>
                             {/* 종료일 */}
                             <div>
-                                <label className="block text-xs text-gray-500 mb-1">종료일</label>
+                                <label className="block text-xs text-muted mb-1">종료일</label>
                                 <input
                                     type="date"
                                     value={filterTo}
                                     onChange={(e) => handleFilterToChange(e.target.value)}
-                                    className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:border-yellow-400 focus:outline-none cursor-pointer"
+                                    className="w-full p-2 bg-card border border-border rounded-lg text-sm text-foreground focus:border-yellow-400 focus:outline-none cursor-pointer"
                                 />
                             </div>
                         </div>
@@ -269,26 +269,26 @@ export default function MyWalletPage() {
                     {loading ? (
                         <div className="text-center py-8">
                             <div className="animate-spin w-6 h-6 border-2 border-yellow-400 border-t-transparent rounded-full mx-auto mb-2"></div>
-                            <p className="text-gray-500 text-sm">조회 중...</p>
+                            <p className="text-muted text-sm">조회 중...</p>
                         </div>
                     ) : transactions.length === 0 ? (
-                        <div className="text-center py-12 text-gray-500">
+                        <div className="text-center py-12 text-muted">
                             {hasActiveFilters ? '조건에 맞는 거래 내역이 없습니다' : '거래 내역이 없습니다'}
                         </div>
                     ) : (
                         transactions.map((tx) => {
                             const isPositive = getTransactionSign(tx);
                             return (
-                                <div key={tx.id} className="card p-4 flex justify-between items-center bg-gray-900 border border-gray-800 rounded-xl">
+                                <div key={tx.id} className="card p-4 flex justify-between items-center bg-card border border-border rounded-xl">
                                     <div>
                                         <p className="font-medium">{tx.typeName || tx.type}</p>
-                                        <p className="text-xs text-gray-500">{formatDate(tx.createdAt)}</p>
+                                        <p className="text-xs text-muted">{formatDate(tx.createdAt)}</p>
                                     </div>
                                     <div className="text-right">
                                         <p className={`font-semibold ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
                                             {isPositive ? '+' : '-'}₩{formatPrice(getTransactionAmount(tx))}
                                         </p>
-                                        <p className="text-xs text-gray-500">잔액: ₩{formatPrice(tx.balance ?? 0)}</p>
+                                        <p className="text-xs text-muted">잔액: ₩{formatPrice(tx.balance ?? 0)}</p>
                                     </div>
                                 </div>
                             );
@@ -300,15 +300,15 @@ export default function MyWalletPage() {
                 <button
                     onClick={() => setPage(p => Math.max(0, p - 1))}
                     disabled={page === 0}
-                    className="px-4 py-2 bg-gray-800 rounded-lg disabled:opacity-50 hover:bg-gray-700 transition"
+                    className="px-4 py-2 bg-card rounded-lg disabled:opacity-50 hover:bg-gray-700 transition"
                 >
                     이전
                 </button>
-                <span className="py-2 text-gray-400">Page {page + 1}</span>
+                <span className="py-2 text-muted">Page {page + 1}</span>
                 <button
                     onClick={() => setPage(p => p + 1)}
                     disabled={!hasMore && transactions.length < pageSize}
-                    className="px-4 py-2 bg-gray-800 rounded-lg disabled:opacity-50 hover:bg-gray-700 transition"
+                    className="px-4 py-2 bg-card rounded-lg disabled:opacity-50 hover:bg-gray-700 transition"
                 >
                     다음
                 </button>
@@ -317,7 +317,7 @@ export default function MyWalletPage() {
             {/* 출금 모달 */}
             {showWithdrawModal && (
                 <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-                    <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-sm">
+                    <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-sm">
                         <h2 className="text-xl font-bold mb-4">예치금 출금</h2>
 
                         {transactions.length > 0 && (() => {
@@ -326,9 +326,9 @@ export default function MyWalletPage() {
                             const holdingAmount = latestTx?.holdingAmount ?? 0;
                             const availableBalance = totalBalance - holdingAmount;
                             return (
-                                <div className="mb-4 p-3 bg-gray-800 rounded-lg text-sm">
+                                <div className="mb-4 p-3 bg-card rounded-lg text-sm">
                                     <div className="flex justify-between">
-                                        <span className="text-gray-400">사용 가능 잔액</span>
+                                        <span className="text-muted">사용 가능 잔액</span>
                                         <span className="text-yellow-400 font-semibold">₩{formatPrice(availableBalance)}</span>
                                     </div>
                                 </div>
@@ -336,7 +336,7 @@ export default function MyWalletPage() {
                         })()}
 
                         <div className="mb-4">
-                            <label className="block text-sm text-gray-400 mb-2">출금 금액 (원)</label>
+                            <label className="block text-sm text-muted mb-2">출금 금액 (원)</label>
                             <input
                                 type="number"
                                 value={withdrawAmount}
@@ -345,7 +345,7 @@ export default function MyWalletPage() {
                                     setWithdrawError('');
                                 }}
                                 placeholder="출금할 금액을 입력하세요"
-                                className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-yellow-400 focus:outline-none"
+                                className="w-full p-3 bg-card border border-gray-600 rounded-lg text-foreground focus:border-yellow-400 focus:outline-none"
                                 min="1"
                                 disabled={withdrawLoading}
                             />

@@ -8,6 +8,8 @@ import { api } from '@/lib/api';
 import { components } from '@/api/schema';
 import LikeButton from '@/components/LikeButton';
 import { useWishlistStore } from '@/store/useWishlistStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import toast from 'react-hot-toast';
 
 type Auction = components["schemas"]["AuctionListResponseDto"];
 type PageDto = components["schemas"]["PageDto"];
@@ -100,9 +102,9 @@ function AuctionCard({ auction }: { auction: Auction }) {
   }, [auction.endTime, auction.auctionStatus]);
 
   return (
-    <div className="card cursor-pointer group hover:border-[#333] h-full flex flex-col relative">
+    <div className="card cursor-pointer group hover:border-border h-full flex flex-col relative">
       <Link href={`/auctions/${auction.auctionId}`}>
-        <div className="relative h-48 bg-[#1a1a1a] rounded-t-xl overflow-hidden">
+        <div className="relative h-48 bg-card rounded-t-xl overflow-hidden">
           {auction.thumbnailUrl ? (
             <Image
               src={auction.thumbnailUrl}
@@ -130,21 +132,21 @@ function AuctionCard({ auction }: { auction: Auction }) {
       >
         <LikeButton
           auctionId={auction.auctionId!}
-          className="p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+          className="p-2 rounded-full bg-black/50 hover:bg-black/70 text-foreground transition-colors"
         />
       </div>
 
       <Link href={`/auctions/${auction.auctionId}`} className="flex-1 flex flex-col">
-        <div className="p-4 bg-[#111] rounded-b-xl border-t border-[#1a1a1a] flex-1 flex flex-col justify-between">
+        <div className="p-4 bg-card rounded-b-xl border-t border-border flex-1 flex flex-col justify-between">
           <h3 className="font-semibold mb-1 line-clamp-2 group-hover:text-yellow-400 transition">
             {auction.productName}
           </h3>
           <div className="flex justify-between items-end mt-4">
             <div>
-              <p className="text-xs text-gray-500">현재가</p>
+              <p className="text-xs text-muted">현재가</p>
               <p className="text-lg font-bold text-yellow-400">₩{formatPrice(auction.currentPrice)}</p>
             </div>
-            <p className="text-sm text-gray-400">{timeLeft}</p>
+            <p className="text-sm text-muted">{timeLeft}</p>
           </div>
         </div>
       </Link>
@@ -157,6 +159,7 @@ function HomePageContent() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { fetchMyBookmarks } = useWishlistStore();
+  const { isLoggedIn, role } = useAuthStore();
 
   // URL에서 상태 읽기
   const filter = (searchParams.get('filter') as 'ALL' | 'IN_PROGRESS' | 'SCHEDULED' | 'ENDED') || 'ALL';
@@ -200,6 +203,13 @@ function HomePageContent() {
   useEffect(() => {
     fetchMyBookmarks();
   }, [fetchMyBookmarks]);
+
+  const handleBannerClick = (e: React.MouseEvent) => {
+    if (!isLoggedIn) {
+      e.preventDefault();
+      toast.error('판매 등록은 로그인 후 이용 가능합니다.');
+    }
+  };
 
   // Load Auctions
   useEffect(() => {
@@ -282,74 +292,124 @@ function HomePageContent() {
 
   return (
     <div className="min-h-screen pb-20">
+      {/* Seller Registration Banner */}
+      {role !== 'SELLER' && (
+        <div className="mb-12 rounded-[2.5rem] overflow-hidden relative bg-gradient-to-br from-gray-900 via-[#111] to-black border border-gray-800 shadow-2xl flex flex-col md:flex-row items-center justify-between p-8 md:p-14 mx-4 xl:mx-auto max-w-7xl group">
+          {/* Decorative background elements */}
+          <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+            <div className="absolute top-[20%] left-[10%] w-2 h-2 bg-white/30 rounded-full blur-[1px]"></div>
+            <div className="absolute top-[60%] left-[30%] w-3 h-3 bg-yellow-500/20 rounded-full blur-[2px]"></div>
+            <div className="absolute top-[40%] right-[20%] w-1.5 h-1.5 bg-white/40 rounded-full blur-[1px]"></div>
+            <div className="absolute bottom-[20%] right-[30%] w-4 h-4 bg-yellow-500/10 rounded-full blur-[3px]"></div>
+            <div className="absolute -top-20 -right-20 w-64 h-64 bg-yellow-500/10 rounded-full blur-[100px] pointer-events-none transition-opacity duration-700 group-hover:opacity-70"></div>
+          </div>
+
+          <div className="flex-1 z-10 text-center md:text-left mb-8 md:mb-0">
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4 tracking-tight leading-tight">잠자고 있는 레고,<br className="hidden md:block" /> 가치를 알아볼 시간입니다.</h2>
+            <p className="text-gray-400 text-sm md:text-base font-medium max-w-lg mx-auto md:mx-0 mb-8 leading-relaxed">
+              소중히 간직했던 희귀 레고를 경매에 등록하고 새로운 주인을 찾아주세요.<br className="hidden md:block" />안전하고 편리한 RareGo만의 판매자 전용 시스템이 함께합니다.
+            </p>
+            <Link
+              href="/seller/onboarding"
+              onClick={handleBannerClick}
+              className="inline-block bg-yellow-500 text-black px-8 py-4 rounded-xl font-black text-lg hover:bg-yellow-400 hover:shadow-[0_0_20px_rgba(234,179,8,0.4)] transition-all active:scale-[0.98]">
+              판매자 등록하기 &gt;
+            </Link>
+          </div>
+
+          <div className="z-10 flex-shrink-0 relative">
+            <div className="absolute inset-0 bg-yellow-500/10 blur-3xl rounded-full"></div>
+            <Image
+              src="/images/banner/seller_banner.png"
+              alt="Seller Lego"
+              width={240}
+              height={240}
+              className="relative z-10 drop-shadow-2xl hover:scale-105 hover:-rotate-2 transition-transform duration-500 select-none object-contain"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Search & Filter Section */}
-      <div className="mb-8 space-y-4">
+      <div className="mb-10 space-y-6">
         {/* Search Bar */}
-        <div className="flex justify-center">
-          <div className="relative w-full max-w-lg">
+        <div className="flex justify-center px-4">
+          <div className="relative w-full max-w-2xl group">
+            <div className="absolute inset-0 bg-yellow-500/5 rounded-full blur-xl group-focus-within:bg-yellow-500/10 transition-colors duration-300"></div>
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={handleSearchKeys}
-              placeholder="상품명 검색..."
-              className="w-full bg-[#111] border border-[#333] rounded-full py-3 pl-5 pr-12 focus:border-yellow-500 focus:outline-none transition-colors text-white"
+              placeholder="찾으시는 레고가 있나요?"
+              className="relative w-full bg-card/80 backdrop-blur-lg border border-border/50 rounded-full py-4 pl-6 pr-14 shadow-lg focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500/50 focus:outline-none transition-all text-foreground text-lg placeholder:text-muted/70"
             />
             <button
               onClick={handleSearchClick}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-yellow-500 transition-colors"
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-muted hover:text-yellow-500 transition-colors z-10"
             >
-              <SearchIcon className="w-5 h-5" />
+              <SearchIcon className="w-6 h-6" />
             </button>
           </div>
         </div>
 
         {/* Categories */}
-        <div className="flex justify-center gap-2 flex-wrap">
-          {(['ALL', ...Object.keys(CATEGORY_MAP)]).map(c => {
-            const isActive = c === 'ALL' ? !category : category === c;
-            return (
-              <button
-                key={c}
-                onClick={() => handleCategoryChange(c)}
-                className={`px-4 py-1.5 rounded-full text-sm border transition-all ${isActive
-                  ? 'bg-white text-black border-white font-bold'
-                  : 'bg-transparent text-gray-400 border-[#333] hover:border-gray-500'
-                  }`}
-              >
-                {c === 'ALL' ? '전체 카테고리' : c}
-              </button>
-            );
-          })}
+        <div className="relative w-full max-w-5xl mx-auto px-4">
+          {/* Scroll fade gradients */}
+          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none"></div>
+          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none"></div>
+
+          <div className="flex items-center gap-3 overflow-x-auto whitespace-nowrap py-2 px-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x">
+            {(['ALL', ...Object.keys(CATEGORY_MAP)]).map(c => {
+              const isActive = c === 'ALL' ? !category : category === c;
+              return (
+                <button
+                  key={c}
+                  onClick={() => handleCategoryChange(c)}
+                  className={`snap-center shrink-0 px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border ${isActive
+                    ? 'bg-foreground text-background border-foreground shadow-[0_0_15px_rgba(255,255,255,0.1)] dark:shadow-[0_0_15px_rgba(255,255,255,0.05)]'
+                    : 'bg-card/50 text-muted border-border/50 hover:bg-card hover:border-foreground/30 hover:text-foreground'
+                    }`}
+                >
+                  {c === 'ALL' ? '전체 카테고리' : c}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Status Filter & Sort */}
-        <div className="flex justify-center items-center gap-4 pt-2 border-t border-[#1a1a1a] w-fit mx-auto px-6">
-          <div className="flex gap-2">
+        <div className="flex justify-center items-center gap-6 pt-4 border-t border-border/40 w-fit mx-auto px-8">
+          <div className="flex gap-4">
             {(['ALL', 'IN_PROGRESS', 'SCHEDULED', 'ENDED'] as const).map(f => (
               <button
                 key={f}
                 onClick={() => handleFilterChange(f)}
-                className={`text-sm font-medium transition-all px-2 py-1 ${filter === f ? 'text-yellow-500' : 'text-gray-500 hover:text-gray-300'
+                className={`text-sm font-semibold transition-colors py-1 relative ${filter === f ? 'text-yellow-500' : 'text-muted hover:text-foreground/80'
                   }`}
               >
                 {f === 'ALL' ? '전체 상태' : f === 'IN_PROGRESS' ? '진행 중' : f === 'SCHEDULED' ? '예정' : f === 'ENDED' ? '종료' : f}
+                {filter === f && (
+                  <span className="absolute -bottom-2.5 flex w-full justify-center">
+                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
+                  </span>
+                )}
               </button>
             ))}
           </div>
 
-          <div className="w-px h-4 bg-[#333]"></div>
+          <div className="w-px h-5 bg-border/60"></div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-4">
             <button
               onClick={() => handleSortChange('NEWEST')}
-              className={`text-sm font-medium transition-all px-2 py-1 ${sort === 'NEWEST' ? 'text-yellow-500' : 'text-gray-500 hover:text-gray-300'}`}
+              className={`text-sm font-semibold transition-colors py-1 ${sort === 'NEWEST' ? 'text-foreground' : 'text-muted hover:text-foreground/80'}`}
             >
               최신순
             </button>
             <button
               onClick={() => handleSortChange('CLOSING_SOON')}
-              className={`text-sm font-medium transition-all px-2 py-1 ${sort === 'CLOSING_SOON' ? 'text-yellow-500' : 'text-gray-500 hover:text-gray-300'}`}
+              className={`text-sm font-semibold transition-colors py-1 ${sort === 'CLOSING_SOON' ? 'text-foreground' : 'text-muted hover:text-foreground/80'}`}
             >
               마감임박순
             </button>
@@ -360,7 +420,7 @@ function HomePageContent() {
       {loading ? (
         <div className="text-center py-20">
           <div className="text-4xl animate-bounce mb-4">🧱</div>
-          <p className="text-gray-500">레고 더미를 뒤지는 중...</p>
+          <p className="text-muted">레고 더미를 뒤지는 중...</p>
         </div>
       ) : (
         <>
@@ -379,7 +439,7 @@ function HomePageContent() {
               <button
                 disabled={!pageInfo.hasPrevious}
                 onClick={() => handlePageChange(currentPage - 1)}
-                className="p-2 text-gray-400 hover:text-white disabled:opacity-30"
+                className="p-2 text-muted hover:text-foreground disabled:opacity-30"
               >
                 &lt; 이전
               </button>
@@ -388,7 +448,7 @@ function HomePageContent() {
                 <button
                   key={i}
                   onClick={() => handlePageChange(i)}
-                  className={`w-8 h-8 rounded ${currentPage === i ? 'bg-yellow-500 text-black font-bold' : 'bg-gray-800 text-gray-400'
+                  className={`w-8 h-8 rounded ${currentPage === i ? 'bg-yellow-500 text-black font-bold' : 'bg-card text-muted'
                     }`}
                 >
                   {i + 1}
@@ -398,7 +458,7 @@ function HomePageContent() {
               <button
                 disabled={!pageInfo.hasNext}
                 onClick={() => handlePageChange(currentPage + 1)}
-                className="p-2 text-gray-400 hover:text-white disabled:opacity-30"
+                className="p-2 text-muted hover:text-foreground disabled:opacity-30"
               >
                 다음 &gt;
               </button>
@@ -406,7 +466,7 @@ function HomePageContent() {
           )}
 
           {auctions.length === 0 && (
-            <div className="text-center py-20 text-gray-500">경매가 없습니다.</div>
+            <div className="text-center py-20 text-muted">경매가 없습니다.</div>
           )}
         </>
       )}
@@ -417,7 +477,7 @@ function HomePageContent() {
 export default function HomePage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500"></div>
       </div>
     }>

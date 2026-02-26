@@ -72,14 +72,14 @@ function ProductRegisterContent() {
     // 수정 모드일 때 초기 데이터 세팅
     useEffect(() => {
         if (!editMode || !initProductId) return;
-        
+
         // Query Parameter를 통해 기본 정보를 폼에 채워넣습니다.
         // 상세 데이터가 없는 필드(description, category 등)는 사용자가 수기로 보완하도록 안내합니다.
         const auctionIdStr = searchParams.get('auctionId');
         const nameStr = searchParams.get('name');
 
         if (auctionIdStr) setExistingAuctionId(Number(auctionIdStr));
-        
+
         setForm(prev => ({
             ...prev,
             name: nameStr || prev.name,
@@ -88,13 +88,13 @@ function ProductRegisterContent() {
         }));
 
         if (!nameStr) {
-             toast("상세 정보가 충분하지 않아 빈 항목은 직접 채워주셔야 합니다.", { icon: "⚠️" });
+            toast("상세 정보가 충분하지 않아 빈 항목은 직접 채워주셔야 합니다.", { icon: "⚠️" });
         }
     }, [editMode, initProductId, searchParams]);
 
     if (!isLoaded || !memberInfo || !isSeller) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-900">
+            <div className="min-h-screen flex items-center justify-center bg-card">
                 <div className="w-12 h-12 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
             </div>
         );
@@ -181,9 +181,9 @@ function ProductRegisterContent() {
                     return;
                 }
                 if (imageFiles.length === 0) {
-                     toast.error("수정 시에도 이미지는 최소 1장 이상 등록해야 합니다.");
-                     setLoading(false);
-                     return;
+                    toast.error("수정 시에도 이미지는 최소 1장 이상 등록해야 합니다.");
+                    setLoading(false);
+                    return;
                 }
 
                 const updateData: components["schemas"]["ProductUpdateDto"] = {
@@ -311,20 +311,20 @@ function ProductRegisterContent() {
 
     return (
         <div className="max-w-3xl mx-auto py-10 px-4">
-            <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-yellow-400 transition mb-6">
+            <Link href="/" className="inline-flex items-center gap-2 text-muted hover:text-yellow-400 transition mb-6">
                 ← 돌아가기
             </Link>
 
-            <h1 className="text-3xl font-bold text-white mb-2">{editMode ? '상품 수정' : '상품 등록'}</h1>
-            <p className="text-gray-400 mb-8">{editMode ? '재검수를 위해 상품 정보를 수정합니다' : '희귀 레고를 경매에 등록하세요'}</p>
+            <h1 className="text-3xl font-bold text-foreground mb-2">{editMode ? '상품 수정' : '상품 등록'}</h1>
+            <p className="text-muted mb-8">{editMode ? '재검수를 위해 상품 정보를 수정합니다' : '희귀 레고를 경매에 등록하세요'}</p>
 
             <div className="flex items-center gap-4 mb-8">
                 {[1, 2, 3].map((s) => (
                     <div key={s} className="flex items-center gap-2">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step >= s ? 'bg-yellow-500 text-black' : 'bg-gray-700 text-gray-400'}`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step >= s ? 'bg-yellow-500 text-black' : 'bg-gray-700 text-muted'}`}>
                             {s}
                         </div>
-                        <span className={step >= s ? 'text-white' : 'text-gray-500'}>
+                        <span className={step >= s ? 'text-foreground' : 'text-muted'}>
                             {s === 1 ? '기본 정보' : s === 2 ? '이미지' : '경매 설정'}
                         </span>
                         {s < 3 && <div className="w-16 h-px bg-gray-700"></div>}
@@ -333,25 +333,25 @@ function ProductRegisterContent() {
             </div>
 
             {step === 1 && (
-                <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 space-y-6">
+                <div className="bg-card rounded-xl p-6 border border-border space-y-6">
                     <div>
-                        <label className="block text-sm text-gray-400 mb-2">상품명 *</label>
+                        <label className="block text-sm text-muted mb-2">상품명 *</label>
                         <input
                             type="text"
                             value={form.name}
                             onChange={(e) => setForm({ ...form, name: e.target.value })}
                             placeholder="예: 레고 스타워즈 밀레니엄 팔콘 75192"
-                            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
+                            className="w-full bg-card border border-border rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-yellow-500"
                         />
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-400 mb-2">카테고리 *</label>
+                        <label className="block text-sm text-muted mb-2">카테고리 *</label>
                         <div className="grid grid-cols-3 gap-2">
                             {categories.map((cat) => (
                                 <button
                                     key={cat.value}
                                     onClick={() => setForm({ ...form, category: cat.value })}
-                                    className={`p-3 rounded-lg text-center transition ${form.category === cat.value ? 'bg-yellow-500 text-black' : 'bg-gray-900 text-white hover:bg-gray-700'}`}
+                                    className={`p-3 rounded-lg text-center transition ${form.category === cat.value ? 'bg-yellow-500 text-black' : 'bg-card text-foreground hover:bg-gray-700'}`}
                                 >
                                     <span className="text-2xl block mb-1">{cat.icon}</span>
                                     <span className="text-xs">{cat.label}</span>
@@ -360,13 +360,13 @@ function ProductRegisterContent() {
                         </div>
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-400 mb-2">상품 상태 (AI 추천용) *</label>
+                        <label className="block text-sm text-muted mb-2">상품 상태 (AI 추천용) *</label>
                         <div className="grid grid-cols-2 gap-2">
                             {conditions.map((cond) => (
                                 <button
                                     key={cond.value}
                                     onClick={() => setForm({ ...form, condition: cond.value })}
-                                    className={`p-3 rounded-lg text-left transition border ${form.condition === cond.value ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-gray-900 border-gray-700 text-gray-400 hover:border-gray-500'}`}
+                                    className={`p-3 rounded-lg text-left transition border ${form.condition === cond.value ? 'bg-indigo-600 border-indigo-500 text-foreground' : 'bg-card border-border text-muted hover:border-gray-500'}`}
                                 >
                                     <div className="font-bold text-sm">{cond.label}</div>
                                     <div className="text-xs opacity-80">{cond.desc}</div>
@@ -375,13 +375,13 @@ function ProductRegisterContent() {
                         </div>
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-400 mb-2">상품 설명 *</label>
+                        <label className="block text-sm text-muted mb-2">상품 설명 *</label>
                         <textarea
                             value={form.description}
                             onChange={(e) => setForm({ ...form, description: e.target.value })}
                             placeholder="보관 상태 등을 상세히 작성해주세요"
                             rows={4}
-                            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500 resize-none"
+                            className="w-full bg-card border border-border rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-yellow-500 resize-none"
                         />
                     </div>
                     <button
@@ -395,21 +395,21 @@ function ProductRegisterContent() {
             )}
 
             {step === 2 && (
-                <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 space-y-6">
+                <div className="bg-card rounded-xl p-6 border border-border space-y-6">
                     <div>
-                        <label className="block text-sm text-gray-400 mb-2">상품 이미지 (최대 5장) *</label>
+                        <label className="block text-sm text-muted mb-2">상품 이미지 (최대 5장) *</label>
                         <div className="grid grid-cols-5 gap-3">
                             {previews.map((img, idx) => (
-                                <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-gray-700">
+                                <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-border">
                                     <Image src={img} alt="미리보기" fill className="object-cover" />
                                     <button
                                         onClick={() => removeImage(idx)}
-                                        className="absolute top-1 right-1 w-6 h-6 bg-red-500 rounded-full text-white text-xs flex items-center justify-center"
+                                        className="absolute top-1 right-1 w-6 h-6 bg-red-500 rounded-full text-foreground text-xs flex items-center justify-center"
                                     >✕</button>
                                 </div>
                             ))}
                             {previews.length < 5 && (
-                                <label className="aspect-square rounded-lg border-2 border-dashed border-gray-600 flex flex-col items-center justify-center cursor-pointer hover:border-yellow-500 transition bg-gray-900">
+                                <label className="aspect-square rounded-lg border-2 border-dashed border-gray-600 flex flex-col items-center justify-center cursor-pointer hover:border-yellow-500 transition bg-card">
                                     <span className="text-2xl mb-1">📷</span>
                                     <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
                                 </label>
@@ -417,7 +417,7 @@ function ProductRegisterContent() {
                         </div>
                     </div>
                     <div className="flex gap-4">
-                        <button onClick={() => setStep(1)} className="flex-1 py-4 bg-gray-700 rounded-lg text-white font-medium">← 이전</button>
+                        <button onClick={() => setStep(1)} className="flex-1 py-4 bg-gray-700 rounded-lg text-foreground font-medium">← 이전</button>
                         <button
                             onClick={() => setStep(3)}
                             disabled={imageFiles.length === 0}
@@ -428,14 +428,14 @@ function ProductRegisterContent() {
             )}
 
             {step === 3 && (
-                <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 space-y-6">
+                <div className="bg-card rounded-xl p-6 border border-border space-y-6">
                     <div>
                         <div className="flex justify-between items-center mb-2">
-                            <label className="block text-sm text-gray-400">경매 시작가 *</label>
+                            <label className="block text-sm text-muted">경매 시작가 *</label>
                             <button
                                 onClick={handleGetRecommendations}
                                 disabled={isRecommending}
-                                className="text-xs bg-indigo-600 px-3 py-1 rounded text-white hover:bg-indigo-700 transition flex items-center gap-1"
+                                className="text-xs bg-indigo-600 px-3 py-1 rounded text-foreground hover:bg-indigo-700 transition flex items-center gap-1"
                             >
                                 {isRecommending ? (
                                     <>
@@ -449,7 +449,7 @@ function ProductRegisterContent() {
 
                         {/* AI 가격 추천 결과 영역 */}
                         {showRecommendations && (
-                            <div className="mb-4 bg-gray-900 p-4 rounded-lg border border-indigo-900/50">
+                            <div className="mb-4 bg-card p-4 rounded-lg border border-indigo-900/50">
                                 <h3 className="text-sm font-bold text-indigo-400 mb-3 flex items-center gap-2">
                                     <span>💡 AI 추천 리포트</span>
                                 </h3>
@@ -457,7 +457,7 @@ function ProductRegisterContent() {
                                 <div className="space-y-4">
                                     {/* 내부 시세 데이터 */}
                                     <div>
-                                        <p className="text-xs text-gray-500 mb-2">BeAdv 내부 거래 데이터 분석</p>
+                                        <p className="text-xs text-muted mb-2">BeAdv 내부 거래 데이터 분석</p>
                                         <div className="grid grid-cols-2 gap-2">
                                             {internalPrices ? (
                                                 internalPrices.length > 0 ? (
@@ -465,9 +465,9 @@ function ProductRegisterContent() {
                                                         <button
                                                             key={idx}
                                                             onClick={() => setForm({ ...form, startPrice: String(item.finalPrice || item.startPrice || 0) })}
-                                                            className="text-left p-2 bg-gray-800 rounded border border-gray-700 hover:border-indigo-500 transition group"
+                                                            className="text-left p-2 bg-card rounded border border-border hover:border-indigo-500 transition group"
                                                         >
-                                                            <div className="text-xs text-gray-400 truncate w-full">{item.productName}</div>
+                                                            <div className="text-xs text-muted truncate w-full">{item.productName}</div>
                                                             <div className="text-indigo-400 font-bold group-hover:text-indigo-300">
                                                                 ₩ {(item.finalPrice || item.startPrice || 0).toLocaleString()}
                                                             </div>
@@ -486,8 +486,8 @@ function ProductRegisterContent() {
 
                                     {/* 외부 시세 데이터 (Streaming) */}
                                     <div>
-                                        <p className="text-xs text-gray-500 mb-2">외부 시세 (BrickLink, eBay 등)</p>
-                                        <div className="space-y-1 max-h-32 overflow-y-auto custom-scrollbar bg-gray-800/50 p-3 rounded">
+                                        <p className="text-xs text-muted mb-2">외부 시세 (BrickLink, eBay 등)</p>
+                                        <div className="space-y-1 max-h-32 overflow-y-auto custom-scrollbar bg-card/50 p-3 rounded">
                                             {externalPriceText ? (
                                                 <div className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">
                                                     {externalPriceText.split('-').map((line, index) => (
@@ -510,43 +510,48 @@ function ProductRegisterContent() {
                         )}
 
                         <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">₩</span>
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted">₩</span>
                             <input
                                 type="number"
                                 value={form.startPrice}
                                 onChange={(e) => setForm({ ...form, startPrice: e.target.value })}
                                 placeholder="0"
-                                className="w-full bg-gray-900 border border-gray-700 rounded-lg pl-10 pr-4 py-4 text-white text-xl focus:outline-none focus:border-yellow-500"
+                                className="w-full bg-card border border-border rounded-lg pl-10 pr-4 py-4 text-foreground text-xl focus:outline-none focus:border-yellow-500"
                             />
                         </div>
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-400 mb-2">경매 기간</label>
+                        <label className="block text-sm text-muted mb-2">경매 기간</label>
                         <div className="grid grid-cols-4 gap-3">
                             {['1', '3', '5', '7'].map((days) => (
                                 <button
                                     key={days}
                                     onClick={() => setForm({ ...form, auctionDuration: days })}
-                                    className={`py-4 rounded-lg font-medium transition ${form.auctionDuration === days ? 'bg-yellow-500 text-black' : 'bg-gray-900 text-white hover:bg-gray-700'}`}
+                                    className={`py-4 rounded-lg font-medium transition ${form.auctionDuration === days ? 'bg-yellow-500 text-black' : 'bg-card text-foreground hover:bg-gray-700'}`}
                                 >
                                     {days}일
                                 </button>
                             ))}
                         </div>
                     </div>
-                    <div className="flex items-start gap-3 bg-indigo-900/30 border border-indigo-700/50 rounded-lg p-4">
-                        <p className="text-sm text-indigo-300 leading-relaxed">
+                    <div className="flex items-start gap-3 bg-muted border border-border rounded-lg p-4">
+                        <p className="text-sm text-foreground leading-relaxed">
                             검수 절차는 약 3일이 소요되며 검수 완료 후 예정 경매로 등록됩니다.
                         </p>
                     </div>
                     <div className="flex gap-4">
-                        <button onClick={() => setStep(2)} className="flex-1 py-4 bg-gray-700 rounded-lg text-white font-medium">← 이전</button>
+                        <button onClick={() => setStep(2)} className="flex-1 py-4 bg-muted rounded-lg text-foreground font-medium hover:bg-gray-200 dark:hover:bg-gray-700">← 이전</button>
                         <button
                             onClick={handleSubmit}
                             disabled={loading || !form.startPrice}
-                            className="flex-1 bg-yellow-500 py-4 text-black font-bold rounded-lg disabled:opacity-50"
+                            className="flex-1 bg-yellow-500 py-4 text-black font-bold rounded-lg flex items-center justify-center gap-2 hover:bg-yellow-400 disabled:opacity-50"
                         >
-                            {loading ? '처리 중...' : (editMode ? '🧱 상품 수정하기' : '🧱 상품 등록하기')}
+                            {loading ? '처리 중...' : (
+                                <>
+                                    <Image src="/main-logo.png" alt="Logo" width={24} height={24} className="w-6 h-6 rounded-sm" />
+                                    {editMode ? '상품 수정하기' : '상품 등록하기'}
+                                </>
+                            )}
                         </button>
                     </div>
                 </div>

@@ -45,10 +45,10 @@ function SuccessContent() {
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
             {/* RareGo 테마에 맞춘 로딩 UI */}
             <div className="w-12 h-12 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-white text-lg font-bold tracking-tight">
+            <p className="text-foreground text-lg font-bold tracking-tight">
                 결제를 안전하게 처리하고 있습니다...
             </p>
-            <p className="text-gray-500 text-sm">잠시만 기다려 주세요.</p>
+            <p className="text-muted text-sm">잠시만 기다려 주세요.</p>
         </div>
     );
 }
@@ -56,7 +56,7 @@ function SuccessContent() {
 export default function PaymentSuccessPage() {
     return (
         // useSearchParams를 사용하므로 Suspense로 감싸야 빌드 에러가 나지 않습니다.
-        <Suspense fallback={<div className="text-white p-20 text-center">로딩 중...</div>}>
+        <Suspense fallback={<div className="text-foreground p-20 text-center">로딩 중...</div>}>
             <SuccessContent />
         </Suspense>
     );

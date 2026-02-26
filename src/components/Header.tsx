@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import { useEffect, useState } from 'react';
 import { useNotificationStore } from '@/store/useNotificationStore';
 import NotificationDropdown from './Notification/NotificationDropdown';
+import { ThemeToggle } from './ThemeToggle';
 
 import toast from 'react-hot-toast';
 
@@ -85,23 +86,23 @@ export default function Header() {
     };
 
     return (
-        <header className="border-b border-[#1a1a1a] sticky top-0 z-50 bg-[#0a0a0a]/95 backdrop-blur-sm">
+        <header className="border-b border-border sticky top-0 z-50 bg-background/95 backdrop-blur-sm">
             <nav className="container mx-auto px-6 py-4">
                 <div className="flex items-center justify-between">
 
                     {/* 로고 섹션 */}
                     <Link href="/" className="flex items-center gap-3 group">
-                        <span className="text-2xl transition-transform group-hover:scale-110">🧱</span>
+                        <img src="/main-logo.png" alt="RareGo Logo" className="w-12 h-12 rounded-lg transition-transform group-hover:scale-110 object-cover" />
                         <div className="flex flex-col">
-                            <span className="text-lg font-bold tracking-tight text-white">RareGo</span>
-                            <span className="text-[10px] text-gray-500 -mt-1 tracking-widest uppercase">
+                            <span className="text-lg font-bold tracking-tight text-foreground">RareGo</span>
+                            <span className="text-[10px] text-muted -mt-1 tracking-widest uppercase">
                                 Rare Lego Auction
                             </span>
                         </div>
                     </Link>
 
                     <div className="flex items-center gap-6">
-                        <div className="flex items-center gap-6 mr-4 border-r border-[#1a1a1a] pr-6">
+                        <div className="flex items-center gap-6 mr-4 border-r border-border pr-6">
                             {/* 공용 메뉴: 경매, 판매 */}
                             {publicNavItems.map((item) => (
                                 <Link
@@ -110,7 +111,7 @@ export default function Header() {
                                     onClick={(e) => handleProtectedClick(e, item.href)}
                                     className={`text-sm transition font-medium ${isActive(item.href)
                                         ? 'text-yellow-400 border-b-2 border-yellow-400 pb-1'
-                                        : 'text-gray-400 hover:text-white'
+                                        : 'text-muted hover:text-foreground'
                                         }`}
                                 >
                                     {item.label}
@@ -124,7 +125,7 @@ export default function Header() {
                                     href={item.href}
                                     className={`text-sm transition font-medium ${isActive(item.href)
                                         ? 'text-yellow-400 border-b-2 border-yellow-400 pb-1'
-                                        : 'text-gray-400 hover:text-white'
+                                        : 'text-muted hover:text-foreground'
                                         }`}
                                 >
                                     {item.label}
@@ -137,7 +138,7 @@ export default function Header() {
                                     href="/admin/inspection"
                                     className={`text-sm transition font-medium ${isActive('/admin/inspection')
                                         ? 'text-red-400 border-b-2 border-red-400 pb-1'
-                                        : 'text-gray-400 hover:text-red-400'
+                                        : 'text-muted hover:text-red-400'
                                         }`}
                                 >
                                     검수
@@ -145,18 +146,20 @@ export default function Header() {
                             )}
                         </div>
 
+                        <ThemeToggle />
+
                         {/* 알림 아이콘 (로그인 시) */}
                         {isLogin && (
                             <div className="relative">
                                 <button
                                     onClick={() => setShowNotifications(!showNotifications)}
-                                    className="text-gray-400 hover:text-white transition p-2 relative"
+                                    className="text-muted hover:text-foreground transition p-2 relative"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                                     </svg>
                                     {unreadCount > 0 && (
-                                        <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
+                                        <span className="absolute top-1 right-1 bg-red-500 text-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
                                             {unreadCount > 99 ? '99+' : unreadCount}
                                         </span>
                                     )}
@@ -179,7 +182,7 @@ export default function Header() {
                                     </Link>
                                     <button
                                         onClick={handleLogout}
-                                        className="text-sm text-gray-500 hover:text-red-400 transition font-medium"
+                                        className="text-sm text-muted hover:text-red-400 transition font-medium"
                                     >
                                         로그아웃
                                     </button>
@@ -187,7 +190,7 @@ export default function Header() {
                             ) : (
                                 <Link
                                     href="/login"
-                                    className="text-sm text-white bg-gray-800 hover:bg-gray-700 py-2 px-4 rounded-lg transition font-medium"
+                                    className="text-sm text-foreground bg-card hover:bg-gray-700 py-2 px-4 rounded-lg transition font-medium"
                                 >
                                     로그인
                                 </Link>

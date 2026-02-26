@@ -87,14 +87,14 @@ export default function VerifyModal({ isOpen, onClose, onVerified }: VerifyModal
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
-            <div className="bg-[#0d0d0d] rounded-3xl p-8 max-w-md w-full border border-gray-800 shadow-2xl transition-all scale-100">
+            <div className="bg-card rounded-3xl p-8 max-w-md w-full border border-border shadow-2xl transition-all scale-100">
                 {/* 헤더 */}
                 <div className="text-center mb-8">
                     <div className="w-20 h-20 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-yellow-500/20">
                         <span className="text-4xl">🔐</span>
                     </div>
-                    <h3 className="text-2xl font-bold text-white mb-2">본인인증</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed">
+                    <h3 className="text-2xl font-bold text-foreground mb-2">본인인증</h3>
+                    <p className="text-muted text-sm leading-relaxed">
                         안전한 경매 참여를 위해<br />
                         본인인증이 필요합니다.
                     </p>
@@ -103,34 +103,34 @@ export default function VerifyModal({ isOpen, onClose, onVerified }: VerifyModal
                 {step === 'input' ? (
                     <div className="space-y-5">
                         <div className="space-y-1.5">
-                            <label className="block text-xs font-medium text-gray-500 ml-1">이름 (실명)</label>
+                            <label className="block text-xs font-medium text-muted ml-1">이름 (실명)</label>
                             <input
                                 type="text"
                                 value={form.realName}
                                 onChange={(e) => setForm({ ...form, realName: e.target.value })}
                                 placeholder="성함을 입력해주세요"
-                                className={`w-full bg-[#1a1a1a] border ${form.realName && !NAME_REGEX.test(form.realName) ? 'border-red-500/50' : 'border-[#262626]'} rounded-xl px-4 py-4 text-white focus:outline-none focus:border-yellow-500 transition-all`}
+                                className={`w-full bg-card border ${form.realName && !NAME_REGEX.test(form.realName) ? 'border-red-500/50' : 'border-[#262626]'} rounded-xl px-4 py-4 text-foreground focus:outline-none focus:border-yellow-500 transition-all`}
                             />
                             {form.realName && !NAME_REGEX.test(form.realName) && (
                                 <p className="text-[10px] text-red-400 ml-1">한글 또는 영문 1-10자로 입력해주세요.</p>
                             )}
                         </div>
                         <div className="space-y-1.5">
-                            <label className="block text-xs font-medium text-gray-500 ml-1">휴대폰 번호</label>
+                            <label className="block text-xs font-medium text-muted ml-1">휴대폰 번호</label>
                             <input
                                 type="tel"
                                 value={form.contactPhone}
                                 onChange={(e) => setForm({ ...form, contactPhone: formatPhone(e.target.value) })}
                                 placeholder="010-0000-0000"
                                 maxLength={13}
-                                className={`w-full bg-[#1a1a1a] border ${form.contactPhone && !PHONE_REGEX.test(form.contactPhone) ? 'border-red-500/50' : 'border-[#262626]'} rounded-xl px-4 py-4 text-white focus:outline-none focus:border-yellow-500 transition-all`}
+                                className={`w-full bg-card border ${form.contactPhone && !PHONE_REGEX.test(form.contactPhone) ? 'border-red-500/50' : 'border-[#262626]'} rounded-xl px-4 py-4 text-foreground focus:outline-none focus:border-yellow-500 transition-all`}
                             />
                         </div>
 
                         <div className="flex gap-3 pt-4">
                             <button
                                 onClick={onClose}
-                                className="flex-1 bg-gray-900 text-gray-400 py-4 rounded-xl hover:bg-gray-800 transition font-bold"
+                                className="flex-1 bg-card text-muted py-4 rounded-xl hover:bg-card transition font-bold"
                             >
                                 취소
                             </button>
@@ -151,14 +151,14 @@ export default function VerifyModal({ isOpen, onClose, onVerified }: VerifyModal
                             </p>
                         </div>
                         <div className="space-y-1.5">
-                            <label className="block text-xs font-medium text-gray-500 ml-1">인증번호</label>
+                            <label className="block text-xs font-medium text-muted ml-1">인증번호</label>
                             <input
                                 type="text"
                                 value={form.verifyCode}
                                 onChange={(e) => setForm({ ...form, verifyCode: e.target.value.replace(/[^\d]/g, '').slice(0, 6) })}
                                 placeholder="6자리 숫자 입력"
                                 maxLength={6}
-                                className="w-full bg-[#1a1a1a] border border-[#262626] rounded-xl px-4 py-4 text-white text-center text-2xl tracking-[0.5em] font-bold focus:outline-none focus:border-yellow-500 transition-all"
+                                className="w-full bg-card border border-[#262626] rounded-xl px-4 py-4 text-foreground text-center text-2xl tracking-[0.5em] font-bold focus:outline-none focus:border-yellow-500 transition-all"
                             />
                         </div>
                         <p className="text-center text-[11px] text-gray-600">
@@ -168,7 +168,7 @@ export default function VerifyModal({ isOpen, onClose, onVerified }: VerifyModal
                         <div className="flex gap-3 pt-4">
                             <button
                                 onClick={() => setStep('input')}
-                                className="flex-1 bg-gray-900 text-gray-400 py-4 rounded-xl hover:bg-gray-800 transition font-bold"
+                                className="flex-1 bg-card text-muted py-4 rounded-xl hover:bg-card transition font-bold"
                             >
                                 재입력
                             </button>
