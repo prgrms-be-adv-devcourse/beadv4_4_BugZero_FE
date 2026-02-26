@@ -93,7 +93,7 @@ export default function Header() {
 
                     {/* 로고 섹션 */}
                     <Link href="/" className="flex items-center gap-3 group">
-                        <Image src="/main-logo.png" alt="RareGo Logo" width={48} height={48} className="w-12 h-12 rounded-lg transition-transform group-hover:scale-110 object-cover" />
+                        <Image src="/main-logo.png" alt="RareGo Logo" width={64} height={64} className="w-16 h-16 rounded-lg transition-transform group-hover:scale-110 object-cover" />
                         <div className="flex flex-col">
                             <span className="text-lg font-bold tracking-tight text-foreground">RareGo</span>
                             <span className="text-[10px] text-muted -mt-1 tracking-widest uppercase">
