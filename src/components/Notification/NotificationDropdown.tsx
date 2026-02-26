@@ -46,7 +46,7 @@ export default function NotificationDropdown({ onClose }: NotificationDropdownPr
                     <button
                         onClick={() => setFilter('ALL')}
                         className={`px-3 py-1 text-xs rounded-md transition-colors ${filter === 'ALL'
-                            ? 'bg-zinc-700 text-foreground'
+                            ? 'bg-zinc-700 text-white'
                             : 'text-muted hover:text-foreground'
                             }`}
                     >
