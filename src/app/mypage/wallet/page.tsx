@@ -112,9 +112,9 @@ export default function MyWalletPage() {
         const balanceDelta = tx.balanceDelta ?? 0;
         const holdingDelta = tx.holdingDelta ?? 0;
         if (balanceDelta === 0 && holdingDelta !== 0) {
-            return holdingDelta;
+            return Math.abs(holdingDelta);
         }
-        return balanceDelta;
+        return Math.abs(balanceDelta);
     };
 
     // 출금 처리
