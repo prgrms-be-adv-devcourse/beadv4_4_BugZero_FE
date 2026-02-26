@@ -216,8 +216,8 @@ export interface components {
             startedAt?: string;
             /** Format: date-time */
             closedAt?: string;
-            thumbnail?: string;
-            /** Format: double */
+            imageUrls?: string[];
+            /** Format: float */
             score?: number;
         };
         SuccessResponseDtoListAiInternalPriceResponseDto: {

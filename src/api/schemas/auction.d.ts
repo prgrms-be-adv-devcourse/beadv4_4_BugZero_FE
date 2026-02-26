@@ -322,9 +322,9 @@ export interface components {
             /** Format: int64 */
             productId?: number;
             /** @enum {string} */
-            beforeStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "WITHDRAWN";
+            beforeStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "RELISTED" | "WITHDRAWN";
             /** @enum {string} */
-            currentStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "WITHDRAWN";
+            currentStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "RELISTED" | "WITHDRAWN";
             message?: string;
         };
         SuccessResponseDtoAuctionWithdrawResponseDto: {
@@ -347,7 +347,7 @@ export interface components {
             /** Format: int64 */
             productId?: number;
             /** @enum {string} */
-            status?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "WITHDRAWN";
+            status?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "RELISTED" | "WITHDRAWN";
             message?: string;
         };
         SuccessResponseDtoAuctionRelistResponseDto: {
@@ -414,7 +414,7 @@ export interface components {
             /** Format: int32 */
             bidCount?: number;
             /** @enum {string} */
-            auctionStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "WITHDRAWN";
+            auctionStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "RELISTED" | "WITHDRAWN";
             /** @enum {string} */
             tradeStatus?: "PROCESSING" | "SUCCESS" | "FAILED";
             /** Format: date-time */
@@ -477,7 +477,7 @@ export interface components {
             /** Format: int32 */
             bidsCount?: number;
             /** @enum {string} */
-            auctionStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "WITHDRAWN";
+            auctionStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "RELISTED" | "WITHDRAWN";
             /** Format: date-time */
             endTime?: string;
         };
@@ -497,7 +497,7 @@ export interface components {
             /** Format: date-time */
             bidTime?: string;
             /** @enum {string} */
-            auctionStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "WITHDRAWN";
+            auctionStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "RELISTED" | "WITHDRAWN";
             /** Format: int64 */
             currentPrice?: number;
             /** Format: date-time */
@@ -513,7 +513,7 @@ export interface components {
             /** @enum {string} */
             category?: "STARWARS" | "ORIGINAL" | "HARRYPOTTER" | "TECHNIC" | "ICONS" | "IDEAS" | "ARCHITECTURE" | "NINJAGO" | "CITY" | "ETC";
             /** @enum {string} */
-            status?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "WITHDRAWN";
+            status?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "RELISTED" | "WITHDRAWN";
             /** @enum {string} */
             sort?: "CLOSING_SOON" | "NEWEST";
         };
@@ -530,7 +530,7 @@ export interface components {
             productDescription?: string;
             imageUrls?: string[];
             /** @enum {string} */
-            status?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "WITHDRAWN";
+            status?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "RELISTED" | "WITHDRAWN";
             /** Format: date-time */
             startTime?: string;
             /** Format: date-time */
@@ -885,7 +885,7 @@ export interface operations {
     getMyBids: {
         parameters: {
             query: {
-                auctionStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "WITHDRAWN";
+                auctionStatus?: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "RELISTED" | "WITHDRAWN";
                 pageable: components["schemas"]["Pageable"];
             };
             header?: never;

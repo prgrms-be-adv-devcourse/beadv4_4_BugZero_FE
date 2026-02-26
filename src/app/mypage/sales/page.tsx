@@ -73,14 +73,16 @@ export default function MySalesPage() {
     }, [page, loadSales, role]);
 
     const handleWithdraw = async (auctionId: number) => {
-        if (!confirm('정말 이 경매를 삭제하시겠습니까?')) return;
+        if (!confirm('정말 이 경매 판매를 포기하시겠습니까?')) return;
 
         try {
             await api.withdrawAuction(auctionId);
-            toast.success('판매가 취소되었습니다.');
-            setMySales(prev => prev.filter(a => a.auctionId !== auctionId));
+            toast.success('판매가 포기되었습니다.');
+            setMySales(prev => prev.map(a =>
+                a.auctionId === auctionId ? { ...a, auctionStatus: 'WITHDRAWN' } : a
+            ));
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : '판매 취소에 실패했습니다.');
+            toast.error(error instanceof Error ? error.message : '판매 포기에 실패했습니다.');
         }
     };
 
@@ -109,6 +111,8 @@ export default function MySalesPage() {
         switch (sale.auctionStatus) {
             case 'IN_PROGRESS': return { text: '진행중', color: 'text-yellow-400' };
             case 'SCHEDULED': return { text: '예정', color: 'text-blue-400' };
+            case 'RELISTED': return { text: '재경매', color: 'text-purple-400' };
+            case 'WITHDRAWN': return { text: '판매 포기', color: 'text-gray-500' };
             case 'ENDED':
                 return sale.tradeStatus === 'SUCCESS'
                     ? { text: '낙찰', color: 'text-green-500' }
@@ -165,11 +169,6 @@ export default function MySalesPage() {
                                             <span className="text-xs text-gray-500">
                                                 마감: {formatDate(sale.endTime)}
                                             </span>
-                                            {sale.actionRequired && (
-                                                <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full">
-                                                    조치 필요
-                                                </span>
-                                            )}
                                         </div>
                                     </div>
 
@@ -193,7 +192,7 @@ export default function MySalesPage() {
                                                 onClick={() => handleWithdraw(sale.auctionId || 0)}
                                                 className="flex-1 bg-gray-700 text-gray-300 py-2 px-4 rounded-lg text-sm hover:bg-gray-600 transition text-center"
                                             >
-                                                삭제
+                                                판매 포기
                                             </button>
                                         </div>
                                     )}

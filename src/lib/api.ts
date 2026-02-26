@@ -39,7 +39,7 @@ export interface Auction extends Omit<AuctionDetailResponseDto, "status" | "star
     tickSize: number;
     bidCount: number;
     // Required fields from DTO (overriding optionals)
-    status: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "WITHDRAWN";
+    status: "SCHEDULED" | "IN_PROGRESS" | "ENDED" | "WITHDRAWN" | "RELISTED";
     startTime: string;
     endTime: string;
 }

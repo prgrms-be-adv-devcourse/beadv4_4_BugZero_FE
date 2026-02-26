@@ -13,6 +13,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * 예치금 출금
+         * @description 예치금을 출금합니다.
+         */
         post: operations["withdraw"];
         delete?: never;
         options?: never;

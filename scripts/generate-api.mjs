@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 
 const SERVICES = [
     { name: 'member', port: 8081 },
-    { name: 'auth', port: 8089 },
+    { name: 'auth', port: 8080 },
     { name: 'payment', port: 8082 },
     { name: 'auction', port: 8083 },
     { name: 'product', port: 8084 },
