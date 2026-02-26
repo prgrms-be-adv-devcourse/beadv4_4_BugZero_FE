@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
@@ -33,6 +33,21 @@ function SearchIcon({ className }: { className?: string }) {
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <circle cx="11" cy="11" r="8" />
       <path d="m21 21-4.3-4.3" />
+    </svg>
+  );
+}
+function ChevronLeftIcon({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="m15 18-6-6 6-6" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="m9 18 6-6-6-6" />
     </svg>
   );
 }
@@ -173,6 +188,35 @@ function HomePageContent() {
   const [pageInfo, setPageInfo] = useState<PageDto | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Category scroll state
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(true);
+
+  const handleScroll = () => {
+    if (categoryScrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = categoryScrollRef.current;
+      setShowLeftArrow(scrollLeft > 0);
+      setShowRightArrow(Math.ceil(scrollLeft + clientWidth) < scrollWidth - 2);
+    }
+  };
+
+  const scrollCategories = (direction: 'left' | 'right') => {
+    if (categoryScrollRef.current) {
+      const scrollAmount = 300;
+      categoryScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  useEffect(() => {
+    handleScroll();
+    window.addEventListener('resize', handleScroll);
+    return () => window.removeEventListener('resize', handleScroll);
+  }, []);
+
   // URL 파라미터 업데이트 함수
   const updateUrl = (params: { filter?: string; category?: string; keyword?: string; page?: number; sort?: string }) => {
     const newParams = new URLSearchParams(searchParams.toString());
@@ -208,6 +252,7 @@ function HomePageContent() {
     if (!isLoggedIn) {
       e.preventDefault();
       toast.error('판매 등록은 로그인 후 이용 가능합니다.');
+      router.push('/login');
     }
   };
 
@@ -317,13 +362,13 @@ function HomePageContent() {
             </Link>
           </div>
 
-          <div className="z-10 flex-shrink-0 relative">
-            <div className="absolute inset-0 bg-yellow-500/10 blur-3xl rounded-full"></div>
+          <div className="z-10 flex-shrink-0 relative mt-4 md:mt-0">
+            <div className="absolute inset-0 bg-yellow-500/15 blur-3xl rounded-full"></div>
             <Image
               src="/images/banner/seller_banner.png"
               alt="Seller Lego"
-              width={240}
-              height={240}
+              width={340}
+              height={340}
               className="relative z-10 drop-shadow-2xl hover:scale-105 hover:-rotate-2 transition-transform duration-500 select-none object-contain"
             />
           </div>
@@ -354,12 +399,34 @@ function HomePageContent() {
         </div>
 
         {/* Categories */}
-        <div className="relative w-full max-w-5xl mx-auto px-4">
+        <div className="relative w-full max-w-5xl mx-auto px-8 group/cat">
           {/* Scroll fade gradients */}
-          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none"></div>
-          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none"></div>
+          <div className={`absolute left-8 top-0 bottom-0 w-16 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none transition-opacity duration-300 ${showLeftArrow ? 'opacity-100' : 'opacity-0'}`}></div>
+          <div className={`absolute right-8 top-0 bottom-0 w-16 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none transition-opacity duration-300 ${showRightArrow ? 'opacity-100' : 'opacity-0'}`}></div>
 
-          <div className="flex items-center gap-3 overflow-x-auto whitespace-nowrap py-2 px-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x">
+          {/* Left Arrow */}
+          <button
+            onClick={() => scrollCategories('left')}
+            className={`absolute left-0 top-1/2 -translate-y-1/2 z-20 w-8 h-8 flex items-center justify-center bg-card text-foreground rounded-full shadow-md border border-border transition-all duration-300 hover:bg-yellow-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-yellow-500/50 ${showLeftArrow ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'}`}
+            aria-label="이전 카테고리"
+          >
+            <ChevronLeftIcon className="w-5 h-5" />
+          </button>
+
+          {/* Right Arrow */}
+          <button
+            onClick={() => scrollCategories('right')}
+            className={`absolute right-0 top-1/2 -translate-y-1/2 z-20 w-8 h-8 flex items-center justify-center bg-card text-foreground rounded-full shadow-md border border-border transition-all duration-300 hover:bg-yellow-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-yellow-500/50 ${showRightArrow ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'}`}
+            aria-label="다음 카테고리"
+          >
+            <ChevronRightIcon className="w-5 h-5" />
+          </button>
+
+          <div
+            ref={categoryScrollRef}
+            onScroll={handleScroll}
+            className="flex items-center gap-3 overflow-x-auto whitespace-nowrap py-2 px-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x scroll-smooth"
+          >
             {(['ALL', ...Object.keys(CATEGORY_MAP)]).map(c => {
               const isActive = c === 'ALL' ? !category : category === c;
               return (
