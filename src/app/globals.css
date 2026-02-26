@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 @theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -14,7 +16,7 @@
   --card: #f9fafb;
   --border: #e5e7eb;
   --muted: #6b7280;
-  
+
   --lego-yellow: #F5CD2F;
   --lego-red: #C91A09;
   --lego-blue: #0055BF;
