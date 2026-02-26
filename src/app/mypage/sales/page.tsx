@@ -86,6 +86,18 @@ export default function MySalesPage() {
         }
     };
 
+    const handleDeleteProduct = async (productId: number) => {
+        if (!confirm('정말 이 상품을 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다.')) return;
+
+        try {
+            await api.deleteProduct(productId);
+            toast.success('상품이 삭제되었습니다.');
+            loadSales(page);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : '상품 삭제에 실패했습니다.');
+        }
+    };
+
     const submitRelist = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!relistAuctionId) return;
@@ -108,6 +120,9 @@ export default function MySalesPage() {
     };
 
     const getSaleStatus = (sale: MySale) => {
+        if (sale.inspectionStatus === 'PENDING') return { text: '검수 대기', color: 'text-orange-400' };
+        if (sale.inspectionStatus === 'REJECTED') return { text: '검수 반려', color: 'text-red-500' };
+
         switch (sale.auctionStatus) {
             case 'IN_PROGRESS': return { text: '진행중', color: 'text-yellow-400' };
             case 'SCHEDULED': return { text: '예정', color: 'text-blue-400' };
@@ -171,6 +186,37 @@ export default function MySalesPage() {
                                             </span>
                                         </div>
                                     </div>
+
+                                    {/* 검수 대기 상태일 경우 수정/삭제 버튼 표시 */}
+                                    {sale.inspectionStatus === 'PENDING' && (
+                                        <div className="flex gap-2 mt-2" onClick={(e) => e.preventDefault()}>
+                                            <button
+                                                onClick={() => {
+                                                    // 임시 단건 조회 부재 해결 우회용: 기본 정보를 Query에 실어 보냄
+                                                    if (sale.productId) {
+                                                        const qs = new URLSearchParams();
+                                                        qs.set("edit", "true");
+                                                        qs.set("productId", String(sale.productId));
+                                                        qs.set("auctionId", String(sale.auctionId || ""));
+                                                        qs.set("name", sale.title || "");
+                                                        // MySaleResponseDto 에 description 이나 category 가 없는 한계 존재
+                                                        // 이를 위해 백엔드 API 연동이 추후 필요하지만, 지금은 빈값으로 넘어가 다시 작성해야 할 수 있음
+                                                        
+                                                        router.push(`/products/register?${qs.toString()}`);
+                                                    }
+                                                }}
+                                                className="flex-1 bg-gray-800 text-gray-300 py-2 px-4 rounded-lg text-sm hover:bg-gray-700 transition border border-gray-700 text-center"
+                                            >
+                                                상품 수정
+                                            </button>
+                                            <button
+                                                onClick={() => sale.productId && handleDeleteProduct(sale.productId)}
+                                                className="flex-1 bg-red-900/50 text-red-200 py-2 px-4 rounded-lg text-sm hover:bg-red-900 transition border border-red-900/50 text-center"
+                                            >
+                                                삭제
+                                            </button>
+                                        </div>
+                                    )}
 
                                     {/* 유찰/실패 상태일 경우 하단에 액션 버튼 표시 */}
                                     {(sale.tradeStatus === 'FAILED' || (sale.auctionStatus === 'ENDED' && sale.bidCount === 0)) && (

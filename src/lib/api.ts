@@ -101,6 +101,15 @@ export const api = {
         );
     },
 
+    deleteProduct: async (productId: number) => {
+        return handleResponseData<components["schemas"]["SuccessResponseDtoVoid"]>(
+            client.DELETE("/api/v1/products/{productId}", {
+                params: { path: { productId } }
+            }),
+            "상품 삭제에 실패했습니다."
+        );
+    },
+
     getPresignedUrl: async (body: components["schemas"]["PresignedUrlRequestDto"]) => {
         return handleResponseData<components["schemas"]["PresignedUrlResponseDto"]>(
             client.POST("/api/v1/products/images/presigned-url", { body }),
