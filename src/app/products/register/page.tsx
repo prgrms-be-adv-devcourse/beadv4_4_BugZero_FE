@@ -21,7 +21,9 @@ interface ProductForm {
     condition: "MISB" | "NISB" | "MISP" | "USED";
 }
 
-export default function ProductRegisterPage() {
+import { Suspense } from 'react';
+
+function ProductRegisterContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const editMode = searchParams.get('edit') === 'true';
@@ -550,5 +552,17 @@ export default function ProductRegisterPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function ProductRegisterPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-gray-900">
+                <div className="w-12 h-12 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        }>
+            <ProductRegisterContent />
+        </Suspense>
     );
 }
