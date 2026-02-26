@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useMemberStore } from '@/store/useMemberStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -23,6 +23,10 @@ interface ProductForm {
 
 export default function ProductRegisterPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const editMode = searchParams.get('edit') === 'true';
+    const initProductId = searchParams.get('productId');
+
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const { memberInfo, isSeller, isLoaded, fetchMemberInfo } = useMemberStore();
@@ -59,6 +63,32 @@ export default function ProductRegisterPage() {
     const [externalPriceText, setExternalPriceText] = useState<string>("");
     const [isRecommending, setIsRecommending] = useState(false);
     const [showRecommendations, setShowRecommendations] = useState(false);
+
+    // 수정 시, 기존 상품 정보의 AuctionId가 필요함 (ProductUpdateDto에 필수)
+    const [existingAuctionId, setExistingAuctionId] = useState<number | null>(null);
+
+    // 수정 모드일 때 초기 데이터 세팅
+    useEffect(() => {
+        if (!editMode || !initProductId) return;
+        
+        // Query Parameter를 통해 기본 정보를 폼에 채워넣습니다.
+        // 상세 데이터가 없는 필드(description, category 등)는 사용자가 수기로 보완하도록 안내합니다.
+        const auctionIdStr = searchParams.get('auctionId');
+        const nameStr = searchParams.get('name');
+
+        if (auctionIdStr) setExistingAuctionId(Number(auctionIdStr));
+        
+        setForm(prev => ({
+            ...prev,
+            name: nameStr || prev.name,
+            // category, description, price, condition 등은 query에 없으므로 기본값 유지 
+            // 실제 서비스에서는 모든 필드를 query로 받거나 단건 조회 API가 필요합니다.
+        }));
+
+        if (!nameStr) {
+             toast("상세 정보가 충분하지 않아 빈 항목은 직접 채워주셔야 합니다.", { icon: "⚠️" });
+        }
+    }, [editMode, initProductId, searchParams]);
 
     if (!isLoaded || !memberInfo || !isSeller) {
         return (
@@ -121,8 +151,6 @@ export default function ProductRegisterPage() {
 
         setLoading(true);
         try {
-            // 판매자 체크는 페이지 진입 시 이미 완료됨 (리다이렉트)
-
             // --- [4단계: S3 이미지 업로드] ---
             const uploadedS3Paths = await Promise.all(
                 imageFiles.map(async (file) => {
@@ -141,23 +169,54 @@ export default function ProductRegisterPage() {
                 })
             );
 
-            // --- [5단계: 최종 상품 등록] ---
-            const productData: components["schemas"]["ProductCreateRequestDto"] = {
-                name: form.name,
-                category: form.category as "STARWARS" | "ORIGINAL" | "HARRYPOTTER" | "TECHNIC" | "ICONS" | "IDEAS" | "ARCHITECTURE" | "NINJAGO" | "CITY" | "ETC",
-                description: form.description,
-                productAuctionCreateDto: {
-                    startPrice: Number(form.startPrice),
-                    durationDays: Number(form.auctionDuration)
-                },
-                productImageRequestDto: uploadedS3Paths.map((path, i) => ({
-                    imgUrl: path,
-                    sortOrder: i
-                }))
-            };
+            // 주의:Previews에 있는 기존 이미지(Files가 아닌 String URL)와 새로 업로드된 이미지를 합치는 로직이 필요.
+            // (간결화를 위해 현재 imageFiles에 있는 새 이미지만 반영하도록 구성했습니다. 기존 이미지 처리는 별도 보완 필요)
 
-            await api.createProduct(productData);
-            toast.success('상품이 등록되었습니다! 검수 승인 후 경매가 시작됩니다.');
+            if (editMode && initProductId) {
+                if (!existingAuctionId) {
+                    toast.error("경매 ID를 찾을 수 없어 수정할 수 없습니다.");
+                    setLoading(false);
+                    return;
+                }
+                if (imageFiles.length === 0) {
+                     toast.error("수정 시에도 이미지는 최소 1장 이상 등록해야 합니다.");
+                     setLoading(false);
+                     return;
+                }
+
+                const updateData: components["schemas"]["ProductUpdateDto"] = {
+                    name: form.name,
+                    category: form.category as "STARWARS" | "ORIGINAL" | "HARRYPOTTER" | "TECHNIC" | "ICONS" | "IDEAS" | "ARCHITECTURE" | "NINJAGO" | "CITY" | "ETC",
+                    description: form.description,
+                    productAuctionUpdateDto: {
+                        auctionId: existingAuctionId,
+                        startPrice: Number(form.startPrice),
+                        durationDays: Number(form.auctionDuration)
+                    },
+                    productImageUpdateDtos: uploadedS3Paths.map((path, i) => ({
+                        imgUrl: path,
+                        sortOrder: i
+                    }))
+                };
+                await api.updateProduct(Number(initProductId), updateData);
+                toast.success('상품이 수정되었습니다.');
+            } else {
+                const productData: components["schemas"]["ProductCreateRequestDto"] = {
+                    name: form.name,
+                    category: form.category as "STARWARS" | "ORIGINAL" | "HARRYPOTTER" | "TECHNIC" | "ICONS" | "IDEAS" | "ARCHITECTURE" | "NINJAGO" | "CITY" | "ETC",
+                    description: form.description,
+                    productAuctionCreateDto: {
+                        startPrice: Number(form.startPrice),
+                        durationDays: Number(form.auctionDuration)
+                    },
+                    productImageRequestDto: uploadedS3Paths.map((path, i) => ({
+                        imgUrl: path,
+                        sortOrder: i
+                    }))
+                };
+                await api.createProduct(productData);
+                toast.success('상품이 등록되었습니다! 검수 승인 후 경매가 시작됩니다.');
+            }
             router.push('/mypage');
 
         } catch (error) {
@@ -254,8 +313,8 @@ export default function ProductRegisterPage() {
                 ← 돌아가기
             </Link>
 
-            <h1 className="text-3xl font-bold text-white mb-2">상품 등록</h1>
-            <p className="text-gray-400 mb-8">희귀 레고를 경매에 등록하세요</p>
+            <h1 className="text-3xl font-bold text-white mb-2">{editMode ? '상품 수정' : '상품 등록'}</h1>
+            <p className="text-gray-400 mb-8">{editMode ? '재검수를 위해 상품 정보를 수정합니다' : '희귀 레고를 경매에 등록하세요'}</p>
 
             <div className="flex items-center gap-4 mb-8">
                 {[1, 2, 3].map((s) => (
@@ -485,7 +544,7 @@ export default function ProductRegisterPage() {
                             disabled={loading || !form.startPrice}
                             className="flex-1 bg-yellow-500 py-4 text-black font-bold rounded-lg disabled:opacity-50"
                         >
-                            {loading ? '등록 중...' : '🧱 상품 등록하기'}
+                            {loading ? '처리 중...' : (editMode ? '🧱 상품 수정하기' : '🧱 상품 등록하기')}
                         </button>
                     </div>
                 </div>

@@ -407,6 +407,8 @@ export interface components {
         MySaleResponseDto: {
             /** Format: int64 */
             auctionId?: number;
+            /** Format: int64 */
+            productId?: number;
             title?: string;
             thumbnailUrl?: string;
             /** Format: int64 */
@@ -420,6 +422,7 @@ export interface components {
             /** Format: date-time */
             endTime?: string;
             actionRequired?: boolean;
+            inspectionStatus?: string;
         };
         PageDto: {
             /** Format: int32 */
