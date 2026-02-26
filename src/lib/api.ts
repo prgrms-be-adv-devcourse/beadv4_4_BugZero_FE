@@ -211,7 +211,10 @@ export const api = {
             }),
             "입찰 기록을 불러오는 데 실패했습니다."
         );
-        return (data.data || []) as BidLog[];
+        return {
+            logs: (data.data || []) as BidLog[],
+            totalItems: data.pageDto?.totalItems || 0
+        };
     },
 
     createBid: async (auctionId: number, bidAmount: number) => {
