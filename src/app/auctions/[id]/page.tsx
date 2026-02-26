@@ -35,6 +35,7 @@ export default function AuctionDetailPage() {
 
     const [auction, setAuction] = useState<Auction | null>(null);
     const [bidLogs, setBidLogs] = useState<BidLog[]>([]);
+    const [totalBids, setTotalBids] = useState<number>(0);
     const [bidAmount, setBidAmount] = useState('');
     const [loading, setLoading] = useState(true);
     const [bidding, setBidding] = useState(false);
@@ -57,7 +58,10 @@ export default function AuctionDetailPage() {
                 // 경매 정보 및 입찰 기록 병렬 요청
                 const promises: Promise<unknown>[] = [
                     api.getAuction(auctionId).then(setAuction),
-                    api.getBidLogs(auctionId).then(setBidLogs)
+                    api.getBidLogs(auctionId).then(res => {
+                        setBidLogs(res.logs);
+                        setTotalBids(res.totalItems);
+                    })
                 ];
 
                 // 로그인 시 사용자 정보 및 지갑 정보 조회
@@ -172,9 +176,13 @@ export default function AuctionDetailPage() {
                                 bidTime: new Date().toISOString()
                             };
                             setBidLogs(prev => [newLog, ...prev]);
+                            setTotalBids(prev => prev + 1);
                         } else if (data.bidAmount) {
                             // 데이터 부족 시 재조회 (fallback)
-                            api.getBidLogs(auctionId).then(setBidLogs).catch(e => console.error('입찰 기록 갱신 실패', e));
+                            api.getBidLogs(auctionId).then(res => {
+                                setBidLogs(res.logs);
+                                setTotalBids(res.totalItems);
+                            }).catch(e => console.error('입찰 기록 갱신 실패', e));
                         }
                     }
 
@@ -243,7 +251,10 @@ export default function AuctionDetailPage() {
 
             // 수동 갱신
             api.getAuction(auctionId).then(setAuction);
-            api.getBidLogs(auctionId).then(setBidLogs);
+            api.getBidLogs(auctionId).then(res => {
+                setBidLogs(res.logs);
+                setTotalBids(res.totalItems);
+            });
             api.getMyWallet().then(setWallet).catch(() => { });
         } catch (error) {
             const message = getErrorMessage(error, '입찰에 실패했습니다.');
@@ -519,7 +530,7 @@ export default function AuctionDetailPage() {
                                         LIVE
                                     </span>
                                 )}
-                                <span className="text-gray-500 text-sm">{(auction.bidCount || 0)}회 입찰</span>
+                                <span className="text-gray-500 text-sm">{totalBids}회 입찰</span>
                             </div>
                             {auction.status === 'IN_PROGRESS' && <ConnectionIndicator />}
                         </div>
