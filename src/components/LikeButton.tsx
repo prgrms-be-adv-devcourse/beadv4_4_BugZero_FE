@@ -2,7 +2,7 @@
 
 import { useAuthStore } from "@/store/useAuthStore";
 import { useWishlistStore } from "@/store/useWishlistStore";
-import { useSyncExternalStore, useState, useEffect, useRef } from "react";
+import { useSyncExternalStore, useState } from "react";
 import toast from "react-hot-toast";
 
 interface LikeButtonProps {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { api, type MemberInfo } from '@/lib/api';
 import VerifyModal from '@/components/VerifyModal';
 import toast from 'react-hot-toast';
@@ -39,7 +40,7 @@ export default function MyPage() {
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-4">
                         <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg shadow-yellow-400/20 overflow-hidden bg-card border border-border">
-                            <img src={userRole === 'ADMIN' ? '/admin-logo.png' : '/main-logo.png'} alt="Profile" className="w-full h-full object-cover" />
+                            <Image src={userRole === 'ADMIN' ? '/admin-logo.png' : '/main-logo.png'} alt="Profile" width={64} height={64} className="w-full h-full object-cover" />
                         </div>
                         <div>
                             <div className="flex items-center gap-2">

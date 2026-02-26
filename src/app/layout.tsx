@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
+import Image from "next/image";
 import AuthInitializer from "@/components/AuthInitializer"; // ✅ 추가
 import WishlistInitializer from "@/components/WishlistInitializer";
 
@@ -43,7 +44,7 @@ export default function RootLayout({
           <footer className="border-t border-border mt-auto">
             <div className="container mx-auto px-6 py-6 flex items-center justify-between text-sm text-muted">
               <div className="flex items-center gap-2">
-                <img src="/main-logo.png" alt="Footer Logo" className="w-8 h-8 rounded-md object-cover" />
+                <Image src="/main-logo.png" alt="Footer Logo" width={32} height={32} className="w-8 h-8 rounded-md object-cover" />
                 <span>RareGo</span>
               </div>
               <p>© 2026 BugZero</p>

@@ -31,7 +31,6 @@ function getTimeRemaining(date?: string): string {
 export default function WishlistPage() {
     const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const { fetchMyBookmarks } = useWishlistStore();
 
     useEffect(() => {
         async function load() {

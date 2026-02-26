@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
-import { getErrorMessage } from '@/api/utils';
+// import { getErrorMessage } from '@/api/utils';
 import type { components } from '@/api/schema';
 import { toast } from 'react-hot-toast';
 
@@ -183,7 +184,7 @@ export default function ProfileSettingsPage() {
                             {/* 프로필 아이콘 */}
                             <div className="flex items-center gap-4 mb-8">
                                 <div className="w-20 h-20 rounded-full flex items-center justify-center bg-card border border-border overflow-hidden shadow-lg">
-                                    <img src={memberInfo?.role === 'ADMIN' ? '/admin-logo.png' : '/main-logo.png'} alt="Profile" className="w-full h-full object-cover" />
+                                    <Image src={memberInfo?.role === 'ADMIN' ? '/admin-logo.png' : '/main-logo.png'} alt="Profile" width={80} height={80} className="w-full h-full object-cover" />
                                 </div>
                                 <div>
                                     <p className="text-foreground font-medium">{memberInfo?.nickname || '로딩중...'}</p>

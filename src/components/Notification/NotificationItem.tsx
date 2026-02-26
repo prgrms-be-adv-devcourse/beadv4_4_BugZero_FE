@@ -39,7 +39,7 @@ export default function NotificationItem({ notification, onRead }: NotificationI
                             onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                notification.id && onRead(notification.id);
+                                void (notification.id && onRead(notification.id));
                             }}
                             className="text-muted hover:text-yellow-400 transition-colors opacity-0 group-hover:opacity-100 p-1"
                             title="읽음 처리"

@@ -28,7 +28,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     isLoading: false,
 
     connect: async () => {
-        const { abortController, disconnect } = get();
+        const { abortController } = get();
         if (abortController) return; // Already connected
 
         if (typeof window === 'undefined') return;
