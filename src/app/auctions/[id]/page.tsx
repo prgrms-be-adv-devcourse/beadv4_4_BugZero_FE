@@ -11,13 +11,14 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { getErrorMessage } from '@/api/utils';
 import LikeButton from '@/components/LikeButton';
 import toast from 'react-hot-toast';
+import { parseDate } from '@/lib/utils';
 
 function formatPrice(price: number): string {
     return new Intl.NumberFormat('ko-KR').format(price);
 }
 
 function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleString('ko-KR', {
+    return parseDate(dateString).toLocaleString('ko-KR', {
         month: 'short',
         day: 'numeric',
         hour: '2-digit',

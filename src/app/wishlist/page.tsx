@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import { components } from '@/api/schema';
 import LikeButton from '@/components/LikeButton';
 import { useWishlistStore } from '@/store/useWishlistStore';
+import { parseDate } from '@/lib/utils';
 
 type WishlistItem = components["schemas"]["AuctionBookmarkListResponseDto"];
 
@@ -16,7 +17,7 @@ function formatPrice(price?: number): string {
 
 function getTimeRemaining(date?: string): string {
     if (!date) return '-';
-    const total = new Date(date).getTime() - Date.now();
+    const total = parseDate(date).getTime() - Date.now();
     if (total <= 0) return '0분';
 
     const days = Math.floor(total / (1000 * 60 * 60 * 24));
@@ -71,10 +72,10 @@ export default function WishlistPage() {
             // 동일 상태 내에서의 정렬
             if (infoA.auctionStatus === 'IN_PROGRESS') {
                 // 종료 임박순
-                return new Date(infoA.endTime!).getTime() - new Date(infoB.endTime!).getTime();
+                return parseDate(infoA.endTime!).getTime() - parseDate(infoB.endTime!).getTime();
             } else {
                 // 시작 정보가 없으므로 종료 시간 기준 (또는 ID 기준)
-                return new Date(infoA.endTime!).getTime() - new Date(infoB.endTime!).getTime();
+                return parseDate(infoA.endTime!).getTime() - parseDate(infoB.endTime!).getTime();
             }
         });
 
@@ -84,7 +85,7 @@ export default function WishlistPage() {
         .sort((a, b) => {
             const infoA = a.auctionInfo!;
             const infoB = b.auctionInfo!;
-            return new Date(infoB.endTime!).getTime() - new Date(infoA.endTime!).getTime();
+            return parseDate(infoB.endTime!).getTime() - parseDate(infoA.endTime!).getTime();
         });
 
     if (loading) {

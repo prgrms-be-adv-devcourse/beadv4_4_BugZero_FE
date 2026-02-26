@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
+import { parseDate } from '@/lib/utils';
 
 
 function formatPrice(price: number): string {
@@ -109,7 +110,7 @@ export default function AuctionPaymentPage() {
                             <div className="flex justify-between items-center">
                                 <span className="text-muted">결제 기한</span>
                                 <span className="text-red-400 font-medium">
-                                    {new Date(auction.paymentDeadline).toLocaleString('ko-KR')}
+                                    {parseDate(auction.paymentDeadline).toLocaleString('ko-KR')}
                                 </span>
                             </div>
                         </div>

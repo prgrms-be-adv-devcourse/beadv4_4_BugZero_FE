@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
+import { parseDate } from '@/lib/utils';
 
 
 interface Product {
@@ -163,7 +164,7 @@ export default function ProductDetailPage() {
                                 <div className="text-left">
                                     <p className="font-medium text-foreground">검수 정보</p>
                                     <p className="text-sm text-muted">
-                                        {new Date(product.inspection.inspectedAt!).toLocaleDateString('ko-KR')} 검수 완료
+                                        {parseDate(product.inspection.inspectedAt!).toLocaleDateString('ko-KR')} 검수 완료
                                     </p>
                                 </div>
                             </div>

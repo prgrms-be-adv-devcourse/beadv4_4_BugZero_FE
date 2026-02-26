@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import { components } from '@/api/schema';
 import LikeButton from '@/components/LikeButton';
 import { useWishlistStore } from '@/store/useWishlistStore';
+import { parseDate } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
 import toast from 'react-hot-toast';
 
@@ -94,7 +95,7 @@ function formatPrice(price?: number): string {
 
 function getTimeRemaining(endDate?: string): string {
   if (!endDate) return '종료';
-  const total = new Date(endDate).getTime() - Date.now();
+  const total = parseDate(endDate).getTime() - Date.now();
   if (total <= 0) return '종료';
   const days = Math.floor(total / (1000 * 60 * 60 * 24));
   const hours = Math.floor((total % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -293,7 +294,7 @@ function HomePageContent() {
         });
 
         if (sort === 'CLOSING_SOON') {
-          filtered.sort((a, b) => new Date(a.endTime || '').getTime() - new Date(b.endTime || '').getTime());
+          filtered.sort((a, b) => parseDate(a.endTime || '').getTime() - parseDate(b.endTime || '').getTime());
         } else {
           // NEWEST logic (Mock doesn't have createdAt, so just ID reverse for now)
           filtered.sort((a, b) => (b.auctionId || 0) - (a.auctionId || 0));

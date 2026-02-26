@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
+import { parseDate } from '@/lib/utils';
 
 
 type InspectionResult = 'PASS' | 'FAIL' | 'PENDING';
@@ -117,7 +118,7 @@ export default function ProductInspectionPage() {
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted">등록 일시</span>
-                                <span className="text-foreground">{new Date(product.submittedAt).toLocaleDateString('ko-KR')}</span>
+                                <span className="text-foreground">{parseDate(product.submittedAt).toLocaleDateString('ko-KR')}</span>
                             </div>
                         </div>
 

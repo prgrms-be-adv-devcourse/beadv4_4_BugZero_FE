@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { api, type Settlement } from '@/lib/api';
+import { parseDate } from '@/lib/utils';
 
 type SettlementStatus = "READY" | "DONE" | "CANCELED" | "FAILED";
 
@@ -26,7 +27,7 @@ function formatPrice(price: number): string {
 
 function formatDate(dateString?: string): string {
     if (!dateString) return '';
-    const date = new Date(dateString);
+    const date = parseDate(dateString);
     return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 

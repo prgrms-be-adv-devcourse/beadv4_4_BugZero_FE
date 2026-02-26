@@ -6,6 +6,7 @@ import { api, type MySale } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
+import { parseDate } from '@/lib/utils';
 
 function formatPrice(price: number): string {
     return new Intl.NumberFormat('ko-KR').format(price);
@@ -13,7 +14,7 @@ function formatPrice(price: number): string {
 
 function formatDate(dateString?: string): string {
     if (!dateString) return '미정';
-    const date = new Date(dateString);
+    const date = parseDate(dateString);
     if (isNaN(date.getTime())) return '미정';
     return `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
@@ -201,7 +202,7 @@ export default function MySalesPage() {
                                                         qs.set("name", sale.title || "");
                                                         // MySaleResponseDto 에 description 이나 category 가 없는 한계 존재
                                                         // 이를 위해 백엔드 API 연동이 추후 필요하지만, 지금은 빈값으로 넘어가 다시 작성해야 할 수 있음
-                                                        
+
                                                         router.push(`/products/register?${qs.toString()}`);
                                                     }
                                                 }}

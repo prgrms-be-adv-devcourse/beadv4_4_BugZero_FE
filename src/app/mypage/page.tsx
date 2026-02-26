@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { api, type MemberInfo } from '@/lib/api';
 import VerifyModal from '@/components/VerifyModal';
 import toast from 'react-hot-toast';
+import { parseDate } from '@/lib/utils';
 
 export default function MyPage() {
     const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null);
@@ -55,7 +56,7 @@ export default function MyPage() {
                             {userRole}
                         </span>
                         {memberInfo?.createdAt && (
-                            <p className="text-[10px] text-gray-600 mt-2">가입일: {new Date(memberInfo.createdAt).toLocaleDateString()}</p>
+                            <p className="text-[10px] text-gray-600 mt-2">가입일: {parseDate(memberInfo.createdAt).toLocaleDateString()}</p>
                         )}
                     </div>
                 </div>
