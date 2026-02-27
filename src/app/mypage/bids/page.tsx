@@ -3,16 +3,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { api, type MyBid } from '@/lib/api';
-import { parseDate } from '@/lib/utils';
+import { parseDate, formatKSTDate } from '@/lib/utils';
 
 function formatPrice(price: number): string {
     return new Intl.NumberFormat('ko-KR').format(price);
 }
 
 function formatDate(dateString?: string): string {
-    if (!dateString) return '';
-    const date = parseDate(dateString);
-    return `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    return formatKSTDate(dateString, "MM/DD HH:mm");
 }
 
 export default function MyBidsPage() {

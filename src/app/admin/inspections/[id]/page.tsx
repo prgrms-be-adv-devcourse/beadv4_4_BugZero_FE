@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import { parseDate } from '@/lib/utils';
+import { parseDate, formatKSTDate } from '@/lib/utils';
 
 
 type InspectionResult = 'PASS' | 'FAIL' | 'PENDING';
@@ -118,7 +118,7 @@ export default function ProductInspectionPage() {
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted">등록 일시</span>
-                                <span className="text-foreground">{parseDate(product.submittedAt).toLocaleDateString('ko-KR')}</span>
+                                <span className="text-foreground">{formatKSTDate(product.submittedAt, "YYYY. MM. DD. HH:mm:ss").split(" ")[0]}</span>
                             </div>
                         </div>
 

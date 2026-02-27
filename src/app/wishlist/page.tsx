@@ -7,7 +7,7 @@ import { api } from '@/lib/api';
 import { components } from '@/api/schema';
 import LikeButton from '@/components/LikeButton';
 import { useWishlistStore } from '@/store/useWishlistStore';
-import { parseDate } from '@/lib/utils';
+import { parseDate, formatKSTDate } from '@/lib/utils';
 
 type WishlistItem = components["schemas"]["AuctionBookmarkListResponseDto"];
 
@@ -240,7 +240,7 @@ export default function WishlistPage() {
                                             </span>
                                         </div>
                                         <p className="text-[11px] text-gray-700 mt-1">
-                                            종료 일시: {info.endTime?.replace('T', ' ').substring(0, 16)}
+                                            종료 일시: {formatKSTDate(info.endTime, "YYYY-MM-DD HH:mm")}
                                         </p>
                                     </div>
 

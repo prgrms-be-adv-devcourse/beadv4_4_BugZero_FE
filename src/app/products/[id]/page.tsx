@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
-import { parseDate } from '@/lib/utils';
+import { parseDate, formatKSTDate } from '@/lib/utils';
 
 
 interface Product {
@@ -164,7 +164,7 @@ export default function ProductDetailPage() {
                                 <div className="text-left">
                                     <p className="font-medium text-foreground">검수 정보</p>
                                     <p className="text-sm text-muted">
-                                        {parseDate(product.inspection.inspectedAt!).toLocaleDateString('ko-KR')} 검수 완료
+                                        {formatKSTDate(product.inspection.inspectedAt!, "YYYY. MM. DD. HH:mm:ss").split(" ")[0]} 검수 완료
                                     </p>
                                 </div>
                             </div>
